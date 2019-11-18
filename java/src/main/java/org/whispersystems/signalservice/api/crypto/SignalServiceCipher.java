@@ -199,6 +199,9 @@ public class SignalServiceCipher {
           SignalServiceSyncMessage syncMessage = (message.hasSyncMessage() && message.getSyncMessage().hasContacts()) ? createSynchronizeMessage(metadata, message.getSyncMessage()) : null;
           SignalServiceContent content = new SignalServiceContent(authorisation, syncMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp(), false);
           content.setLokiServiceMessage(lokiServiceMessage);
+          if (message.hasDataMessage() && message.getDataMessage().hasProfile()) {
+            content.setSenderDisplayName(message.getDataMessage().getProfile().getDisplayName());
+          }
           return content;
         } else if (message.hasDataMessage()) {
           DataMessage dataMessage = message.getDataMessage();
