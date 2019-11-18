@@ -237,6 +237,68 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             throw PushNetworkException(exception)
         }
     }
+
+    // upload profile photo
+    // refer to the upload function above
+    fun uploadProfilePhoto(server: String, profilePhoto: ByteArray): Triple<Long, String, ByteArray> {
+        val future = SettableFuture<Triple<Long, String, ByteArray>>()
+        val contentType = "application/binary"
+        getAuthToken(server).then { token ->
+            // val file = DigestingRequestBody(data, outputStreamFactory, contentType, length, null)
+            val body = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("type", "network.loki")
+                    .addFormDataPart("Content-Type", contentType)
+                    .addFormDataPart("content", UUID.randomUUID().toString(), RequestBody.create(MediaType.parse("image/*"), profilePhoto))
+                    .build()
+            val request = Request.Builder().url("$server/files").post(body)
+            request.addHeader("Authorization", "Bearer $token")
+            val connection = OkHttpClient()
+            connection.newCall(request.build()).enqueue(object : Callback {
+
+                override fun onResponse(call: Call, response: Response) {
+                    when (response.code()) {
+                        in 200..299 -> {
+                            val bodyAsString = response.body()!!.string()
+                            val body = JsonUtil.fromJson(bodyAsString)
+                            val data = body.get("data")
+                            if (data == null) {
+                                Log.d("Loki", "Couldn't parse profile photo from: $response.")
+                                future.setException(LokiAPI.Error.ParsingFailed)
+                            }
+                            val id = data.get("id").asLong()
+                            val url = data.get("url").asText()
+                            if (url.isEmpty()) {
+                                Log.d("Loki", "Couldn't parse profile photo from: $response.")
+                                future.setException(LokiAPI.Error.ParsingFailed)
+                            }
+                            future.set(Triple(id, url, profilePhoto))
+                            //future.set(Triple(id, url, file.transmittedDigest))
+                        }
+                        401 -> {
+                            apiDatabase.setAuthToken(server, null)
+                            future.setException(LokiAPI.Error.TokenExpired)
+                        }
+                        else -> future.setException(LokiAPI.Error.HTTPRequestFailed(response.code()))
+                    }
+                }
+
+                override fun onFailure(call: Call, exception: IOException) {
+                    Log.d("Loki", "Couldn't reach server: $server.")
+                    future.setException(exception)
+                }
+            })
+        }
+        try {
+            return future.get()
+        } catch (exception: Exception) {
+            val nestedException = exception.cause ?: exception
+            if (nestedException is LokiAPI.Error.HTTPRequestFailed) {
+                throw NonSuccessfulResponseCodeException("Request returned with ${nestedException.code}.")
+            }
+            throw PushNetworkException(exception)
+        }
+    }
 }
 
 private fun Boolean.toInt(): Int { return if (this) 1 else 0 }
