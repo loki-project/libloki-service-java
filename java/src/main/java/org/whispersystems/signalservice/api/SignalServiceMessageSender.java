@@ -659,15 +659,18 @@ public class SignalServiceMessageSender {
       hasDataContent = true;
     }
 
-    if (hasDataContent) {
-      builder.setTimestamp(message.getTimestamp());
-
+    // Loki - Send profile name
+    if (hasDataContent || message.getPairingAuthorisation().isPresent()) {
       String displayName = userDatabase.getDisplayName(userHexEncodedPublicKey);
       if (displayName != null) {
         LokiProfile profile = LokiProfile.newBuilder().setDisplayName(displayName).build();
         builder.setProfile(profile);
+        hasDataContent = true;
       }
+    }
 
+    if (hasDataContent) {
+      builder.setTimestamp(message.getTimestamp());
       container.setDataMessage(builder);
     } else if (!message.getPairingAuthorisation().isPresent()) {
       // Loki - Set an address message is we don't have any data content or a pairing authorisation
