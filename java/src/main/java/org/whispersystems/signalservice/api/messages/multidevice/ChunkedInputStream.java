@@ -1,5 +1,7 @@
 package org.whispersystems.signalservice.api.messages.multidevice;
 
+import org.whispersystems.signalservice.internal.util.Util;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +12,16 @@ public class ChunkedInputStream {
 
   public ChunkedInputStream(InputStream in) {
     this.in = in;
+  }
+
+  protected int readInt32() throws IOException {
+    try {
+      byte[] bytes = new byte[4];
+      Util.readFully(in, bytes);
+      return bytes[0] << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | (bytes[3] & 0xFF);
+    } catch (IndexOutOfBoundsException e) {
+      throw new IOException(e);
+    }
   }
 
   protected int readRawVarint32() throws IOException {

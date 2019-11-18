@@ -35,6 +35,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
         private val longPollingTimeout: Long = 40
         internal val defaultMessageTTL = 24 * 60 * 60 * 1000
         internal var powDifficulty = 40
+        internal val okHTTPCache = hashMapOf<Long, OkHttpClient>()
         // endregion
 
         // region User ID Caching
@@ -98,21 +99,28 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
 
     // region Clearnet Setup
     private fun getClearnetConnection(timeout: Long): OkHttpClient {
-        val trustManager = object : X509TrustManager {
+        var connection = okHTTPCache[timeout]
+        if (connection == null) {
+            val trustManager = object : X509TrustManager {
 
-            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
-            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
-            override fun getAcceptedIssuers(): Array<X509Certificate> { return arrayOf() }
-        }
-        val sslContext = SSLContext.getInstance("SSL")
-        sslContext.init(null, arrayOf( trustManager ), SecureRandom())
-        return OkHttpClient().newBuilder()
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) {}
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> {
+                    return arrayOf()
+                }
+            }
+            val sslContext = SSLContext.getInstance("SSL")
+            sslContext.init(null, arrayOf(trustManager), SecureRandom())
+            connection = OkHttpClient().newBuilder()
                 .sslSocketFactory(sslContext.socketFactory, trustManager)
                 .hostnameVerifier { _, _ -> true }
                 .connectTimeout(timeout, TimeUnit.SECONDS)
                 .readTimeout(timeout, TimeUnit.SECONDS)
                 .writeTimeout(timeout, TimeUnit.SECONDS)
                 .build()
+            okHTTPCache[timeout] = connection
+        }
+        return connection!!
     }
     // endregion
 
@@ -143,54 +151,56 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
             }
         }
         val deferred = deferred<Map<*, *>, Exception>()
-        connection.newCall(request.build()).enqueue(object : Callback {
+        Thread {
+            connection.newCall(request.build()).enqueue(object : Callback {
 
-            override fun onResponse(call: Call, response: Response) {
-                when (response.code()) {
-                    200 -> {
-                        val jsonAsString = response.body()!!.string()
-                        @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(jsonAsString, Map::class.java)
-                        deferred.resolve(json)
-                    }
-                    400 -> dropSnodeIfNeeded()
-                    421 -> {
-                        // The snode isn't associated with the given public key anymore
-                        Log.d("Loki", "Invalidating swarm for: $hexEncodedPublicKey.")
-                        Analytics.shared.track("Migrated Snode")
-                        LokiSwarmAPI(database).dropIfNeeded(target, hexEncodedPublicKey)
-                        deferred.reject(Error.SnodeMigrated)
-                    }
-                    432 -> {
-                        // The PoW difficulty is too low
-                        val jsonAsString = response.body()!!.string()
-                        @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(jsonAsString, Map::class.java)
-                        val powDifficulty = json?.get("difficulty") as? Int
-                        if (powDifficulty != null) {
-                            Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
-                            LokiAPI.powDifficulty = powDifficulty
-                        } else {
-                            Log.d("Loki", "Failed to update proof of work difficulty.")
+                override fun onResponse(call: Call, response: Response) {
+                    when (response.code()) {
+                        200 -> {
+                            val jsonAsString = response.body()!!.string()
+                            @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(jsonAsString, Map::class.java)
+                            deferred.resolve(json)
                         }
-                        deferred.reject(Error.InsufficientProofOfWork)
-                    }
-                    500 -> dropSnodeIfNeeded()
-                    503 -> dropSnodeIfNeeded()
-                    else -> {
-                        Log.d("Loki", "Unhandled response code: ${response.code()}.")
-                        deferred.reject(Error.Generic)
+                        400 -> dropSnodeIfNeeded()
+                        421 -> {
+                            // The snode isn't associated with the given public key anymore
+                            Log.d("Loki", "Invalidating swarm for: $hexEncodedPublicKey.")
+                            Analytics.shared.track("Migrated Snode")
+                            LokiSwarmAPI(database).dropIfNeeded(target, hexEncodedPublicKey)
+                            deferred.reject(Error.SnodeMigrated)
+                        }
+                        432 -> {
+                            // The PoW difficulty is too low
+                            val jsonAsString = response.body()!!.string()
+                            @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(jsonAsString, Map::class.java)
+                            val powDifficulty = json?.get("difficulty") as? Int
+                            if (powDifficulty != null) {
+                                Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
+                                LokiAPI.powDifficulty = powDifficulty
+                            } else {
+                                Log.d("Loki", "Failed to update proof of work difficulty.")
+                            }
+                            deferred.reject(Error.InsufficientProofOfWork)
+                        }
+                        500 -> dropSnodeIfNeeded()
+                        503 -> dropSnodeIfNeeded()
+                        else -> {
+                            Log.d("Loki", "Unhandled response code: ${response.code()}.")
+                            deferred.reject(Error.Generic)
+                        }
                     }
                 }
-            }
 
-            override fun onFailure(call: Call, exception: IOException) {
-                if (exception is ConnectException || exception is SocketTimeoutException) {
-                    dropSnodeIfNeeded()
-                } else {
-                    Log.d("Loki", "Unhandled exception: $exception.")
+                override fun onFailure(call: Call, exception: IOException) {
+                    if (exception is ConnectException || exception is SocketTimeoutException) {
+                        dropSnodeIfNeeded()
+                    } else {
+                        Log.d("Loki", "Unhandled exception: $exception.")
+                    }
+                    deferred.reject(exception)
                 }
-                deferred.reject(exception)
-            }
-        })
+            })
+        }.start()
         return deferred.promise
     }
 
@@ -208,7 +218,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
         return retryIfNeeded(maxRetryCount) {
             LokiSwarmAPI(database).getSingleTargetSnode(userHexEncodedPublicKey).bind { targetSnode ->
                 getRawMessages(targetSnode, false).map { parseRawMessagesResponse(it, targetSnode) }
-            }.get()
+            }
         }
     }
 
@@ -239,7 +249,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
                                 rawResponse
                             }
                         }.toSet()
-                    }.get()
+                    }
                 }
             }
         }
@@ -248,7 +258,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
             val target = LokiAPITarget(peer.address, peer.port)
             val deferred = deferred<Set<RawResponsePromise>, Exception>()
             retryIfNeeded(maxRetryCount) {
-                task { listOf(target) }.map { it.map { sendLokiMessage(lokiMessage, it) } }.map { it.toSet() }.get()
+                task { listOf(target) }.map { it.map { sendLokiMessage(lokiMessage, it) } }.map { it.toSet() }
             }.success {
                 LokiP2PAPI.shared.mark(true, destination)
                 onP2PSuccess()

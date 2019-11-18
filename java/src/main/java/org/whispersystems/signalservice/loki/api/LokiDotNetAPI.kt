@@ -1,5 +1,6 @@
 package org.whispersystems.signalservice.loki.api
 
+import com.fasterxml.jackson.databind.JsonNode
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
@@ -30,6 +31,16 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
 
     internal enum class HTTPVerb { GET, PUT, POST, DELETE, PATCH }
 
+    companion object {
+        private val authRequestCache = hashMapOf<String, Promise<String, Exception>>()
+        private var connection = OkHttpClient()
+
+        @JvmStatic
+        public fun setCache(cache: Cache) {
+            connection = OkHttpClient.Builder().cache(cache).build()
+        }
+    }
+
     public sealed class Error(val description: String) : Exception() {
         object Generic : Error("An error occurred.")
         object ParsingFailed : Error("Failed to parse object from JSON.")
@@ -37,14 +48,19 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
 
     public fun getAuthToken(server: String): Promise<String, Exception> {
         val token = apiDatabase.getAuthToken(server)
-        return if (token != null) {
-            Promise.of(token)
-        } else {
-            requestNewAuthToken(server).bind { submitAuthToken(it, server) }.then { newToken ->
+        if (token != null) { return Promise.of(token) }
+        // Avoid multiple token requests to the server by caching
+        var promise = authRequestCache[server]
+        if (promise == null) {
+            promise = requestNewAuthToken(server).bind { submitAuthToken(it, server) }.then { newToken ->
                 apiDatabase.setAuthToken(server, newToken)
                 newToken
+            }.always {
+                authRequestCache.remove(server)
             }
+            authRequestCache[server] = promise
         }
+        return promise
     }
 
     private fun requestNewAuthToken(server: String): Promise<String, Exception> {
@@ -85,7 +101,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
         val sanitizedEndpoint = endpoint.removePrefix("/")
         fun execute(token: String?) {
             var url = "$server/$sanitizedEndpoint"
-            if (verb == HTTPVerb.GET) {
+            if (verb == HTTPVerb.GET || verb == HTTPVerb.DELETE) {
                 val queryParameters = parameters.map { "${it.key}=${it.value}" }.joinToString("&")
                 if (queryParameters.isNotEmpty()) {
                     url += "?$queryParameters"
@@ -110,25 +126,26 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
                     }
                 }
             }
-            val connection = OkHttpClient()
-            connection.newCall(request.build()).enqueue(object : Callback {
+            Thread {
+                connection.newCall(request.build()).enqueue(object : Callback {
 
-                override fun onResponse(call: Call, response: Response) {
-                    when (response.code()) {
-                        in 200..299 -> deferred.resolve(response)
-                        401 -> {
-                            apiDatabase.setAuthToken(server, null)
-                            deferred.reject(LokiAPI.Error.TokenExpired)
+                    override fun onResponse(call: Call, response: Response) {
+                        when (response.code()) {
+                            in 200..299 -> deferred.resolve(response)
+                            401 -> {
+                                apiDatabase.setAuthToken(server, null)
+                                deferred.reject(LokiAPI.Error.TokenExpired)
+                            }
+                            else -> deferred.reject(LokiAPI.Error.HTTPRequestFailed(response.code()))
                         }
-                        else -> deferred.reject(LokiAPI.Error.HTTPRequestFailed(response.code()))
                     }
-                }
 
-                override fun onFailure(call: Call, exception: IOException) {
-                    Log.d("Loki", "Couldn't reach server: $server.")
-                    deferred.reject(exception)
-                }
-            })
+                    override fun onFailure(call: Call, exception: IOException) {
+                        Log.d("Loki", "Couldn't reach server: $server.")
+                        deferred.reject(exception)
+                    }
+                })
+            }.start()
         }
         if (isAuthRequired) {
             getAuthToken(server).success { execute(it) }.fail { deferred.reject(it) }
@@ -136,6 +153,20 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             execute(null)
         }
         return deferred.promise
+    }
+
+    internal fun getUserProfiles(hexEncodedPublicKeys: Set<String>, server: String, includeAnnotations: Boolean): Promise<JsonNode, Exception> {
+        val parameters = mapOf( "include_user_annotations" to includeAnnotations.toInt(), "ids" to hexEncodedPublicKeys.joinToString { "@$it" } )
+        return execute(HTTPVerb.GET, server, "users", false, parameters).map { rawResponse ->
+            val bodyAsString = rawResponse.body()!!.string()
+            val body = JsonUtil.fromJson(bodyAsString)
+            val data = body.get("data")
+            if (data == null) {
+                Log.d("Loki", "Couldn't parse user profiles for: $hexEncodedPublicKeys from: $rawResponse.")
+                throw Error.ParsingFailed
+            }
+            data
+        }
     }
 
     internal fun setSelfAnnotation(server: String, type: String, newValue: Any?): Promise<Response, Exception> {
@@ -162,7 +193,6 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
                 .build()
             val request = Request.Builder().url("$server/files").post(body)
             request.addHeader("Authorization", "Bearer $token")
-            val connection = OkHttpClient()
             connection.newCall(request.build()).enqueue(object : Callback {
 
                 override fun onResponse(call: Call, response: Response) {
@@ -208,3 +238,5 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
         }
     }
 }
+
+private fun Boolean.toInt(): Int { return if (this) 1 else 0 }

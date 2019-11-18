@@ -263,6 +263,12 @@ public class SignalServiceDataMessage {
   }
   public Optional<PreKeyBundle> getPreKeyBundle() { return preKeyBundle; }
   public Optional<PairingAuthorisation> getPairingAuthorisation() { return pairingAuthorisation; }
+  public boolean canSyncMessage() {
+    // If any of the Loki fields are present then don't sync the message
+    if (isFriendRequest || preKeyBundle.isPresent() || pairingAuthorisation.isPresent()) return false;
+    // Only sync if the message has valid content
+    return body.isPresent() || attachments.isPresent() || sticker.isPresent() || quote.isPresent() || contacts.isPresent() || previews.isPresent();
+  }
 
   public int getTTL() {
     int minute = 60 * 1000;

@@ -216,6 +216,9 @@ public class SignalServiceSyncMessage {
     return stickerPackOperations;
   }
 
-  public int getTTL() { return 24 * 60 * 60 * 1000; }
+  public int getTTL() {
+    int hour = 60 * 60 * 1000;
+    return getContacts().isPresent() ? 6 * hour : 24 * hour;
+  }
 
 }

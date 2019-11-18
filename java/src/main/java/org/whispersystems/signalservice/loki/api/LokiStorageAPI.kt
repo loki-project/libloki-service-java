@@ -1,21 +1,29 @@
 package org.whispersystems.signalservice.loki.api
 
 import nl.komponents.kovenant.Promise
-import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.internal.util.JsonUtil
+import org.whispersystems.signalservice.loki.utilities.PublicKeyValidation
+import org.whispersystems.signalservice.loki.utilities.recover
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
+import kotlin.collections.set
 
-class LokiStorageAPI(public val server: String, private val userHexEncodedPublicKey: String, private val userPrivateKey: ByteArray, private val database: LokiAPIDatabaseProtocol) : LokiDotNetAPI(userHexEncodedPublicKey, userPrivateKey, database) {
+private data class DeviceMappingFetchResult private constructor(val pubKey: String, val error: Exception?, val authorisations: List<PairingAuthorisation>) {
+  constructor(pubKey: String, authorisations: List<PairingAuthorisation>): this(pubKey, null, authorisations)
+  constructor(pubKey: String, error: Exception): this(pubKey, error, listOf())
+  val isSuccess = error == null
+}
+
+class LokiStorageAPI(public val server: String, private val userHexEncodedPublicKey: String, userPrivateKey: ByteArray, private val database: LokiAPIDatabaseProtocol) : LokiDotNetAPI(userHexEncodedPublicKey, userPrivateKey, database) {
 
   companion object {
     // region Settings
     private val maxRetryCount = 8
     private val lastDeviceLinkUpdate = hashMapOf<String, Long>()
-    private val deviceMappingUpdateInterval = 8 * 60 * 1000
+    private val deviceMappingRequestCache = hashMapOf<String, Promise<List<PairingAuthorisation>, Exception>>()
+    private val deviceMappingUpdateInterval = 60 * 1000
     private val deviceMappingType = "network.loki.messenger.devicemapping"
     // endregion
 
@@ -35,28 +43,17 @@ class LokiStorageAPI(public val server: String, private val userHexEncodedPublic
   }
 
   // region Private API
-  private fun fetchDeviceMappings(hexEncodedPublicKey: String): Promise<List<PairingAuthorisation>, Exception> {
-    val parameters = mapOf( "include_user_annotations" to 1 )
-    return execute(HTTPVerb.GET, server, "users/@$hexEncodedPublicKey", false, parameters).map { rawResponse ->
-      try {
-        val bodyAsString = rawResponse.body()!!.string()
-        val body = JsonUtil.fromJson(bodyAsString)
-        val data = body.get("data")
-        if (data == null) {
-          Log.d("Loki", "Couldn't parse device mappings for user: $hexEncodedPublicKey from: $rawResponse.")
-          throw Error.ParsingFailed
-        }
-        val annotations = data.get("annotations")
+  private fun fetchDeviceMappings(hexEncodedPublicKeys: List<String>): Promise<List<DeviceMappingFetchResult>, Exception> {
+    return getUserProfiles(hexEncodedPublicKeys.toSet(), server, true).map { data ->
+      data.map dataMap@ { node ->
+        val device = node.get("username").asText()
+        val annotations = node.get("annotations")
         val deviceMappingAnnotation = annotations.find { annotation ->
-            annotation.get("type").asText() == deviceMappingType
-        }
-        if (deviceMappingAnnotation == null) {
-          Log.d("Loki", "Couldn't parse device mappings for user: $hexEncodedPublicKey from: $rawResponse.")
-          throw Error.ParsingFailed
-        }
+          annotation.get("type").asText() == deviceMappingType
+        } ?: return@dataMap DeviceMappingFetchResult(device, Error.ParsingFailed)
         val value = deviceMappingAnnotation.get("value")
         val authorisationsAsJSON = value.get("authorisations")
-        authorisationsAsJSON.mapNotNull { authorisationAsJSON ->
+        val authorisations = authorisationsAsJSON.mapNotNull { authorisationAsJSON ->
           try {
             val primaryDevicePublicKey = authorisationAsJSON.get("primaryDevicePubKey").asText()
             val secondaryDevicePublicKey = authorisationAsJSON.get("secondaryDevicePubKey").asText()
@@ -78,46 +75,77 @@ class LokiStorageAPI(public val server: String, private val userHexEncodedPublic
             }
             authorisation
           } catch (e: Exception) {
-            Log.d("Loki", "Failed to parse device mapping for $hexEncodedPublicKey from $authorisationAsJSON due to error: $e.")
+            Log.d("Loki", "Failed to parse device mapping for $device from $authorisationAsJSON due to error: $e.")
             null
           }
         }
-      } catch (exception: Exception) {
-        Log.d("Loki", "Failed to parse device mappings for: $hexEncodedPublicKey from $rawResponse due to error: $exception.")
-        throw Error.ParsingFailed
+        DeviceMappingFetchResult(device, authorisations)
+      }
+    }.recover { e -> hexEncodedPublicKeys.map { DeviceMappingFetchResult(it, e) } }
+  }
+
+  private fun fetchAndSaveDeviceMappings(hexEncodedPublicKeys: List<String>): Promise<List<DeviceMappingFetchResult>, Exception> {
+    return fetchDeviceMappings(hexEncodedPublicKeys).success { mappings ->
+      for (result in mappings) {
+        if (result.isSuccess) {
+          database.removePairingAuthorisations(result.pubKey)
+          result.authorisations.forEach { database.insertOrUpdatePairingAuthorisation(it) }
+        }
       }
     }
   }
 
-  private fun fetchAndSaveDeviceMappings(hexEncodedPublicKey: String): Promise<List<PairingAuthorisation>, Exception> {
-    return fetchDeviceMappings(hexEncodedPublicKey).success { authorisations ->
-      database.removePairingAuthorisations(hexEncodedPublicKey)
-      authorisations.forEach { database.insertOrUpdatePairingAuthorisation(it) }
-    }
+  private fun hasCacheExpired(time: Long, pubKey: String): Boolean {
+    return !lastDeviceLinkUpdate.containsKey(pubKey) || (time - lastDeviceLinkUpdate[pubKey]!! > deviceMappingUpdateInterval)
   }
   // endregion
 
   // region Public API
-  fun getDeviceMappings(hexEncodedPublicKey: String, skipCache: Boolean = false): Promise<List<PairingAuthorisation>, Exception> {
-    val databaseAuthorisations = database.getPairingAuthorisations(hexEncodedPublicKey)
-    val now = System.currentTimeMillis()
-    val hasCacheExpired = !lastDeviceLinkUpdate.containsKey(hexEncodedPublicKey) || (now - lastDeviceLinkUpdate[hexEncodedPublicKey]!! > deviceMappingUpdateInterval)
-    val isSelf = (hexEncodedPublicKey == userHexEncodedPublicKey) // Don't rely on the server for the user's own device mapping
-    if (!isSelf && (hasCacheExpired || skipCache)) {
-      val deferred = deferred<List<PairingAuthorisation>, Exception>()
-      // Try and fetch the device mappings, otherwise fall back to database
-      fetchAndSaveDeviceMappings(hexEncodedPublicKey).success { authorisations ->
-        lastDeviceLinkUpdate[hexEncodedPublicKey] = now
-        deferred.resolve(authorisations)
-      }.fail {
-        // If we errored out due to a parsing failure then don't immediately re-fetch
-        if (it is Error.ParsingFailed) { lastDeviceLinkUpdate[hexEncodedPublicKey] = now }
-        deferred.resolve(databaseAuthorisations)
+  public fun hasCacheExpired(hexEncodedPublicKey: String): Boolean {
+    return hasCacheExpired(System.currentTimeMillis(), hexEncodedPublicKey)
+  }
+
+  fun updateUserDeviceMappings(): Promise<Unit, Exception> {
+    return getDeviceMappings(userHexEncodedPublicKey).bind { authorisations ->
+      // We are a primary device if an authorisation has us listed as one
+      val isPrimary = authorisations.find { it.primaryDevicePublicKey == userHexEncodedPublicKey } != null
+      retryIfNeeded(maxRetryCount) {
+        val authorisationsAsJSON = authorisations.map { it.toJSON() }
+        val value = if (authorisations.count() > 0) mapOf( "isPrimary" to isPrimary, "authorisations" to authorisationsAsJSON ) else null
+        setSelfAnnotation(server, deviceMappingType, value)
       }
-      return deferred.promise
-    } else {
+    }.map { Unit }.success {
+      Log.d("Loki", "Updated user device mappings")
+    }
+  }
+
+  fun getDeviceMappings(hexEncodedPublicKey: String): Promise<List<PairingAuthorisation>, Exception> {
+    return getDeviceMappings(setOf(hexEncodedPublicKey))
+  }
+
+  fun getDeviceMappings(hexEncodedPublicKeys: Set<String>): Promise<List<PairingAuthorisation>, Exception> {
+    val now = System.currentTimeMillis()
+    val validDevices = hexEncodedPublicKeys.filter { PublicKeyValidation.isValid(it) }
+    val devicesToFetch = validDevices.filter { it != userHexEncodedPublicKey && hasCacheExpired(now, it) }
+    val databaseAuthorisations = validDevices.minus(devicesToFetch).flatMap { database.getPairingAuthorisations(it) }
+    // If we don't need to fetch then bail early
+    if (devicesToFetch.isEmpty()) {
       return Promise.of(databaseAuthorisations)
     }
+    return fetchAndSaveDeviceMappings(devicesToFetch).map { results ->
+      val authorisations = mutableListOf<PairingAuthorisation>()
+      for (result in results) {
+        // Update the last fetch time
+        if (result.isSuccess || result.error is Error.ParsingFailed) {
+          lastDeviceLinkUpdate[result.pubKey] = now
+        }
+        // Fall back to using database authorisation if we failed
+        val list = if (result.isSuccess) result.authorisations else database.getPairingAuthorisations(result.pubKey)
+        authorisations.addAll(list)
+      }
+      // Return the union of the db auth and our fetched auth
+      authorisations.union(databaseAuthorisations).toList()
+    }.recover { hexEncodedPublicKeys.flatMap { database.getPairingAuthorisations(it) } }
   }
 
   fun getPrimaryDevicePublicKey(hexEncodedPublicKey: String): Promise<String?, Exception> {
@@ -134,22 +162,14 @@ class LokiStorageAPI(public val server: String, private val userHexEncodedPublic
   }
 
   fun getAllDevicePublicKeys(hexEncodedPublicKey: String): Promise<Set<String>, Exception> {
-    return getDeviceMappings(hexEncodedPublicKey).map { authorisations ->
+    // Our primary device should have all the mappings
+    return getPrimaryDevicePublicKey(hexEncodedPublicKey).bind { primaryDevicePublicKey ->
+      val primaryDevice = primaryDevicePublicKey ?: hexEncodedPublicKey
+      getDeviceMappings(primaryDevice)
+    }.map { authorisations ->
       val publicKeys = authorisations.flatMap { listOf(it.primaryDevicePublicKey, it.secondaryDevicePublicKey) }.toSet()
       publicKeys.plus(hexEncodedPublicKey)
     }
-  }
-
-  fun updateUserDeviceMappings(): Promise<Unit, Exception> {
-    return getDeviceMappings(userHexEncodedPublicKey).bind { authorisations ->
-      // We are a primary device if an authorisation has us listed as one
-      val isPrimary = authorisations.find { it.primaryDevicePublicKey == userHexEncodedPublicKey } != null
-      retryIfNeeded(maxRetryCount) {
-        val authorisationsAsJSON = authorisations.map { it.toJSON() }
-        val value = if (authorisations.count() > 0) mapOf( "isPrimary" to isPrimary, "authorisations" to authorisationsAsJSON ) else null
-        setSelfAnnotation(server, deviceMappingType, value).get()
-      }
-    }.map { Unit }
   }
   // endregion
 }

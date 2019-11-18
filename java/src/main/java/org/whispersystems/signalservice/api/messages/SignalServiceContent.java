@@ -115,14 +115,14 @@ public class SignalServiceContent {
     this.pairingAuthorisation = Optional.absent();
   }
 
-  public SignalServiceContent(PairingAuthorisation authorisation, String sender, int senderDevice, long timestamp, boolean needsReceipt) {
+  public SignalServiceContent(PairingAuthorisation authorisation, SignalServiceSyncMessage synchronizeMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt) {
     this.sender       = sender;
     this.senderDevice = senderDevice;
     this.timestamp    = timestamp;
     this.needsReceipt = needsReceipt;
 
     this.message            = Optional.absent();
-    this.synchronizeMessage = Optional.absent();
+    this.synchronizeMessage = Optional.fromNullable(synchronizeMessage);
     this.callMessage        = Optional.absent();
     this.readMessage        = Optional.absent();
     this.typingMessage      = Optional.absent();

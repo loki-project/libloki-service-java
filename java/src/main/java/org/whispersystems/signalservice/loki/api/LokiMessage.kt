@@ -1,7 +1,7 @@
 package org.whispersystems.signalservice.loki.api
 
 import nl.komponents.kovenant.Promise
-import nl.komponents.kovenant.task
+import nl.komponents.kovenant.deferred
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.loki.crypto.ProofOfWork
@@ -59,15 +59,18 @@ internal data class LokiMessage(
 
     @kotlin.ExperimentalUnsignedTypes
     internal fun calculatePoW(): Promise<LokiMessage, Exception> {
-        return task {
+        val deferred = deferred<LokiMessage, Exception>()
+        // Run PoW in a background thread and not on the promise thread
+        Thread {
             val now = System.currentTimeMillis()
             val nonce = ProofOfWork.calculate(data, destination, now, ttl)
             if (nonce != null ) {
-                copy(nonce = nonce, timestamp = now)
+                deferred.resolve(copy(nonce = nonce, timestamp = now))
             } else {
-                throw LokiAPI.Error.ProofOfWorkCalculationFailed
+                deferred.reject(LokiAPI.Error.ProofOfWorkCalculationFailed)
             }
-        }
+        }.start()
+        return deferred.promise
     }
 
     internal fun toJSON(): Map<String, String> {

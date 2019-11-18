@@ -2,15 +2,14 @@ package org.whispersystems.signalservice.loki.utilities
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
-import nl.komponents.kovenant.task
 import java.util.*
 
-fun <T> retryIfNeeded(maxRetryCount: Int, retryInterval: Long = 1 * 1000, body: () -> T): Promise<T, Exception> {
+fun <V, T : Promise<V, Exception>> retryIfNeeded(maxRetryCount: Int, retryInterval: Long = 1 * 1000, body: () -> T): Promise<V, Exception> {
     var retryCount = 0
-    val deferred = deferred<T, Exception>()
+    val deferred = deferred<V, Exception>()
     val thread = Thread.currentThread()
     fun retryIfNeeded() {
-        task { body() }.success {
+        body().success {
             deferred.resolve(it)
         }.fail {
             if (retryCount == maxRetryCount) {

@@ -50,8 +50,13 @@ message Content {
 }
 
 message LokiAddressMessage {
-  optional string ptpAddress = 1;
-  optional uint32 ptpPort = 2;
+  enum Type {
+    HOST_REACHABLE = 0;
+    HOST_UNREACHABLE = 1;
+  }
+  optional string ptpAddress    = 1;
+  optional uint32 ptpPort       = 2;
+  optional Type   type          = 3;
 }
 
 message PairingAuthorisationMessage {
