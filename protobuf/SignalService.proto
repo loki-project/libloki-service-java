@@ -225,6 +225,7 @@ message DataMessage {
 
 message LokiProfile {
   optional string displayName = 1;
+  optional AttachmentPointer avatar = 2;
 }
 
 message NullMessage {
