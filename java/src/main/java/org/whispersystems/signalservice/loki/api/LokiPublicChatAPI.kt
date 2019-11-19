@@ -92,6 +92,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
                         val user = message.get("user")
                         val hexEncodedPublicKey = user.get("username").asText()
                         val displayName = if (user.hasNonNull("name")) user.get("name").asText() else "Anonymous"
+                        val avatarUrl = if (user.hasNonNull("avatar")) user.get("avatar").asText() else ""
                         @Suppress("NAME_SHADOWING") val body = message.get("text").asText()
                         val timestamp = value.get("timestamp").asLong()
                         var quote: LokiPublicChatMessage.Quote? = null
@@ -135,7 +136,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
                         val signatureVersion = value.get("sigver").asLong()
                         val signature = LokiPublicChatMessage.Signature(Hex.fromStringCondensed(hexEncodedSignature), signatureVersion)
                         // Verify the message
-                        val groupMessage = LokiPublicChatMessage(serverID, hexEncodedPublicKey, displayName, body, timestamp, publicChatMessageType, quote, attachments, signature)
+                        val groupMessage = LokiPublicChatMessage(serverID, hexEncodedPublicKey, displayName, avatarUrl, body, timestamp, publicChatMessageType, quote, attachments, signature)
                         if (groupMessage.hasValidSignature()) groupMessage else null
                     } catch (exception: Exception) {
                         Log.d("Loki", "Couldn't parse message for public chat channel with ID: $channel on server: $server from: ${JsonUtil.toJson(message)}. Exception: ${exception.message}")
@@ -195,11 +196,12 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
                     val data = body.get("data")
                     val serverID = data.get("id").asLong()
                     val displayName = userDatabase.getDisplayName(userHexEncodedPublicKey) ?: "Anonymous"
+                    val avatarUrl = userDatabase.getProfileAvatarUrl(userHexEncodedPublicKey) ?: ""
                     val text = data.get("text").asText()
                     val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
                     val dateAsString = data.get("created_at").asText()
                     val timestamp = format.parse(dateAsString).time
-                    @Suppress("NAME_SHADOWING") val message = LokiPublicChatMessage(serverID, userHexEncodedPublicKey, displayName, text, timestamp, publicChatMessageType, message.quote, message.attachments, signedMessage.signature)
+                    @Suppress("NAME_SHADOWING") val message = LokiPublicChatMessage(serverID, userHexEncodedPublicKey, displayName, avatarUrl, text, timestamp, publicChatMessageType, message.quote, message.attachments, signedMessage.signature)
                     message
                 } catch (exception: Exception) {
                     Log.d("Loki", "Couldn't parse message for public chat channel with ID: $channel on server: $server.")
