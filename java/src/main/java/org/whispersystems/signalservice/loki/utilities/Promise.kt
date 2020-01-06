@@ -4,6 +4,7 @@ package org.whispersystems.signalservice.loki.utilities
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import org.whispersystems.libsignal.logging.Log
+import java.util.concurrent.TimeoutException
 
 fun <V, E : Throwable> Promise<V, E>.get(defaultValue: V): V {
   return try {
@@ -37,5 +38,27 @@ fun <V, E : Throwable> Promise<V, E>.recover(callback: (exception: E) -> V): Pro
       deferred.reject(it)
     }
   }
+  return deferred.promise
+}
+
+/**
+ * Time out a promise after a given time
+ */
+fun <V> Promise<V, Exception>.timeout(millis: Long): Promise<V, Exception> {
+  if (this.isDone()) { return this; }
+  val deferred = deferred<V, Exception>()
+  Thread {
+    Thread.sleep(millis)
+    if (!deferred.promise.isDone()) {
+      deferred.reject(TimeoutException("Promise timed out."))
+    }
+  }.start()
+
+  this.success {
+    if (!deferred.promise.isDone()) { deferred.resolve(it) }
+  }.fail {
+    if (!deferred.promise.isDone()) { deferred.reject(it) }
+  }
+
   return deferred.promise
 }

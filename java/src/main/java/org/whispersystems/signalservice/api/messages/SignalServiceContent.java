@@ -19,8 +19,8 @@ public class SignalServiceContent {
   private final long    timestamp;
   private final boolean needsReceipt;
 
-  private final Optional<SignalServiceDataMessage>    message;
-  private final Optional<SignalServiceSyncMessage>    synchronizeMessage;
+  private Optional<SignalServiceDataMessage>          message;
+  private Optional<SignalServiceSyncMessage>          synchronizeMessage;
   private final Optional<SignalServiceCallMessage>    callMessage;
   private final Optional<SignalServiceReceiptMessage> readMessage;
   private final Optional<SignalServiceTypingMessage>  typingMessage;
@@ -29,6 +29,7 @@ public class SignalServiceContent {
   private final Optional<PairingAuthorisation> pairingAuthorisation;
   public Optional<LokiServiceMessage> lokiServiceMessage = Optional.absent();
   public Optional<String> senderDisplayName = Optional.absent();
+  public Optional<String> senderProfileAvatarUrl = Optional.absent();
 
   public SignalServiceContent(LokiServiceMessage lokiServiceMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt) {
     this.sender       = sender;
@@ -115,14 +116,14 @@ public class SignalServiceContent {
     this.pairingAuthorisation = Optional.absent();
   }
 
-  public SignalServiceContent(PairingAuthorisation authorisation, SignalServiceSyncMessage synchronizeMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt) {
+  public SignalServiceContent(PairingAuthorisation authorisation, String sender, int senderDevice, long timestamp, boolean needsReceipt) {
     this.sender       = sender;
     this.senderDevice = senderDevice;
     this.timestamp    = timestamp;
     this.needsReceipt = needsReceipt;
 
     this.message            = Optional.absent();
-    this.synchronizeMessage = Optional.fromNullable(synchronizeMessage);
+    this.synchronizeMessage = Optional.absent();
     this.callMessage        = Optional.absent();
     this.readMessage        = Optional.absent();
     this.typingMessage      = Optional.absent();
@@ -132,10 +133,10 @@ public class SignalServiceContent {
   public Optional<SignalServiceDataMessage> getDataMessage() {
     return message;
   }
+  public void setDataMessage(SignalServiceDataMessage message) { this.message = Optional.fromNullable(message); }
 
-  public Optional<SignalServiceSyncMessage> getSyncMessage() {
-    return synchronizeMessage;
-  }
+  public Optional<SignalServiceSyncMessage> getSyncMessage() { return synchronizeMessage; }
+  public void setSyncMessage(SignalServiceSyncMessage message) { this.synchronizeMessage = Optional.fromNullable(message); }
 
   public Optional<SignalServiceCallMessage> getCallMessage() {
     return callMessage;
@@ -170,4 +171,5 @@ public class SignalServiceContent {
   // Loki
   public void setLokiServiceMessage(LokiServiceMessage lokiServiceMessage) { this.lokiServiceMessage = Optional.fromNullable(lokiServiceMessage); }
   public void setSenderDisplayName(String displayName) { senderDisplayName = Optional.fromNullable(displayName); }
+  public void setSenderProfileAvatarUrl(String url) { senderProfileAvatarUrl = Optional.fromNullable(url); }
 }

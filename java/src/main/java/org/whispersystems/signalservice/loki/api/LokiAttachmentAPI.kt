@@ -6,7 +6,6 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException
 import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException
-import org.whispersystems.signalservice.internal.push.PushAttachmentData
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -64,10 +63,5 @@ object LokiAttachmentAPI {
       Log.d("Loki", "Couldn't parse attachment.")
       throw if (e is NonSuccessfulResponseCodeException) e else PushNetworkException(e)
     }
-  }
-
-  fun uploadAttachment(server: String, attachment: PushAttachmentData): Triple<Long, String, ByteArray> {
-    // Even though we're using LokiStorageAPI to do uploading, this will upload to the correct server
-    return LokiStorageAPI.shared.uploadAttachment(server, attachment)
   }
 }

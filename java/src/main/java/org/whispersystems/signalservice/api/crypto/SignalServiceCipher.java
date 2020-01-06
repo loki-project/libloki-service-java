@@ -196,11 +196,16 @@ public class SignalServiceCipher {
           byte[] grantSignature = pairingAuthorisationMessage.hasGrantSignature() ? pairingAuthorisationMessage.getGrantSignature().toByteArray() : null;
           PairingAuthorisation authorisation = new PairingAuthorisation(primaryDevicePublicKey, secondaryDevicePublicKey, requestSignature, grantSignature);
           SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
-          SignalServiceSyncMessage syncMessage = (message.hasSyncMessage() && message.getSyncMessage().hasContacts()) ? createSynchronizeMessage(metadata, message.getSyncMessage()) : null;
-          SignalServiceContent content = new SignalServiceContent(authorisation, syncMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp(), false);
+          SignalServiceContent content = new SignalServiceContent(authorisation, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp(), false);
           content.setLokiServiceMessage(lokiServiceMessage);
-          if (message.hasDataMessage() && message.getDataMessage().hasProfile()) {
-            content.setSenderDisplayName(message.getDataMessage().getProfile().getDisplayName());
+          if (message.hasSyncMessage() && message.getSyncMessage().hasContacts()) {
+            SignalServiceSyncMessage syncMessage = createSynchronizeMessage(metadata, message.getSyncMessage());
+            content.setSyncMessage(syncMessage);
+          }
+          if (message.hasDataMessage()) {
+            setProfile(message.getDataMessage(), content);
+            SignalServiceDataMessage dataMessage = createSignalServiceMessage(metadata, message.getDataMessage(), envelope.isFriendRequest());
+            content.setDataMessage(dataMessage);
           }
           return content;
         } else if (message.hasDataMessage()) {
@@ -213,25 +218,23 @@ public class SignalServiceCipher {
                   plaintext.getMetadata().isNeedsReceipt());
 
           content.setLokiServiceMessage(lokiServiceMessage);
+          setProfile(dataMessage, content);
 
-          if (dataMessage.hasProfile()) {
-            content.setSenderDisplayName(dataMessage.getProfile().getDisplayName());
+          return content;
+        } else if (message.hasSyncMessage()) {
+          SignalServiceContent content = new SignalServiceContent(createSynchronizeMessage(plaintext.getMetadata(), message.getSyncMessage()),
+                  plaintext.getMetadata().getSender(),
+                  plaintext.getMetadata().getSenderDevice(),
+                  plaintext.getMetadata().getTimestamp(),
+                  plaintext.getMetadata().isNeedsReceipt());
+
+          // Loki - Profile
+          if (message.getSyncMessage().hasSent() && message.getSyncMessage().getSent().hasMessage()) {
+            DataMessage dataMessage = message.getSyncMessage().getSent().getMessage();
+            setProfile(dataMessage, content);
           }
 
           return content;
-          /* Loki - Original code
-          return new SignalServiceContent(createSignalServiceMessage(plaintext.getMetadata(), message.getDataMessage()),
-                                          plaintext.getMetadata().getSender(),
-                                          plaintext.getMetadata().getSenderDevice(),
-                                          plaintext.getMetadata().getTimestamp(),
-                                          plaintext.getMetadata().isNeedsReceipt());
-           */
-        } else if (message.hasSyncMessage()) {
-          return new SignalServiceContent(createSynchronizeMessage(plaintext.getMetadata(), message.getSyncMessage()),
-                                          plaintext.getMetadata().getSender(),
-                                          plaintext.getMetadata().getSenderDevice(),
-                                          plaintext.getMetadata().getTimestamp(),
-                                          plaintext.getMetadata().isNeedsReceipt());
         } else if (message.hasCallMessage()) {
           return new SignalServiceContent(createCallMessage(message.getCallMessage()),
                                           plaintext.getMetadata().getSender(),
@@ -263,6 +266,14 @@ public class SignalServiceCipher {
       return null;
     } catch (InvalidProtocolBufferException e) {
       throw new InvalidMetadataMessageException(e);
+    }
+  }
+
+  private void setProfile(DataMessage message, SignalServiceContent content) {
+    if (message.hasProfile()) {
+      SignalServiceProtos.LokiProfile profile = message.getProfile();
+      if (profile.hasDisplayName()) { content.setSenderDisplayName(profile.getDisplayName()); }
+      if (profile.hasAvatar()) { content.setSenderProfileAvatarUrl(profile.getAvatar()); }
     }
   }
 
@@ -333,6 +344,7 @@ public class SignalServiceCipher {
     List<SharedContact>            sharedContacts   = createSharedContacts(content);
     List<Preview>                  previews         = createPreviews(content);
     Sticker                        sticker          = createSticker(content);
+    boolean                        unpairingRequest = ((content.getFlags() & DataMessage.Flags.UNPAIRING_REQUEST_VALUE     ) != 0);
 
     for (AttachmentPointer pointer : content.getAttachmentsList()) {
       attachments.add(createAttachmentPointer(pointer));
@@ -357,7 +369,7 @@ public class SignalServiceCipher {
                                         sharedContacts,
                                         previews,
                                         sticker,
-                                        isFriendRequest, null, null);
+                                        isFriendRequest, null, null, unpairingRequest);
   }
 
   private SignalServiceSyncMessage createSynchronizeMessage(Metadata metadata, SyncMessage content)

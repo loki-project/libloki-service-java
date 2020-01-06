@@ -114,6 +114,7 @@ message DataMessage {
     END_SESSION             = 1;
     EXPIRATION_TIMER_UPDATE = 2;
     PROFILE_KEY_UPDATE      = 4;
+    UNPAIRING_REQUEST       = 128;
   }
 
   message Quote {
@@ -225,6 +226,7 @@ message DataMessage {
 
 message LokiProfile {
   optional string displayName = 1;
+  optional string avatar = 2;
 }
 
 message NullMessage {

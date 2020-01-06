@@ -121,6 +121,13 @@ public class SignalServiceMessageReceiver {
     return new ProfileCipherInputStream(new FileInputStream(destination), profileKey);
   }
 
+  public InputStream retrievePublicProfileAvatar(String path, File destination, int maxSizeBytes)
+    throws IOException
+  {
+    LokiAttachmentAPI.INSTANCE.getAttachment(destination, path, maxSizeBytes, null);
+    return new FileInputStream(destination);
+  }
+
   /**
    * Retrieves a SignalServiceAttachment.
    *
