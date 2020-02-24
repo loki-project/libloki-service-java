@@ -334,6 +334,11 @@ message SyncMessage {
     optional Type  type    = 3;
   }
 
+  message OpenGroupDetails {
+    optional string url = 1;
+    optional uint32 channelId = 2;
+  }
+
   optional Sent                 sent                 = 1;
   optional Contacts             contacts             = 2;
   optional Groups               groups               = 3;
@@ -344,6 +349,7 @@ message SyncMessage {
   optional Configuration        configuration        = 9;
   optional bytes                padding              = 8;
   repeated StickerPackOperation stickerPackOperation = 10;
+  repeated OpenGroupDetails     openGroups           = 100;
 }
 
 message AttachmentPointer {

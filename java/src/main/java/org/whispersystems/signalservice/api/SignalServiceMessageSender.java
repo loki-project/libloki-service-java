@@ -383,6 +383,8 @@ public class SignalServiceMessageSender {
                                                  message.getContacts().get().isComplete());
     } else if (message.getGroups().isPresent()) {
       content = createMultiDeviceGroupsContent(message.getGroups().get().asStream());
+    } else if (message.getOpenGroups().isPresent()) {
+      content = createMultiDeviceOpenGroupsContent(message.getOpenGroups().get());
     } else if (message.getRead().isPresent()) {
       content = createMultiDeviceReadContent(message.getRead().get());
     } else if (message.getBlockedList().isPresent()) {
@@ -729,6 +731,22 @@ public class SignalServiceMessageSender {
                                         .setData(ByteString.readFrom(groups.getInputStream())));
 
     return container.setSyncMessage(builder).build().toByteArray();
+  }
+
+  private byte[] createMultiDeviceOpenGroupsContent(List<LokiPublicChat> openGroups) throws IOException {
+      Content.Builder     container = Content.newBuilder();
+      SyncMessage.Builder builder   = createSyncMessageBuilder();
+      for (LokiPublicChat openGroup : openGroups) {
+          String url = openGroup.getServer();
+          int channel = Long.valueOf(openGroup.getChannel()).intValue();
+          SyncMessage.OpenGroupDetails details = SyncMessage.OpenGroupDetails.newBuilder()
+                                                                              .setUrl(url)
+                                                                              .setChannelId(channel)
+                                                                              .build();
+          builder.addOpenGroups(details);
+      }
+
+      return container.setSyncMessage(builder).build().toByteArray();
   }
 
   private byte[] createMultiDeviceSentTranscriptContent(SentTranscriptMessage transcript, Optional<UnidentifiedAccessPair> unidentifiedAccess) throws IOException {

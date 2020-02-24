@@ -9,9 +9,13 @@ public data class LokiPublicChat(
     public val isDeletable: Boolean
 ) {
     public val server get() = serverURL.toLowerCase()
-    public val id get() = "$server.$channel"
+    public val id get() = getId(channel, server)
 
     companion object {
+
+        @JvmStatic fun getId(channel: Long, server: String): String {
+            return "$server.$channel"
+        }
 
         @JvmStatic fun fromJSON(jsonAsString: String): LokiPublicChat? {
             try {

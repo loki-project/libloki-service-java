@@ -26952,6 +26952,31 @@ public final class SignalServiceProtos {
      */
     org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.StickerPackOperationOrBuilder getStickerPackOperationOrBuilder(
         int index);
+
+    // repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    java.util.List<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails> 
+        getOpenGroupsList();
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails getOpenGroups(int index);
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    int getOpenGroupsCount();
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    java.util.List<? extends org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder> 
+        getOpenGroupsOrBuilderList();
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder getOpenGroupsOrBuilder(
+        int index);
   }
   /**
    * Protobuf type {@code signalservice.SyncMessage}
@@ -27116,6 +27141,14 @@ public final class SignalServiceProtos {
               stickerPackOperation_.add(input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.StickerPackOperation.PARSER, extensionRegistry));
               break;
             }
+            case 802: {
+              if (!((mutable_bitField0_ & 0x00000400) == 0x00000400)) {
+                openGroups_ = new java.util.ArrayList<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails>();
+                mutable_bitField0_ |= 0x00000400;
+              }
+              openGroups_.add(input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.PARSER, extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -27129,6 +27162,9 @@ public final class SignalServiceProtos {
         }
         if (((mutable_bitField0_ & 0x00000200) == 0x00000200)) {
           stickerPackOperation_ = java.util.Collections.unmodifiableList(stickerPackOperation_);
+        }
+        if (((mutable_bitField0_ & 0x00000400) == 0x00000400)) {
+          openGroups_ = java.util.Collections.unmodifiableList(openGroups_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -33170,6 +33206,558 @@ public final class SignalServiceProtos {
       // @@protoc_insertion_point(class_scope:signalservice.SyncMessage.StickerPackOperation)
     }
 
+    public interface OpenGroupDetailsOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
+
+      // optional string url = 1;
+      /**
+       * <code>optional string url = 1;</code>
+       */
+      boolean hasUrl();
+      /**
+       * <code>optional string url = 1;</code>
+       */
+      java.lang.String getUrl();
+      /**
+       * <code>optional string url = 1;</code>
+       */
+      com.google.protobuf.ByteString
+          getUrlBytes();
+
+      // optional uint32 channelId = 2;
+      /**
+       * <code>optional uint32 channelId = 2;</code>
+       */
+      boolean hasChannelId();
+      /**
+       * <code>optional uint32 channelId = 2;</code>
+       */
+      int getChannelId();
+    }
+    /**
+     * Protobuf type {@code signalservice.SyncMessage.OpenGroupDetails}
+     */
+    public static final class OpenGroupDetails extends
+        com.google.protobuf.GeneratedMessage
+        implements OpenGroupDetailsOrBuilder {
+      // Use OpenGroupDetails.newBuilder() to construct.
+      private OpenGroupDetails(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+        super(builder);
+        this.unknownFields = builder.getUnknownFields();
+      }
+      private OpenGroupDetails(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+      private static final OpenGroupDetails defaultInstance;
+      public static OpenGroupDetails getDefaultInstance() {
+        return defaultInstance;
+      }
+
+      public OpenGroupDetails getDefaultInstanceForType() {
+        return defaultInstance;
+      }
+
+      private final com.google.protobuf.UnknownFieldSet unknownFields;
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+          getUnknownFields() {
+        return this.unknownFields;
+      }
+      private OpenGroupDetails(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        initFields();
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              default: {
+                if (!parseUnknownField(input, unknownFields,
+                                       extensionRegistry, tag)) {
+                  done = true;
+                }
+                break;
+              }
+              case 10: {
+                bitField0_ |= 0x00000001;
+                url_ = input.readBytes();
+                break;
+              }
+              case 16: {
+                bitField0_ |= 0x00000002;
+                channelId_ = input.readUInt32();
+                break;
+              }
+            }
+          }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e.getMessage()).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
+        }
+      }
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_SyncMessage_OpenGroupDetails_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_SyncMessage_OpenGroupDetails_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder.class);
+      }
+
+      public static com.google.protobuf.Parser<OpenGroupDetails> PARSER =
+          new com.google.protobuf.AbstractParser<OpenGroupDetails>() {
+        public OpenGroupDetails parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new OpenGroupDetails(input, extensionRegistry);
+        }
+      };
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<OpenGroupDetails> getParserForType() {
+        return PARSER;
+      }
+
+      private int bitField0_;
+      // optional string url = 1;
+      public static final int URL_FIELD_NUMBER = 1;
+      private java.lang.Object url_;
+      /**
+       * <code>optional string url = 1;</code>
+       */
+      public boolean hasUrl() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>optional string url = 1;</code>
+       */
+      public java.lang.String getUrl() {
+        java.lang.Object ref = url_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            url_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string url = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getUrlBytes() {
+        java.lang.Object ref = url_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          url_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      // optional uint32 channelId = 2;
+      public static final int CHANNELID_FIELD_NUMBER = 2;
+      private int channelId_;
+      /**
+       * <code>optional uint32 channelId = 2;</code>
+       */
+      public boolean hasChannelId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional uint32 channelId = 2;</code>
+       */
+      public int getChannelId() {
+        return channelId_;
+      }
+
+      private void initFields() {
+        url_ = "";
+        channelId_ = 0;
+      }
+      private byte memoizedIsInitialized = -1;
+      public final boolean isInitialized() {
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized != -1) return isInitialized == 1;
+
+        memoizedIsInitialized = 1;
+        return true;
+      }
+
+      public void writeTo(com.google.protobuf.CodedOutputStream output)
+                          throws java.io.IOException {
+        getSerializedSize();
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          output.writeBytes(1, getUrlBytes());
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          output.writeUInt32(2, channelId_);
+        }
+        getUnknownFields().writeTo(output);
+      }
+
+      private int memoizedSerializedSize = -1;
+      public int getSerializedSize() {
+        int size = memoizedSerializedSize;
+        if (size != -1) return size;
+
+        size = 0;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(1, getUrlBytes());
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeUInt32Size(2, channelId_);
+        }
+        size += getUnknownFields().getSerializedSize();
+        memoizedSerializedSize = size;
+        return size;
+      }
+
+      private static final long serialVersionUID = 0L;
+      @java.lang.Override
+      protected java.lang.Object writeReplace()
+          throws java.io.ObjectStreamException {
+        return super.writeReplace();
+      }
+
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(
+          com.google.protobuf.ByteString data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(
+          com.google.protobuf.ByteString data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(byte[] data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(
+          byte[] data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input, extensionRegistry);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseDelimitedFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return PARSER.parseDelimitedFrom(input);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseDelimitedFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return PARSER.parseDelimitedFrom(input, extensionRegistry);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(
+          com.google.protobuf.CodedInputStream input)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input);
+      }
+      public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parseFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input, extensionRegistry);
+      }
+
+      public static Builder newBuilder() { return Builder.create(); }
+      public Builder newBuilderForType() { return newBuilder(); }
+      public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails prototype) {
+        return newBuilder().mergeFrom(prototype);
+      }
+      public Builder toBuilder() { return newBuilder(this); }
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code signalservice.SyncMessage.OpenGroupDetails}
+       */
+      public static final class Builder extends
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_SyncMessage_OpenGroupDetails_descriptor;
+        }
+
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_SyncMessage_OpenGroupDetails_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder.class);
+        }
+
+        // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.newBuilder()
+        private Builder() {
+          maybeForceBuilderInitialization();
+        }
+
+        private Builder(
+            com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
+        }
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          }
+        }
+        private static Builder create() {
+          return new Builder();
+        }
+
+        public Builder clear() {
+          super.clear();
+          url_ = "";
+          bitField0_ = (bitField0_ & ~0x00000001);
+          channelId_ = 0;
+          bitField0_ = (bitField0_ & ~0x00000002);
+          return this;
+        }
+
+        public Builder clone() {
+          return create().mergeFrom(buildPartial());
+        }
+
+        public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+          return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_SyncMessage_OpenGroupDetails_descriptor;
+        }
+
+        public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails getDefaultInstanceForType() {
+          return org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.getDefaultInstance();
+        }
+
+        public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails build() {
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails result = buildPartial();
+          if (!result.isInitialized()) {
+            throw newUninitializedMessageException(result);
+          }
+          return result;
+        }
+
+        public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails buildPartial() {
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
+          }
+          result.url_ = url_;
+          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+            to_bitField0_ |= 0x00000002;
+          }
+          result.channelId_ = channelId_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
+        }
+
+        public Builder mergeFrom(com.google.protobuf.Message other) {
+          if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails) {
+            return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails)other);
+          } else {
+            super.mergeFrom(other);
+            return this;
+          }
+        }
+
+        public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails other) {
+          if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.getDefaultInstance()) return this;
+          if (other.hasUrl()) {
+            bitField0_ |= 0x00000001;
+            url_ = other.url_;
+            onChanged();
+          }
+          if (other.hasChannelId()) {
+            setChannelId(other.getChannelId());
+          }
+          this.mergeUnknownFields(other.getUnknownFields());
+          return this;
+        }
+
+        public final boolean isInitialized() {
+          return true;
+        }
+
+        public Builder mergeFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws java.io.IOException {
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails) e.getUnfinishedMessage();
+            throw e;
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
+            }
+          }
+          return this;
+        }
+        private int bitField0_;
+
+        // optional string url = 1;
+        private java.lang.Object url_ = "";
+        /**
+         * <code>optional string url = 1;</code>
+         */
+        public boolean hasUrl() {
+          return ((bitField0_ & 0x00000001) == 0x00000001);
+        }
+        /**
+         * <code>optional string url = 1;</code>
+         */
+        public java.lang.String getUrl() {
+          java.lang.Object ref = url_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            url_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>optional string url = 1;</code>
+         */
+        public com.google.protobuf.ByteString
+            getUrlBytes() {
+          java.lang.Object ref = url_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            url_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string url = 1;</code>
+         */
+        public Builder setUrl(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          url_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string url = 1;</code>
+         */
+        public Builder clearUrl() {
+          bitField0_ = (bitField0_ & ~0x00000001);
+          url_ = getDefaultInstance().getUrl();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string url = 1;</code>
+         */
+        public Builder setUrlBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          url_ = value;
+          onChanged();
+          return this;
+        }
+
+        // optional uint32 channelId = 2;
+        private int channelId_ ;
+        /**
+         * <code>optional uint32 channelId = 2;</code>
+         */
+        public boolean hasChannelId() {
+          return ((bitField0_ & 0x00000002) == 0x00000002);
+        }
+        /**
+         * <code>optional uint32 channelId = 2;</code>
+         */
+        public int getChannelId() {
+          return channelId_;
+        }
+        /**
+         * <code>optional uint32 channelId = 2;</code>
+         */
+        public Builder setChannelId(int value) {
+          bitField0_ |= 0x00000002;
+          channelId_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional uint32 channelId = 2;</code>
+         */
+        public Builder clearChannelId() {
+          bitField0_ = (bitField0_ & ~0x00000002);
+          channelId_ = 0;
+          onChanged();
+          return this;
+        }
+
+        // @@protoc_insertion_point(builder_scope:signalservice.SyncMessage.OpenGroupDetails)
+      }
+
+      static {
+        defaultInstance = new OpenGroupDetails(true);
+        defaultInstance.initFields();
+      }
+
+      // @@protoc_insertion_point(class_scope:signalservice.SyncMessage.OpenGroupDetails)
+    }
+
     private int bitField0_;
     // optional .signalservice.SyncMessage.Sent sent = 1;
     public static final int SENT_FIELD_NUMBER = 1;
@@ -33413,6 +34001,42 @@ public final class SignalServiceProtos {
       return stickerPackOperation_.get(index);
     }
 
+    // repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;
+    public static final int OPENGROUPS_FIELD_NUMBER = 100;
+    private java.util.List<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails> openGroups_;
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    public java.util.List<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails> getOpenGroupsList() {
+      return openGroups_;
+    }
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    public java.util.List<? extends org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder> 
+        getOpenGroupsOrBuilderList() {
+      return openGroups_;
+    }
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    public int getOpenGroupsCount() {
+      return openGroups_.size();
+    }
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails getOpenGroups(int index) {
+      return openGroups_.get(index);
+    }
+    /**
+     * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+     */
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder getOpenGroupsOrBuilder(
+        int index) {
+      return openGroups_.get(index);
+    }
+
     private void initFields() {
       sent_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.Sent.getDefaultInstance();
       contacts_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.Contacts.getDefaultInstance();
@@ -33424,6 +34048,7 @@ public final class SignalServiceProtos {
       configuration_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.Configuration.getDefaultInstance();
       padding_ = com.google.protobuf.ByteString.EMPTY;
       stickerPackOperation_ = java.util.Collections.emptyList();
+      openGroups_ = java.util.Collections.emptyList();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -33466,6 +34091,9 @@ public final class SignalServiceProtos {
       }
       for (int i = 0; i < stickerPackOperation_.size(); i++) {
         output.writeMessage(10, stickerPackOperation_.get(i));
+      }
+      for (int i = 0; i < openGroups_.size(); i++) {
+        output.writeMessage(100, openGroups_.get(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -33515,6 +34143,10 @@ public final class SignalServiceProtos {
       for (int i = 0; i < stickerPackOperation_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(10, stickerPackOperation_.get(i));
+      }
+      for (int i = 0; i < openGroups_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(100, openGroups_.get(i));
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -33633,6 +34265,7 @@ public final class SignalServiceProtos {
           getVerifiedFieldBuilder();
           getConfigurationFieldBuilder();
           getStickerPackOperationFieldBuilder();
+          getOpenGroupsFieldBuilder();
         }
       }
       private static Builder create() {
@@ -33696,6 +34329,12 @@ public final class SignalServiceProtos {
           bitField0_ = (bitField0_ & ~0x00000200);
         } else {
           stickerPackOperationBuilder_.clear();
+        }
+        if (openGroupsBuilder_ == null) {
+          openGroups_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000400);
+        } else {
+          openGroupsBuilder_.clear();
         }
         return this;
       }
@@ -33803,6 +34442,15 @@ public final class SignalServiceProtos {
         } else {
           result.stickerPackOperation_ = stickerPackOperationBuilder_.build();
         }
+        if (openGroupsBuilder_ == null) {
+          if (((bitField0_ & 0x00000400) == 0x00000400)) {
+            openGroups_ = java.util.Collections.unmodifiableList(openGroups_);
+            bitField0_ = (bitField0_ & ~0x00000400);
+          }
+          result.openGroups_ = openGroups_;
+        } else {
+          result.openGroups_ = openGroupsBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -33892,6 +34540,32 @@ public final class SignalServiceProtos {
                    getStickerPackOperationFieldBuilder() : null;
             } else {
               stickerPackOperationBuilder_.addAllMessages(other.stickerPackOperation_);
+            }
+          }
+        }
+        if (openGroupsBuilder_ == null) {
+          if (!other.openGroups_.isEmpty()) {
+            if (openGroups_.isEmpty()) {
+              openGroups_ = other.openGroups_;
+              bitField0_ = (bitField0_ & ~0x00000400);
+            } else {
+              ensureOpenGroupsIsMutable();
+              openGroups_.addAll(other.openGroups_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.openGroups_.isEmpty()) {
+            if (openGroupsBuilder_.isEmpty()) {
+              openGroupsBuilder_.dispose();
+              openGroupsBuilder_ = null;
+              openGroups_ = other.openGroups_;
+              bitField0_ = (bitField0_ & ~0x00000400);
+              openGroupsBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getOpenGroupsFieldBuilder() : null;
+            } else {
+              openGroupsBuilder_.addAllMessages(other.openGroups_);
             }
           }
         }
@@ -35255,6 +35929,246 @@ public final class SignalServiceProtos {
           stickerPackOperation_ = null;
         }
         return stickerPackOperationBuilder_;
+      }
+
+      // repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;
+      private java.util.List<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails> openGroups_ =
+        java.util.Collections.emptyList();
+      private void ensureOpenGroupsIsMutable() {
+        if (!((bitField0_ & 0x00000400) == 0x00000400)) {
+          openGroups_ = new java.util.ArrayList<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails>(openGroups_);
+          bitField0_ |= 0x00000400;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder> openGroupsBuilder_;
+
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public java.util.List<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails> getOpenGroupsList() {
+        if (openGroupsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(openGroups_);
+        } else {
+          return openGroupsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public int getOpenGroupsCount() {
+        if (openGroupsBuilder_ == null) {
+          return openGroups_.size();
+        } else {
+          return openGroupsBuilder_.getCount();
+        }
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails getOpenGroups(int index) {
+        if (openGroupsBuilder_ == null) {
+          return openGroups_.get(index);
+        } else {
+          return openGroupsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder setOpenGroups(
+          int index, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails value) {
+        if (openGroupsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureOpenGroupsIsMutable();
+          openGroups_.set(index, value);
+          onChanged();
+        } else {
+          openGroupsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder setOpenGroups(
+          int index, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder builderForValue) {
+        if (openGroupsBuilder_ == null) {
+          ensureOpenGroupsIsMutable();
+          openGroups_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          openGroupsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder addOpenGroups(org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails value) {
+        if (openGroupsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureOpenGroupsIsMutable();
+          openGroups_.add(value);
+          onChanged();
+        } else {
+          openGroupsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder addOpenGroups(
+          int index, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails value) {
+        if (openGroupsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureOpenGroupsIsMutable();
+          openGroups_.add(index, value);
+          onChanged();
+        } else {
+          openGroupsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder addOpenGroups(
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder builderForValue) {
+        if (openGroupsBuilder_ == null) {
+          ensureOpenGroupsIsMutable();
+          openGroups_.add(builderForValue.build());
+          onChanged();
+        } else {
+          openGroupsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder addOpenGroups(
+          int index, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder builderForValue) {
+        if (openGroupsBuilder_ == null) {
+          ensureOpenGroupsIsMutable();
+          openGroups_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          openGroupsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder addAllOpenGroups(
+          java.lang.Iterable<? extends org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails> values) {
+        if (openGroupsBuilder_ == null) {
+          ensureOpenGroupsIsMutable();
+          super.addAll(values, openGroups_);
+          onChanged();
+        } else {
+          openGroupsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder clearOpenGroups() {
+        if (openGroupsBuilder_ == null) {
+          openGroups_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000400);
+          onChanged();
+        } else {
+          openGroupsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public Builder removeOpenGroups(int index) {
+        if (openGroupsBuilder_ == null) {
+          ensureOpenGroupsIsMutable();
+          openGroups_.remove(index);
+          onChanged();
+        } else {
+          openGroupsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder getOpenGroupsBuilder(
+          int index) {
+        return getOpenGroupsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder getOpenGroupsOrBuilder(
+          int index) {
+        if (openGroupsBuilder_ == null) {
+          return openGroups_.get(index);  } else {
+          return openGroupsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public java.util.List<? extends org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder> 
+           getOpenGroupsOrBuilderList() {
+        if (openGroupsBuilder_ != null) {
+          return openGroupsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(openGroups_);
+        }
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder addOpenGroupsBuilder() {
+        return getOpenGroupsFieldBuilder().addBuilder(
+            org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder addOpenGroupsBuilder(
+          int index) {
+        return getOpenGroupsFieldBuilder().addBuilder(
+            index, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .signalservice.SyncMessage.OpenGroupDetails openGroups = 100;</code>
+       */
+      public java.util.List<org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder> 
+           getOpenGroupsBuilderList() {
+        return getOpenGroupsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder> 
+          getOpenGroupsFieldBuilder() {
+        if (openGroupsBuilder_ == null) {
+          openGroupsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetails.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage.OpenGroupDetailsOrBuilder>(
+                  openGroups_,
+                  ((bitField0_ & 0x00000400) == 0x00000400),
+                  getParentForChildren(),
+                  isClean());
+          openGroups_ = null;
+        }
+        return openGroupsBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:signalservice.SyncMessage)
@@ -42628,6 +43542,11 @@ public final class SignalServiceProtos {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_signalservice_SyncMessage_StickerPackOperation_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_signalservice_SyncMessage_OpenGroupDetails_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_signalservice_SyncMessage_OpenGroupDetails_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_signalservice_AttachmentPointer_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -42779,7 +43698,7 @@ public final class SignalServiceProtos {
       "(\014\022,\n\005state\030\003 \001(\0162\035.signalservice.Verifi" +
       "ed.State\022\023\n\013nullMessage\030\004 \001(\014\"2\n\005State\022\013" +
       "\n\007DEFAULT\020\000\022\014\n\010VERIFIED\020\001\022\016\n\nUNVERIFIED\020" +
-      "\002\"\340\013\n\013SyncMessage\022-\n\004sent\030\001 \001(\0132\037.signal" +
+      "\002\"\325\014\n\013SyncMessage\022-\n\004sent\030\001 \001(\0132\037.signal" +
       "service.SyncMessage.Sent\0225\n\010contacts\030\002 \001" +
       "(\0132#.signalservice.SyncMessage.Contacts\022" +
       "1\n\006groups\030\003 \001(\0132!.signalservice.SyncMess" +
@@ -42792,58 +43711,61 @@ public final class SignalServiceProtos {
       "rvice.SyncMessage.Configuration\022\017\n\007paddi" +
       "ng\030\010 \001(\014\022M\n\024stickerPackOperation\030\n \003(\0132/" +
       ".signalservice.SyncMessage.StickerPackOp" +
-      "eration\032\236\002\n\004Sent\022\023\n\013destination\030\001 \001(\t\022\021\n" +
-      "\ttimestamp\030\002 \001(\004\022+\n\007message\030\003 \001(\0132\032.sign" +
-      "alservice.DataMessage\022 \n\030expirationStart" +
-      "Timestamp\030\004 \001(\004\022V\n\022unidentifiedStatus\030\005 ",
-      "\003(\0132:.signalservice.SyncMessage.Sent.Uni" +
-      "dentifiedDeliveryStatus\032G\n\032UnidentifiedD" +
-      "eliveryStatus\022\023\n\013destination\030\001 \001(\t\022\024\n\014un" +
-      "identified\030\002 \001(\010\032a\n\010Contacts\022.\n\004blob\030\001 \001" +
-      "(\0132 .signalservice.AttachmentPointer\022\027\n\010" +
-      "complete\030\002 \001(\010:\005false\022\014\n\004data\030e \001(\014\032F\n\006G" +
-      "roups\022.\n\004blob\030\001 \001(\0132 .signalservice.Atta" +
-      "chmentPointer\022\014\n\004data\030e \001(\014\032,\n\007Blocked\022\017" +
-      "\n\007numbers\030\001 \003(\t\022\020\n\010groupIds\030\002 \003(\014\032\217\001\n\007Re" +
-      "quest\0225\n\004type\030\001 \001(\0162\'.signalservice.Sync",
-      "Message.Request.Type\"M\n\004Type\022\013\n\007UNKNOWN\020" +
-      "\000\022\014\n\010CONTACTS\020\001\022\n\n\006GROUPS\020\002\022\013\n\007BLOCKED\020\003" +
-      "\022\021\n\rCONFIGURATION\020\004\032)\n\004Read\022\016\n\006sender\030\001 " +
-      "\001(\t\022\021\n\ttimestamp\030\002 \001(\004\032}\n\rConfiguration\022" +
-      "\024\n\014readReceipts\030\001 \001(\010\022&\n\036unidentifiedDel" +
-      "iveryIndicators\030\002 \001(\010\022\030\n\020typingIndicator" +
-      "s\030\003 \001(\010\022\024\n\014linkPreviews\030\004 \001(\010\032\234\001\n\024Sticke" +
-      "rPackOperation\022\016\n\006packId\030\001 \001(\014\022\017\n\007packKe" +
-      "y\030\002 \001(\014\022B\n\004type\030\003 \001(\01624.signalservice.Sy" +
-      "ncMessage.StickerPackOperation.Type\"\037\n\004T",
-      "ype\022\013\n\007INSTALL\020\000\022\n\n\006REMOVE\020\001\"\354\001\n\021Attachm" +
-      "entPointer\022\n\n\002id\030\001 \001(\006\022\023\n\013contentType\030\002 " +
-      "\001(\t\022\013\n\003key\030\003 \001(\014\022\014\n\004size\030\004 \001(\r\022\021\n\tthumbn" +
-      "ail\030\005 \001(\014\022\016\n\006digest\030\006 \001(\014\022\020\n\010fileName\030\007 " +
-      "\001(\t\022\r\n\005flags\030\010 \001(\r\022\r\n\005width\030\t \001(\r\022\016\n\006hei" +
-      "ght\030\n \001(\r\022\017\n\007caption\030\013 \001(\t\022\013\n\003url\030e \001(\t\"" +
-      "\032\n\005Flags\022\021\n\rVOICE_MESSAGE\020\001\"\365\001\n\014GroupCon" +
-      "text\022\n\n\002id\030\001 \001(\014\022.\n\004type\030\002 \001(\0162 .signals" +
-      "ervice.GroupContext.Type\022\014\n\004name\030\003 \001(\t\022\017" +
-      "\n\007members\030\004 \003(\t\0220\n\006avatar\030\005 \001(\0132 .signal",
-      "service.AttachmentPointer\022\016\n\006admins\030\006 \003(" +
-      "\t\"H\n\004Type\022\013\n\007UNKNOWN\020\000\022\n\n\006UPDATE\020\001\022\013\n\007DE" +
-      "LIVER\020\002\022\010\n\004QUIT\020\003\022\020\n\014REQUEST_INFO\020\004\"\231\002\n\016" +
-      "ContactDetails\022\016\n\006number\030\001 \001(\t\022\014\n\004name\030\002" +
-      " \001(\t\0224\n\006avatar\030\003 \001(\0132$.signalservice.Con" +
-      "tactDetails.Avatar\022\r\n\005color\030\004 \001(\t\022)\n\010ver" +
-      "ified\030\005 \001(\0132\027.signalservice.Verified\022\022\n\n" +
-      "profileKey\030\006 \001(\014\022\017\n\007blocked\030\007 \001(\010\022\023\n\013exp" +
-      "ireTimer\030\010 \001(\r\022\020\n\010nickname\030e \001(\t\032-\n\006Avat" +
-      "ar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006length\030\002 \001(\r\"",
-      "\367\001\n\014GroupDetails\022\n\n\002id\030\001 \001(\014\022\014\n\004name\030\002 \001" +
-      "(\t\022\017\n\007members\030\003 \003(\t\0222\n\006avatar\030\004 \001(\0132\".si" +
-      "gnalservice.GroupDetails.Avatar\022\024\n\006activ" +
-      "e\030\005 \001(\010:\004true\022\023\n\013expireTimer\030\006 \001(\r\022\r\n\005co" +
-      "lor\030\007 \001(\t\022\017\n\007blocked\030\010 \001(\010\022\016\n\006admins\030\t \003" +
-      "(\t\032-\n\006Avatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006len" +
-      "gth\030\002 \001(\rBE\n.org.whispersystems.signalse" +
-      "rvice.internal.pushB\023SignalServiceProtos"
+      "eration\022?\n\nopenGroups\030d \003(\0132+.signalserv" +
+      "ice.SyncMessage.OpenGroupDetails\032\236\002\n\004Sen" +
+      "t\022\023\n\013destination\030\001 \001(\t\022\021\n\ttimestamp\030\002 \001(" +
+      "\004\022+\n\007message\030\003 \001(\0132\032.signalservice.DataM",
+      "essage\022 \n\030expirationStartTimestamp\030\004 \001(\004" +
+      "\022V\n\022unidentifiedStatus\030\005 \003(\0132:.signalser" +
+      "vice.SyncMessage.Sent.UnidentifiedDelive" +
+      "ryStatus\032G\n\032UnidentifiedDeliveryStatus\022\023" +
+      "\n\013destination\030\001 \001(\t\022\024\n\014unidentified\030\002 \001(" +
+      "\010\032a\n\010Contacts\022.\n\004blob\030\001 \001(\0132 .signalserv" +
+      "ice.AttachmentPointer\022\027\n\010complete\030\002 \001(\010:" +
+      "\005false\022\014\n\004data\030e \001(\014\032F\n\006Groups\022.\n\004blob\030\001" +
+      " \001(\0132 .signalservice.AttachmentPointer\022\014" +
+      "\n\004data\030e \001(\014\032,\n\007Blocked\022\017\n\007numbers\030\001 \003(\t",
+      "\022\020\n\010groupIds\030\002 \003(\014\032\217\001\n\007Request\0225\n\004type\030\001" +
+      " \001(\0162\'.signalservice.SyncMessage.Request" +
+      ".Type\"M\n\004Type\022\013\n\007UNKNOWN\020\000\022\014\n\010CONTACTS\020\001" +
+      "\022\n\n\006GROUPS\020\002\022\013\n\007BLOCKED\020\003\022\021\n\rCONFIGURATI" +
+      "ON\020\004\032)\n\004Read\022\016\n\006sender\030\001 \001(\t\022\021\n\ttimestam" +
+      "p\030\002 \001(\004\032}\n\rConfiguration\022\024\n\014readReceipts" +
+      "\030\001 \001(\010\022&\n\036unidentifiedDeliveryIndicators" +
+      "\030\002 \001(\010\022\030\n\020typingIndicators\030\003 \001(\010\022\024\n\014link" +
+      "Previews\030\004 \001(\010\032\234\001\n\024StickerPackOperation\022" +
+      "\016\n\006packId\030\001 \001(\014\022\017\n\007packKey\030\002 \001(\014\022B\n\004type",
+      "\030\003 \001(\01624.signalservice.SyncMessage.Stick" +
+      "erPackOperation.Type\"\037\n\004Type\022\013\n\007INSTALL\020" +
+      "\000\022\n\n\006REMOVE\020\001\0322\n\020OpenGroupDetails\022\013\n\003url" +
+      "\030\001 \001(\t\022\021\n\tchannelId\030\002 \001(\r\"\354\001\n\021Attachment" +
+      "Pointer\022\n\n\002id\030\001 \001(\006\022\023\n\013contentType\030\002 \001(\t" +
+      "\022\013\n\003key\030\003 \001(\014\022\014\n\004size\030\004 \001(\r\022\021\n\tthumbnail" +
+      "\030\005 \001(\014\022\016\n\006digest\030\006 \001(\014\022\020\n\010fileName\030\007 \001(\t" +
+      "\022\r\n\005flags\030\010 \001(\r\022\r\n\005width\030\t \001(\r\022\016\n\006height" +
+      "\030\n \001(\r\022\017\n\007caption\030\013 \001(\t\022\013\n\003url\030e \001(\t\"\032\n\005" +
+      "Flags\022\021\n\rVOICE_MESSAGE\020\001\"\365\001\n\014GroupContex",
+      "t\022\n\n\002id\030\001 \001(\014\022.\n\004type\030\002 \001(\0162 .signalserv" +
+      "ice.GroupContext.Type\022\014\n\004name\030\003 \001(\t\022\017\n\007m" +
+      "embers\030\004 \003(\t\0220\n\006avatar\030\005 \001(\0132 .signalser" +
+      "vice.AttachmentPointer\022\016\n\006admins\030\006 \003(\t\"H" +
+      "\n\004Type\022\013\n\007UNKNOWN\020\000\022\n\n\006UPDATE\020\001\022\013\n\007DELIV" +
+      "ER\020\002\022\010\n\004QUIT\020\003\022\020\n\014REQUEST_INFO\020\004\"\231\002\n\016Con" +
+      "tactDetails\022\016\n\006number\030\001 \001(\t\022\014\n\004name\030\002 \001(" +
+      "\t\0224\n\006avatar\030\003 \001(\0132$.signalservice.Contac" +
+      "tDetails.Avatar\022\r\n\005color\030\004 \001(\t\022)\n\010verifi" +
+      "ed\030\005 \001(\0132\027.signalservice.Verified\022\022\n\npro",
+      "fileKey\030\006 \001(\014\022\017\n\007blocked\030\007 \001(\010\022\023\n\013expire" +
+      "Timer\030\010 \001(\r\022\020\n\010nickname\030e \001(\t\032-\n\006Avatar\022" +
+      "\023\n\013contentType\030\001 \001(\t\022\016\n\006length\030\002 \001(\r\"\367\001\n" +
+      "\014GroupDetails\022\n\n\002id\030\001 \001(\014\022\014\n\004name\030\002 \001(\t\022" +
+      "\017\n\007members\030\003 \003(\t\0222\n\006avatar\030\004 \001(\0132\".signa" +
+      "lservice.GroupDetails.Avatar\022\024\n\006active\030\005" +
+      " \001(\010:\004true\022\023\n\013expireTimer\030\006 \001(\r\022\r\n\005color" +
+      "\030\007 \001(\t\022\017\n\007blocked\030\010 \001(\010\022\016\n\006admins\030\t \003(\t\032" +
+      "-\n\006Avatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006length" +
+      "\030\002 \001(\rBE\n.org.whispersystems.signalservi",
+      "ce.internal.pushB\023SignalServiceProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -43017,7 +43939,7 @@ public final class SignalServiceProtos {
           internal_static_signalservice_SyncMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_SyncMessage_descriptor,
-              new java.lang.String[] { "Sent", "Contacts", "Groups", "Request", "Read", "Blocked", "Verified", "Configuration", "Padding", "StickerPackOperation", });
+              new java.lang.String[] { "Sent", "Contacts", "Groups", "Request", "Read", "Blocked", "Verified", "Configuration", "Padding", "StickerPackOperation", "OpenGroups", });
           internal_static_signalservice_SyncMessage_Sent_descriptor =
             internal_static_signalservice_SyncMessage_descriptor.getNestedTypes().get(0);
           internal_static_signalservice_SyncMessage_Sent_fieldAccessorTable = new
@@ -43072,6 +43994,12 @@ public final class SignalServiceProtos {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_SyncMessage_StickerPackOperation_descriptor,
               new java.lang.String[] { "PackId", "PackKey", "Type", });
+          internal_static_signalservice_SyncMessage_OpenGroupDetails_descriptor =
+            internal_static_signalservice_SyncMessage_descriptor.getNestedTypes().get(8);
+          internal_static_signalservice_SyncMessage_OpenGroupDetails_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_signalservice_SyncMessage_OpenGroupDetails_descriptor,
+              new java.lang.String[] { "Url", "ChannelId", });
           internal_static_signalservice_AttachmentPointer_descriptor =
             getDescriptor().getMessageTypes().get(13);
           internal_static_signalservice_AttachmentPointer_fieldAccessorTable = new
