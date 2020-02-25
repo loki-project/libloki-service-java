@@ -343,7 +343,8 @@ public class SignalServiceMessageSender {
     byte[]                  content            = createMessageContent(message, recipients.get(0));
     long                    timestamp          = message.getTimestamp();
     List<SendMessageResult> results            = sendMessage(messageID, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL());
-    boolean                 needsSyncInResults = recipients.contains(localAddress) && message.canSyncMessage();
+    boolean                 canSyncMessage = recipients.contains(localAddress) && message.canSyncMessage();
+    boolean                 needsSyncInResults = false;
 
     for (SendMessageResult result : results) {
       if (result.getSuccess() != null && result.getSuccess().isNeedsSync()) {
@@ -352,7 +353,7 @@ public class SignalServiceMessageSender {
       }
     }
 
-    if (needsSyncInResults || (isMultiDevice.get())) {
+    if ((canSyncMessage || needsSyncInResults) && isMultiDevice.get()) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.<SignalServiceAddress>absent(), timestamp, results);
         // Trigger an event to send a sync message
         if (eventListener.isPresent()) {
