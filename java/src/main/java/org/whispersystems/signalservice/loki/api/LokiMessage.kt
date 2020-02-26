@@ -1,12 +1,12 @@
 package org.whispersystems.signalservice.loki.api
 
-import nl.komponents.kovenant.Promise
-import nl.komponents.kovenant.deferred
+import nl.komponents.kovenant.*
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.loki.crypto.ProofOfWork
 import org.whispersystems.signalservice.loki.messaging.LokiMessageWrapper
 import org.whispersystems.signalservice.loki.messaging.SignalMessageInfo
+import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 
 internal data class LokiMessage(
@@ -40,6 +40,8 @@ internal data class LokiMessage(
 
     internal companion object {
 
+        internal val proofOfWorkContext = Kovenant.createContext("ProofOfWorkContext")
+
         internal fun from(message: SignalMessageInfo): LokiMessage? {
             try {
                 val wrappedMessage = LokiMessageWrapper.wrap(message)
@@ -58,19 +60,14 @@ internal data class LokiMessage(
     }
 
     @kotlin.ExperimentalUnsignedTypes
-    internal fun calculatePoW(): Promise<LokiMessage, Exception> {
-        val deferred = deferred<LokiMessage, Exception>()
-        // Run PoW in a background thread and not on the promise thread
-        Thread {
+    internal fun calculatePoW(context: Context = Kovenant.context): Promise<LokiMessage, Exception> {
+        // Run PoW in a dedicated context as to not affect any other contexts
+        // We then call `withContext` to make the returned promise operate on the passed in context
+        return task(proofOfWorkContext) {
             val now = System.currentTimeMillis()
-            val nonce = ProofOfWork.calculate(data, destination, now, ttl)
-            if (nonce != null ) {
-                deferred.resolve(copy(nonce = nonce, timestamp = now))
-            } else {
-                deferred.reject(LokiAPI.Error.ProofOfWorkCalculationFailed)
-            }
-        }.start()
-        return deferred.promise
+            val nonce = ProofOfWork.calculate(data, destination, now, ttl) ?: throw LokiAPI.Error.ProofOfWorkCalculationFailed
+            copy(nonce = nonce, timestamp = now)
+        }.withContext(context)
     }
 
     internal fun toJSON(): Map<String, String> {
