@@ -165,7 +165,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
 
     fun addDeviceLink(deviceLink: DeviceLink): Promise<Unit, Exception> {
         Log.d("Loki", "Updating device links.")
-        return getDeviceLinks(userHexEncodedPublicKey, true).bind { deviceLinks ->
+        return getDeviceLinks(userHexEncodedPublicKey, true).bind(LokiAPI.sharedWorkContext) { deviceLinks ->
             val mutableDeviceLinks = deviceLinks.toMutableSet()
             mutableDeviceLinks.add(deviceLink)
             setDeviceLinks(mutableDeviceLinks)
@@ -176,7 +176,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
 
     fun removeDeviceLink(deviceLink: DeviceLink): Promise<Unit, Exception> {
         Log.d("Loki", "Updating device links.")
-        return getDeviceLinks(userHexEncodedPublicKey, true).bind { deviceLinks ->
+        return getDeviceLinks(userHexEncodedPublicKey, true).bind(LokiAPI.sharedWorkContext) { deviceLinks ->
             val mutableDeviceLinks = deviceLinks.toMutableSet()
             mutableDeviceLinks.remove(deviceLink)
             setDeviceLinks(mutableDeviceLinks)
