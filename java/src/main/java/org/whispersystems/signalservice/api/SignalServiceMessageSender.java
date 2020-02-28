@@ -343,7 +343,8 @@ public class SignalServiceMessageSender {
     byte[]                  content            = createMessageContent(message, recipients.get(0));
     long                    timestamp          = message.getTimestamp();
     List<SendMessageResult> results            = sendMessage(messageID, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL());
-    boolean                 needsSyncInResults = recipients.contains(localAddress) && message.canSyncMessage();
+    boolean                 canSyncMessage = recipients.contains(localAddress) && message.canSyncMessage();
+    boolean                 needsSyncInResults = false;
 
     for (SendMessageResult result : results) {
       if (result.getSuccess() != null && result.getSuccess().isNeedsSync()) {
@@ -352,7 +353,7 @@ public class SignalServiceMessageSender {
       }
     }
 
-    if (needsSyncInResults || (isMultiDevice.get())) {
+    if ((canSyncMessage || needsSyncInResults) && isMultiDevice.get()) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.<SignalServiceAddress>absent(), timestamp, results);
         // Trigger an event to send a sync message
         if (eventListener.isPresent()) {
@@ -383,6 +384,8 @@ public class SignalServiceMessageSender {
                                                  message.getContacts().get().isComplete());
     } else if (message.getGroups().isPresent()) {
       content = createMultiDeviceGroupsContent(message.getGroups().get().asStream());
+    } else if (message.getOpenGroups().isPresent()) {
+      content = createMultiDeviceOpenGroupsContent(message.getOpenGroups().get());
     } else if (message.getRead().isPresent()) {
       content = createMultiDeviceReadContent(message.getRead().get());
     } else if (message.getBlockedList().isPresent()) {
@@ -729,6 +732,22 @@ public class SignalServiceMessageSender {
                                         .setData(ByteString.readFrom(groups.getInputStream())));
 
     return container.setSyncMessage(builder).build().toByteArray();
+  }
+
+  private byte[] createMultiDeviceOpenGroupsContent(List<LokiPublicChat> openGroups) throws IOException {
+      Content.Builder     container = Content.newBuilder();
+      SyncMessage.Builder builder   = createSyncMessageBuilder();
+      for (LokiPublicChat openGroup : openGroups) {
+          String url = openGroup.getServer();
+          int channel = Long.valueOf(openGroup.getChannel()).intValue();
+          SyncMessage.OpenGroupDetails details = SyncMessage.OpenGroupDetails.newBuilder()
+                                                                              .setUrl(url)
+                                                                              .setChannelId(channel)
+                                                                              .build();
+          builder.addOpenGroups(details);
+      }
+
+      return container.setSyncMessage(builder).build().toByteArray();
   }
 
   private byte[] createMultiDeviceSentTranscriptContent(SentTranscriptMessage transcript, Optional<UnidentifiedAccessPair> unidentifiedAccess) throws IOException {

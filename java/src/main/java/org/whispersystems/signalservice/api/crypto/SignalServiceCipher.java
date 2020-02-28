@@ -81,6 +81,7 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Typing
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
 import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.loki.api.DeviceLink;
+import org.whispersystems.signalservice.loki.api.LokiPublicChat;
 import org.whispersystems.signalservice.loki.messaging.LokiServiceAddressMessage;
 import org.whispersystems.signalservice.loki.messaging.LokiServiceMessage;
 import org.whispersystems.signalservice.loki.messaging.LokiServicePreKeyBundleMessage;
@@ -489,6 +490,15 @@ public class SignalServiceCipher {
       }
 
       return SignalServiceSyncMessage.forStickerPackOperations(operations);
+    }
+
+    List<SyncMessage.OpenGroupDetails> openGroupDetails = content.getOpenGroupsList();
+    if (openGroupDetails.size() > 0) {
+        List<LokiPublicChat> openGroups = new LinkedList<>();
+        for (SyncMessage.OpenGroupDetails details : content.getOpenGroupsList()) {
+            openGroups.add(new LokiPublicChat(details.getChannelId(), details.getUrl(), "", true));
+        }
+        return SignalServiceSyncMessage.forOpenGroups(openGroups);
     }
 
     return SignalServiceSyncMessage.empty();
