@@ -1295,7 +1295,7 @@ public class SignalServiceMessageSender {
     } catch (Exception exception) {
       Throwable underlyingError = exception.getCause();
       if (underlyingError instanceof LokiAPI.Error) {
-          return SendMessageResult.lokiAPIError(recipient, underlyingError);
+          return SendMessageResult.lokiAPIError(recipient, (LokiAPI.Error) underlyingError);
       } else {
           return SendMessageResult.networkFailure(recipient);
       }
