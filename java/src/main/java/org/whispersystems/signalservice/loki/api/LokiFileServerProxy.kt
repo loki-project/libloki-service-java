@@ -16,7 +16,7 @@ import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 
-internal class LokiFileServerProxy(val server: String) : LokiHTTPClient(60) {
+public class LokiFileServerProxy(val server: String) : LokiHTTPClient(60) {
     private val keyPair = curve.generateKeyPair()
 
     companion object {
