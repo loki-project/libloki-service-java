@@ -99,6 +99,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
         object InsufficientProofOfWork : Error("The proof of work is insufficient.")
         object TokenExpired : Error("The auth token being used has expired.")
         object ParsingFailed : Error("Couldn't parse JSON.")
+        class TargetPublicKeySetMissing(target: LokiAPITarget) : Error("Missing public key set for: $target.")
     }
     // endregion
 

@@ -269,7 +269,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
                 val body = JsonUtil.fromJson(bodyAsString)
                 val data = body.get("data")
                 val annotations = data.get("annotations")
-                val annotation = annotations.find { it.get("type").asText("") == channelInfoType } ?: throw Error.ParsingFailed
+                val annotation = annotations.find { it.get("type").asText("") == channelInfoType } ?: throw LokiAPI.Error.ParsingFailed
                 val info = annotation.get("value")
                 info.get("name").asText()
             } catch (exception: Exception) {

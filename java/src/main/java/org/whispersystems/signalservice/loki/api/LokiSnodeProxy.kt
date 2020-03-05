@@ -14,7 +14,7 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 
-public class LokiSnodeProxy(private val target: LokiAPITarget, timeout: Long) : LokiHTTPClient(timeout) {
+internal class LokiSnodeProxy(private val target: LokiAPITarget, timeout: Long) : LokiHTTPClient(timeout) {
 
     private val keyPair by lazy { curve.generateKeyPair() }
 
@@ -24,15 +24,9 @@ public class LokiSnodeProxy(private val target: LokiAPITarget, timeout: Long) : 
     }
     // endregion
 
-    // region Error
-    sealed class Error(val description: String) : Exception() {
-        class TargetPublicKeySetMissing(target: LokiAPITarget) : Error("Missing public key set for: $target.")
-    }
-    // endregion
-
     // region Proxying
     override fun execute(request: Request): Promise<Response, Exception> {
-        val targetHexEncodedPublicKeySet = target.publicKeySet ?: return Promise.ofFail(Error.TargetPublicKeySetMissing(target))
+        val targetHexEncodedPublicKeySet = target.publicKeySet ?: return Promise.ofFail(LokiAPI.Error.TargetPublicKeySetMissing(target))
         val keyPair = this.keyPair
         val requestBodyAsString = getBodyAsString(request)
         val canonicalRequestHeaders = getCanonicalHeaders(request)

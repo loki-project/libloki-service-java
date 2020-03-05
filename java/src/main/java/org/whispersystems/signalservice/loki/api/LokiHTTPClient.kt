@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
 
-public open class LokiHTTPClient(private val timeout: Long) {
+internal open class LokiHTTPClient(private val timeout: Long) {
 
     internal data class Response(val isSuccess: Boolean, val statusCode: Int, val body: String?)
 

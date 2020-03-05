@@ -11,14 +11,14 @@ public class SendMessageResult {
   private final boolean              networkFailure;
   private final boolean              unregisteredFailure;
   private final IdentityFailure      identityFailure;
-  private final Throwable            exception;
+  private final Throwable            lokiAPIError;
 
   public static SendMessageResult success(SignalServiceAddress address, boolean unidentified, boolean needsSync) {
     return new SendMessageResult(address, new Success(unidentified, needsSync), false, false, null, null);
   }
 
-  public static SendMessageResult exception(SignalServiceAddress address, Throwable exception) {
-      return new SendMessageResult(address, null, false, false, null, exception);
+  public static SendMessageResult lokiAPIError(SignalServiceAddress address, Throwable lokiAPIError) {
+      return new SendMessageResult(address, null, false, false, null, lokiAPIError);
   }
 
   public static SendMessageResult networkFailure(SignalServiceAddress address) {
@@ -53,15 +53,15 @@ public class SendMessageResult {
     return identityFailure;
   }
 
-  public Throwable getException() { return exception; }
+  public Throwable getLokiAPIError() { return lokiAPIError; }
 
-  private SendMessageResult(SignalServiceAddress address, Success success, boolean networkFailure, boolean unregisteredFailure, IdentityFailure identityFailure, Throwable exception) {
+  private SendMessageResult(SignalServiceAddress address, Success success, boolean networkFailure, boolean unregisteredFailure, IdentityFailure identityFailure, Throwable lokiAPIError) {
     this.address             = address;
     this.success             = success;
     this.networkFailure      = networkFailure;
     this.unregisteredFailure = unregisteredFailure;
     this.identityFailure     = identityFailure;
-    this.exception           = exception;
+    this.lokiAPIError        = lokiAPIError;
   }
 
   public static class Success {
