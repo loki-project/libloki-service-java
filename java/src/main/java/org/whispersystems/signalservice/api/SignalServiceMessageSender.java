@@ -87,6 +87,7 @@ import org.whispersystems.signalservice.loki.api.LokiFileServerAPI;
 import org.whispersystems.signalservice.loki.api.LokiPublicChat;
 import org.whispersystems.signalservice.loki.api.LokiPublicChatAPI;
 import org.whispersystems.signalservice.loki.api.LokiPublicChatMessage;
+import org.whispersystems.signalservice.loki.api.LokiSnodeProxy;
 import org.whispersystems.signalservice.loki.messaging.LokiMessageDatabaseProtocol;
 import org.whispersystems.signalservice.loki.messaging.LokiPreKeyBundleDatabaseProtocol;
 import org.whispersystems.signalservice.loki.messaging.LokiSyncMessage;
@@ -1292,7 +1293,12 @@ public class SignalServiceMessageSender {
       f.get(1, TimeUnit.MINUTES);
       return SendMessageResult.success(recipient, false, false);
     } catch (Exception exception) {
-      return SendMessageResult.networkFailure(recipient);
+      Throwable underlyingError = exception.getCause();
+      if (underlyingError instanceof LokiAPI.Error) {
+          return SendMessageResult.lokiAPIError(recipient, (LokiAPI.Error) underlyingError);
+      } else {
+          return SendMessageResult.networkFailure(recipient);
+      }
     }
   }
 

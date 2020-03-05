@@ -37,11 +37,6 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
         private val authTokenRequestCache = hashMapOf<String, Promise<String, Exception>>()
     }
 
-    public sealed class Error(val description: String) : Exception() {
-        object Generic : Error("An error occurred.")
-        object ParsingFailed : Error("Failed to parse JSON.")
-    }
-
     public data class UploadResult(val id: Long, val url: String, val digest: ByteArray?)
 
     public fun getAuthToken(server: String): Promise<String, Exception> {
@@ -147,7 +142,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             val data = body.get("data")
             if (data == null) {
                 Log.d("Loki", "Couldn't parse user profiles for: $hexEncodedPublicKeys from: $rawResponse.")
-                throw Error.ParsingFailed
+                throw LokiAPI.Error.ParsingFailed
             }
             data
         }

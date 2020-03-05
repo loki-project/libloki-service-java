@@ -126,7 +126,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                             deviceLinks.addAll(updateResult.deviceLinks)
                         }
                         is DeviceLinkUpdateResult.Failure -> {
-                            if (updateResult.error is Error.ParsingFailed) {
+                            if (updateResult.error is LokiAPI.Error.ParsingFailed) {
                                 lastDeviceLinkUpdate[updateResult.hexEncodedPublicKey] = now // Don't infinitely update in case of a parsing failure
                             }
                             deviceLinks.addAll(database.getDeviceLinks(updateResult.hexEncodedPublicKey)) // Fall back on cached device links in case of a failure
