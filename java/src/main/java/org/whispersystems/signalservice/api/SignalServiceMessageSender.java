@@ -1218,6 +1218,7 @@ public class SignalServiceMessageSender {
       final int senderDeviceID = type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER ? 0 : SignalServiceAddress.DEFAULT_DEVICE_ID;
       // Make sure we have a valid ttl; otherwise default to a day
       if (ttl <= 0) { ttl = 24 * 60 * 60 * 1000; }
+      final int __ttl = ttl;
       SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
       // TODO: PoW indicator
       // Update the message and thread if needed
@@ -1243,7 +1244,9 @@ public class SignalServiceMessageSender {
               @Override
               public Unit invoke(Map<?, ?> map) {
                 if (isSuccess[0]) { return Unit.INSTANCE; } // Succeed as soon as the first promise succeeds
-                broadcaster.broadcast("messageSent", timestamp);
+                if (__ttl == 86400000) {
+                  broadcaster.broadcast("messageSent", timestamp);
+                }
                 isSuccess[0] = true;
                 // Update the message and thread if needed
                 if (isFriendRequestMessage && updateFriendRequestStatus && eventListener.isPresent()) {
@@ -1259,7 +1262,9 @@ public class SignalServiceMessageSender {
               public Unit invoke(Exception exception) {
                 errorCount[0] += 1;
                 if (errorCount[0] != promiseCount[0]) { return Unit.INSTANCE; } // Only error out if all promises failed
-                broadcaster.broadcast("messageFailed", timestamp);
+                if (__ttl == 86400000) {
+                    broadcaster.broadcast("messageFailed", timestamp);
+                }
                 // Update the message and thread if needed
                 if (isFriendRequestMessage && updateFriendRequestStatus && eventListener.isPresent()) {
                     eventListener.get().onFriendRequestSendingFailed(messageID, threadID);
