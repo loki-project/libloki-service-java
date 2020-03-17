@@ -202,14 +202,18 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
             val parameters = lokiMessage.toJSON()
             return invoke(LokiAPITarget.Method.SendMessage, target, destination, parameters)
         }
+        fun broadcast(event: String) {
+            if (message.ttl != 86400000) { return }
+            broadcaster.broadcast(event, message.timestamp)
+        }
         fun sendLokiMessageUsingSwarmAPI(): Promise<Set<RawResponsePromise>, Exception> {
-            broadcaster.broadcast("calculatingPoW", message.timestamp)
+            broadcast("calculatingPoW")
             return lokiMessage.calculatePoW().bind { lokiMessageWithPoW ->
-                broadcaster.broadcast("contactingNetwork", message.timestamp)
+                broadcast("contactingNetwork")
                 retryIfNeeded(maxRetryCount) {
                     swarmAPI.getTargetSnodes(destination).map { swarm ->
                         swarm.map { target ->
-                            broadcaster.broadcast("sendingMessage", message.timestamp)
+                            broadcast("sendingMessage")
                             sendLokiMessage(lokiMessageWithPoW, target).map { rawResponse ->
                                 val json = rawResponse as? Map<*, *>
                                 val powDifficulty = json?.get("difficulty") as? Int
