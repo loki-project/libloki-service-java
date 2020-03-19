@@ -1,5 +1,6 @@
 package org.whispersystems.signalservice.loki.api
 
+import nl.komponents.kovenant.Kovenant
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.map
@@ -9,6 +10,7 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.messaging.LokiUserDatabaseProtocol
+import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
 import java.text.SimpleDateFormat
 import java.util.*
@@ -17,6 +19,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
 
     companion object {
         private val moderators: HashMap<String, HashMap<Long, Set<String>>> = hashMapOf() // Server URL to (channel ID to set of moderator IDs)
+        val sharedWorkContext = Kovenant.createContext("LokiPublicChatAPISharedWorkContext")
 
         // region Settings
         private val fallbackBatchCount = 64
@@ -54,7 +57,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
         } else {
             parameters["count"] = fallbackBatchCount
         }
-        return execute(HTTPVerb.GET, server, "channels/$channel/messages", false, parameters).then(LokiAPI.sharedWorkContext) { response ->
+        return execute(HTTPVerb.GET, server, "channels/$channel/messages", false, parameters).then(sharedWorkContext) { response ->
             try {
                 val bodyAsString = response.body!!
                 val body = JsonUtil.fromJson(bodyAsString)
