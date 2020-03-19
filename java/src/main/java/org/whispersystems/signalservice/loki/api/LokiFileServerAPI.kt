@@ -51,15 +51,15 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
 
     fun getDeviceLinks(hexEncodedPublicKey: String, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
         if (deviceLinkRequestCache.containsKey(hexEncodedPublicKey) && !isForcedUpdate) {
-            return deviceLinkRequestCache[hexEncodedPublicKey]!! // A request was already pending
-        } else {
-            val promise = getDeviceLinks(setOf(hexEncodedPublicKey), isForcedUpdate)
-            deviceLinkRequestCache[hexEncodedPublicKey] = promise
-            promise.always {
-                deviceLinkRequestCache.remove(hexEncodedPublicKey)
-            }
-            return promise
+            val result = deviceLinkRequestCache[hexEncodedPublicKey]
+            if (result != null) { return result } // A request was already pending
         }
+        val promise = getDeviceLinks(setOf(hexEncodedPublicKey), isForcedUpdate)
+        deviceLinkRequestCache[hexEncodedPublicKey] = promise
+        promise.always {
+            deviceLinkRequestCache.remove(hexEncodedPublicKey)
+        }
+        return promise
     }
 
     fun getDeviceLinks(hexEncodedPublicKeys: Set<String>, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
