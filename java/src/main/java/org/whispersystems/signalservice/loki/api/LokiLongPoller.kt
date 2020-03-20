@@ -87,7 +87,7 @@ class LokiLongPoller(private val userHexEncodedPublicKey: String, private val da
     }
 
     private fun longPoll(target: LokiAPITarget, deferred: Deferred<Unit, Exception>): Promise<Unit, Exception> {
-        return LokiAPI(userHexEncodedPublicKey, database, broadcaster).getRawMessages(target, true).bind(LokiAPI.sharedWorkContext) { rawResponse ->
+        return LokiAPI(userHexEncodedPublicKey, database, broadcaster).getRawMessages(target, true).bind(LokiAPI.messagePollingContext) { rawResponse ->
             if (deferred.promise.isDone()) {
                 // The long polling connection has been canceled; don't recurse
                 task { Unit }

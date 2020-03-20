@@ -17,7 +17,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
         // region Settings
         private val lastDeviceLinkUpdate = ConcurrentHashMap<String, Long>()
         private val deviceLinkRequestCache = ConcurrentHashMap<String, Promise<Set<DeviceLink>, Exception>>()
-        private val deviceLinkUpdateInterval = 20 * 1000
+        private val deviceLinkUpdateInterval = 60 * 1000
         private val deviceLinkType = "network.loki.messenger.devicemapping"
         internal val maxRetryCount = 8
         public val maxFileSize = 10_000_000 // 10 MB
@@ -51,15 +51,15 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
 
     fun getDeviceLinks(hexEncodedPublicKey: String, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
         if (deviceLinkRequestCache.containsKey(hexEncodedPublicKey) && !isForcedUpdate) {
-            return deviceLinkRequestCache[hexEncodedPublicKey]!! // A request was already pending
-        } else {
-            val promise = getDeviceLinks(setOf(hexEncodedPublicKey), isForcedUpdate)
-            deviceLinkRequestCache[hexEncodedPublicKey] = promise
-            promise.always {
-                deviceLinkRequestCache.remove(hexEncodedPublicKey)
-            }
-            return promise
+            val result = deviceLinkRequestCache[hexEncodedPublicKey]
+            if (result != null) { return result } // A request was already pending
         }
+        val promise = getDeviceLinks(setOf(hexEncodedPublicKey), isForcedUpdate)
+        deviceLinkRequestCache[hexEncodedPublicKey] = promise
+        promise.always {
+            deviceLinkRequestCache.remove(hexEncodedPublicKey)
+        }
+        return promise
     }
 
     fun getDeviceLinks(hexEncodedPublicKeys: Set<String>, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
@@ -71,7 +71,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
         if (updatees.isEmpty()) {
             return Promise.of(cachedDeviceLinks)
         } else {
-            return getUserProfiles(updatees, server, true).map(LokiAPI.sharedWorkContext) { data ->
+            return getUserProfiles(updatees, server, true).map(LokiAPI.sharedContext) { data ->
                 data.map dataMap@ { node ->
                     val hexEncodedPublicKey = node.get("username").asText()
                     val annotations = node.get("annotations")
@@ -117,7 +117,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                         // Do nothing
                     }
                 }
-            }.map(LokiAPI.sharedWorkContext) { updateResults ->
+            }.map(LokiAPI.sharedContext) { updateResults ->
                 val deviceLinks = mutableListOf<DeviceLink>()
                 for (updateResult in updateResults) {
                     when (updateResult) {

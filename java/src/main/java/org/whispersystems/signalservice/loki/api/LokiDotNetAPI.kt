@@ -59,7 +59,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
     private fun requestNewAuthToken(server: String): Promise<String, Exception> {
         Log.d("Loki", "Requesting auth token for server: $server.")
         val parameters: Map<String, Any> = mapOf( "pubKey" to userHexEncodedPublicKey )
-        return execute(HTTPVerb.GET, server, "loki/v1/get_challenge", false, parameters).map(LokiAPI.sharedWorkContext) { response ->
+        return execute(HTTPVerb.GET, server, "loki/v1/get_challenge", false, parameters).map(LokiAPI.sharedContext) { response ->
             try {
                 val bodyAsString = response.body!!
                 @Suppress("NAME_SHADOWING") val body = JsonUtil.fromJson(bodyAsString, Map::class.java)

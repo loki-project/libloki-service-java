@@ -27,10 +27,12 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
     private val swarmAPI by lazy { LokiSwarmAPI(database, broadcaster) }
 
     companion object {
+        val messageSendingContext = Kovenant.createContext("LokiAPIMessageSendingContext")
+        val messagePollingContext = Kovenant.createContext("LokiAPIMessagePollingContext")
         /**
-         * All performance intensive operations (e.g. encryption and decryption) must be executed on this context.
+         * For operations that are shared between message sending and message polling.
          */
-        val sharedWorkContext = Kovenant.createContext("LokiAPISharedWorkContext")
+        val sharedContext = Kovenant.createContext("LokiAPISharedContext")
         var userHexEncodedPublicKeyCache = mutableMapOf<Long, Set<String>>() // Thread ID to set of user hex encoded public keys
 
         // region Settings
@@ -189,7 +191,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
     fun getMessages(): MessageListPromise {
         return retryIfNeeded(maxRetryCount) {
             swarmAPI.getSingleTargetSnode(userHexEncodedPublicKey).bind { targetSnode ->
-                getRawMessages(targetSnode, false).map(sharedWorkContext) { parseRawMessagesResponse(it, targetSnode) }
+                getRawMessages(targetSnode, false).map(messagePollingContext) { parseRawMessagesResponse(it, targetSnode) }
             }
         }
     }
@@ -203,7 +205,8 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
             return invoke(LokiAPITarget.Method.SendMessage, target, destination, parameters)
         }
         fun broadcast(event: String) {
-            if (message.ttl != 86400000) { return }
+            val dayInMs = 86400000
+            if (message.ttl != dayInMs && message.ttl != 4 * dayInMs) { return }
             broadcaster.broadcast(event, message.timestamp)
         }
         fun sendLokiMessageUsingSwarmAPI(): Promise<Set<RawResponsePromise>, Exception> {
