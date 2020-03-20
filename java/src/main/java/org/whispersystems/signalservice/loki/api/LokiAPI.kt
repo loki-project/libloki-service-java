@@ -203,7 +203,8 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
             return invoke(LokiAPITarget.Method.SendMessage, target, destination, parameters)
         }
         fun broadcast(event: String) {
-            if (message.ttl != 86400000) { return }
+            val dayInMs = 86400000
+            if (message.ttl != dayInMs && message.ttl != 4 * dayInMs) { return }
             broadcaster.broadcast(event, message.timestamp)
         }
         fun sendLokiMessageUsingSwarmAPI(): Promise<Set<RawResponsePromise>, Exception> {
