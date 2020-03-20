@@ -19,7 +19,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
 
     companion object {
         private val moderators: HashMap<String, HashMap<Long, Set<String>>> = hashMapOf() // Server URL to (channel ID to set of moderator IDs)
-        val sharedWorkContext = Kovenant.createContext("LokiPublicChatAPISharedWorkContext")
+        val sharedContext = Kovenant.createContext("LokiPublicChatAPISharedContext")
 
         // region Settings
         private val fallbackBatchCount = 64
@@ -57,7 +57,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
         } else {
             parameters["count"] = fallbackBatchCount
         }
-        return execute(HTTPVerb.GET, server, "channels/$channel/messages", false, parameters).then(sharedWorkContext) { response ->
+        return execute(HTTPVerb.GET, server, "channels/$channel/messages", false, parameters).then(sharedContext) { response ->
             try {
                 val bodyAsString = response.body!!
                 val body = JsonUtil.fromJson(bodyAsString)
