@@ -190,7 +190,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
     // region Public API
     fun getMessages(): MessageListPromise {
         return retryIfNeeded(maxRetryCount) {
-            swarmAPI.getSingleTargetSnode(userHexEncodedPublicKey).bind { targetSnode ->
+            swarmAPI.getSingleTargetSnode(userHexEncodedPublicKey).bind(messagePollingContext) { targetSnode ->
                 getRawMessages(targetSnode, false).map(messagePollingContext) { parseRawMessagesResponse(it, targetSnode) }
             }
         }
