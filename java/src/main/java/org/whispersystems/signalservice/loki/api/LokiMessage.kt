@@ -60,7 +60,7 @@ internal data class LokiMessage(
     @kotlin.ExperimentalUnsignedTypes
     internal fun calculatePoW(): Promise<LokiMessage, Exception> {
         val deferred = deferred<LokiMessage, Exception>()
-        // Run PoW in a background thread and not on the promise thread
+        // Run PoW in a background thread
         Thread {
             val now = System.currentTimeMillis()
             val nonce = ProofOfWork.calculate(data, destination, now, ttl)

@@ -128,7 +128,7 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
             val parameters = mapOf( "pubKey" to hexEncodedPublicKey )
             return getRandomSnode().bind {
                 LokiAPI(hexEncodedPublicKey, database, broadcaster).invoke(LokiAPITarget.Method.GetSwarm, it, hexEncodedPublicKey, parameters)
-            }.map {
+            }.map(LokiAPI.sharedContext) {
                 parseTargets(it).toSet()
             }.success {
                 database.setSwarmCache(hexEncodedPublicKey, it)
