@@ -22,7 +22,6 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
         // region Settings
         private val minimumSnodeCount = 2
         private val targetSnodeCount = 3
-        private val maxRandomSnodePoolSize = 1024
         internal val failureThreshold = 2
         // endregion
 
@@ -38,10 +37,9 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 val url = "$target/json_rpc"
                 Log.d("Loki", "Invoking get_n_service_nodes on $target.")
                 val parameters = mapOf(
-                    "method" to "get_n_service_nodes",
+                    "method" to "get_service_nodes",
                     "params" to mapOf(
                         "active_only" to true,
-                        "limit" to maxRandomSnodePoolSize,
                         "fields" to mapOf( "public_ip" to true,  "storage_port" to true,  "pubkey_x25519" to true,  "pubkey_ed25519" to true )
                     )
                 )
