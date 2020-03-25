@@ -34,7 +34,7 @@ internal class LokiFileServerProxy(val server: String) : LokiHTTPClient(60) {
         Thread {
             val symmetricKey = curve.calculateAgreement(lokiServerPublicKey, keyPair.privateKey)
             // Kovenant propagates a context to chained promises, so LokiPublicChatAPI.sharedContext should be used for all of the below
-            LokiSwarmAPI.getRandomSnode().bind(LokiAPI.sharedContext) { proxy ->
+            LokiSwarmAPI.getFileServerProxy().bind(LokiAPI.sharedContext) { proxy ->
                 val url = "${proxy.address}:${proxy.port}/file_proxy"
                 Log.d("Loki", "Proxying file server request through $proxy.")
                 val endpoint = request.url().toString().removePrefix(server).removePrefix("/")

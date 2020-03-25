@@ -5,11 +5,13 @@ import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import nl.komponents.kovenant.task
+import nl.komponents.kovenant.then
 import okhttp3.*
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
+import org.whispersystems.signalservice.loki.utilities.recover
 import java.io.IOException
 import java.security.SecureRandom
 
@@ -17,12 +19,12 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
 
     companion object {
         internal var failureCount: MutableMap<LokiAPITarget, Int> = mutableMapOf()
+        internal var snodeVersions: MutableMap<LokiAPITarget, String> = mutableMapOf()
         private val connection = OkHttpClient()
 
         // region Settings
         private val minimumSnodeCount = 2
         private val targetSnodeCount = 3
-        private val maxRandomSnodePoolSize = 1024
         internal val failureThreshold = 2
         // endregion
 
@@ -38,10 +40,9 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 val url = "$target/json_rpc"
                 Log.d("Loki", "Invoking get_n_service_nodes on $target.")
                 val parameters = mapOf(
-                    "method" to "get_n_service_nodes",
+                    "method" to "get_service_nodes",
                     "params" to mapOf(
                         "active_only" to true,
-                        "limit" to maxRandomSnodePoolSize,
                         "fields" to mapOf( "public_ip" to true,  "storage_port" to true,  "pubkey_x25519" to true,  "pubkey_ed25519" to true )
                     )
                 )
@@ -104,6 +105,60 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 }
             }
         }
+
+        internal fun getFileServerProxy(): Promise<LokiAPITarget, Exception> {
+            val deferred = deferred<LokiAPITarget, Exception>()
+            fun getVersion(snode: LokiAPITarget): Promise<String, Exception> {
+                val version = snodeVersions[snode]
+                if (version != null) { return Promise.of(version) }
+                @Suppress("NAME_SHADOWING") val deferred = deferred<String, Exception>()
+                val url = "${snode.address}:${snode.port}/get_stats/v1"
+                val request = Request.Builder().url(url).get()
+                connection.newCall(request.build()).enqueue(object : Callback {
+
+                    override fun onResponse(call: Call, response: Response) {
+                        when (response.code()) {
+                            200 -> {
+                                val bodyAsString = response.body()!!.string()
+                                @Suppress("NAME_SHADOWING") val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                                val version = body?.get("version") as? String
+                                if (version != null) {
+                                    snodeVersions[snode] = version
+                                    deferred.resolve(version)
+                                } else {
+                                    deferred.reject(LokiAPI.Error.MissingSnodeVersion)
+                                }
+                            } else -> {
+                                Log.d("Loki", "Couldn't reach $snode.")
+                                deferred.reject(LokiAPI.Error.Generic)
+                            }
+                        }
+                    }
+
+                    override fun onFailure(call: Call, exception: IOException) {
+                        Log.d("Loki", "Couldn't reach $snode.")
+                        deferred.reject(exception)
+                    }
+                })
+                return deferred.promise
+            }
+            getRandomSnode().success { snode ->
+                getVersion(snode).then { version ->
+                    if (version >= "2.0.2") {
+                        Log.d("Loki", "Using file server proxy with version number $version.")
+                        Promise.of(snode)
+                    } else {
+                        Log.d("Loki", "Rejecting file server proxy with version number $version.")
+                        getFileServerProxy()
+                    }
+                }.recover {
+                    getFileServerProxy()
+                }
+            }.fail {
+                deferred.reject(it)
+            }
+            return deferred.promise
+        }
         // endregion
     }
 
@@ -135,9 +190,7 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
             }
         }
     }
-    // endregion
 
-    // region Public API
     internal fun getSingleTargetSnode(hexEncodedPublicKey: String): Promise<LokiAPITarget, Exception> {
         // SecureRandom() should be cryptographically secure
         return getSwarm(hexEncodedPublicKey).map { it.shuffled(SecureRandom()).random() }
