@@ -37,7 +37,7 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
             if (randomSnodePool.isEmpty()) {
                 val target = seedNodePool.random()
                 val url = "$target/json_rpc"
-                Log.d("Loki", "Invoking get_n_service_nodes on $target.")
+                Log.d("Loki", "Invoking get_service_nodes on $target.")
                 val parameters = mapOf(
                     "method" to "get_service_nodes",
                     "params" to mapOf(
