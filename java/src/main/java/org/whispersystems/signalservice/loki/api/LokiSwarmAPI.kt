@@ -5,7 +5,6 @@ import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import nl.komponents.kovenant.task
-import nl.komponents.kovenant.then
 import okhttp3.*
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
@@ -114,6 +113,7 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 @Suppress("NAME_SHADOWING") val deferred = deferred<String, Exception>()
                 val url = "${snode.address}:${snode.port}/get_stats/v1"
                 val request = Request.Builder().url(url).get()
+                val connection = LokiHTTPClient(LokiAPI.defaultTimeout).getClearnetConnection()
                 connection.newCall(request.build()).enqueue(object : Callback {
 
                     override fun onResponse(call: Call, response: Response) {
@@ -142,8 +142,8 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 })
                 return deferred.promise
             }
-            getRandomSnode().success { snode ->
-                getVersion(snode).then { version ->
+            getRandomSnode().bind(LokiAPI.sharedContext) { snode ->
+                getVersion(snode).bind(LokiAPI.sharedContext) { version ->
                     if (version >= "2.0.2") {
                         Log.d("Loki", "Using file server proxy with version number $version.")
                         Promise.of(snode)
@@ -154,8 +154,10 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 }.recover {
                     getFileServerProxy()
                 }
-            }.fail {
-                deferred.reject(it)
+            }.success { snode ->
+                deferred.resolve(snode as LokiAPITarget)
+            }.fail { error ->
+                deferred.reject(error)
             }
             return deferred.promise
         }
