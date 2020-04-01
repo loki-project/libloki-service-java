@@ -10,7 +10,7 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
-import org.whispersystems.signalservice.loki.utilities.recover
+import org.whispersystems.signalservice.loki.utilities.recoverBind
 import java.io.IOException
 import java.security.SecureRandom
 
@@ -151,11 +151,11 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                         Log.d("Loki", "Rejecting file server proxy with version number $version.")
                         getFileServerProxy()
                     }
-                }.recover {
+                }.recoverBind {
                     getFileServerProxy()
                 }
             }.success { snode ->
-                deferred.resolve(snode as LokiAPITarget)
+                deferred.resolve(snode)
             }.fail { error ->
                 deferred.reject(error)
             }

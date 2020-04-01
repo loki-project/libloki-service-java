@@ -25,8 +25,27 @@ fun <V, E> Promise<V, E>.successBackground(callback: (value: V) -> Unit): Promis
   return this
 }
 
+fun <V, E : Throwable> Promise<V, E>.recoverBind(callback: (exception: E) -> Promise<V, E>): Promise<V, E> {
+    val deferred = deferred<V, E>(context)
+    success {
+        deferred.resolve(it)
+    }.fail { exception ->
+        try {
+            val recoveredValue = callback(exception)
+            recoveredValue.success {
+                deferred.resolve(it)
+            }.fail {
+                deferred.reject(it)
+            }
+        } catch (e: Throwable) {
+            deferred.reject(exception)
+        }
+    }
+    return deferred.promise
+}
+
 fun <V, E : Throwable> Promise<V, E>.recover(callback: (exception: E) -> V): Promise<V, E> {
-  val deferred = deferred<V, E>()
+  val deferred = deferred<V, E>(context)
   success {
     deferred.resolve(it)
   }.fail {
