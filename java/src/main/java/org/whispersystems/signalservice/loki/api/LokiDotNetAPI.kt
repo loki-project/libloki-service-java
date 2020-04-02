@@ -220,11 +220,11 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
         if (server == LokiFileServerAPI.shared.server) {
             request.addHeader("Authorization", "Bearer loki")
             // Uploads to the Loki File Server shouldn't include any personally identifiable information, so use a dummy auth token
-            promise = LokiFileServerProxy(server).execute(request.build())
+            promise = LokiFileServerProxy(server, true).execute(request.build())
         } else {
             promise = getAuthToken(server).bind { token ->
                 request.addHeader("Authorization", "Bearer $token")
-                LokiFileServerProxy(server).execute(request.build())
+                LokiFileServerProxy(server, true).execute(request.build())
             }
         }
         return promise.map { response ->
