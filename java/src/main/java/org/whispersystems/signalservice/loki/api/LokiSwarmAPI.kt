@@ -1,5 +1,6 @@
 package org.whispersystems.signalservice.loki.api
 
+import nl.komponents.kovenant.Deferred
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
@@ -10,7 +11,6 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
-import org.whispersystems.signalservice.loki.utilities.recover
 import java.io.IOException
 import java.security.SecureRandom
 
@@ -106,59 +106,77 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
         }
 
         internal fun getFileServerProxy(): Promise<LokiAPITarget, Exception> {
-            val deferred = deferred<LokiAPITarget, Exception>()
-            fun getVersion(snode: LokiAPITarget): Promise<String, Exception> {
-                val version = snodeVersions[snode]
-                if (version != null) { return Promise.of(version) }
-                @Suppress("NAME_SHADOWING") val deferred = deferred<String, Exception>()
-                val url = "${snode.address}:${snode.port}/get_stats/v1"
-                val request = Request.Builder().url(url).get()
-                val connection = LokiHTTPClient(LokiAPI.defaultTimeout).getClearnetConnection()
-                connection.newCall(request.build()).enqueue(object : Callback {
+            val deferred = deferred<LokiAPITarget, Exception>(LokiAPI.sharedContext)
+            Thread {
+                getFileServerNode(deferred)
+            }.start()
+            return deferred.promise
+        }
 
-                    override fun onResponse(call: Call, response: Response) {
-                        when (response.code()) {
-                            200 -> {
-                                val bodyAsString = response.body()!!.string()
-                                @Suppress("NAME_SHADOWING") val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
-                                val version = body?.get("version") as? String
-                                if (version != null) {
-                                    snodeVersions[snode] = version
-                                    deferred.resolve(version)
-                                } else {
-                                    deferred.reject(LokiAPI.Error.MissingSnodeVersion)
-                                }
-                            } else -> {
-                                Log.d("Loki", "Couldn't reach $snode.")
-                                deferred.reject(LokiAPI.Error.Generic)
-                            }
-                        }
-                    }
+        // WARNING: This function will block the thread
+        private fun getFileServerNode(deferred: Deferred<LokiAPITarget, Exception>, failureCount: Int = 0) {
+            if (deferred.promise.isDone()) { return }
 
-                    override fun onFailure(call: Call, exception: IOException) {
-                        Log.d("Loki", "Couldn't reach $snode.")
-                        deferred.reject(exception)
-                    }
-                })
-                return deferred.promise
+            val snode: LokiAPITarget
+            try {
+                snode = getRandomSnode().get()
+            } catch (e: Exception) {
+                deferred.reject(e)
+                return
             }
-            getRandomSnode().bind(LokiAPI.sharedContext) { snode ->
-                getVersion(snode).bind(LokiAPI.sharedContext) { version ->
-                    if (version >= "2.0.2") {
-                        Log.d("Loki", "Using file server proxy with version number $version.")
-                        Promise.of(snode)
-                    } else {
-                        Log.d("Loki", "Rejecting file server proxy with version number $version.")
-                        getFileServerProxy()
-                    }
-                }.recover {
-                    getFileServerProxy()
+
+            try {
+                val version = getVersion(snode).get()
+                if (version >= "2.0.2") {
+                    Log.d("Loki", "Using file server proxy with version number $version.")
+                    deferred.resolve(snode)
+                } else {
+                    Log.d("Loki", "Rejecting file server proxy with version number $version.")
+                    getFileServerNode(deferred, failureCount)
                 }
-            }.success { snode ->
-                deferred.resolve(snode as LokiAPITarget)
-            }.fail { error ->
-                deferred.reject(error)
+            } catch (e: Exception) {
+                if (failureCount < 3) {
+                    getFileServerNode(deferred, failureCount + 1)
+                } else {
+                    deferred.reject(e)
+                }
             }
+
+        }
+
+        private fun getVersion(snode: LokiAPITarget): Promise<String, Exception> {
+            val version = snodeVersions[snode]
+            if (version != null) { return Promise.of(version) }
+            val deferred = deferred<String, Exception>()
+            val url = "${snode.address}:${snode.port}/get_stats/v1"
+            val request = Request.Builder().url(url).get()
+            val connection = LokiHTTPClient(LokiAPI.defaultTimeout).getClearnetConnection()
+            connection.newCall(request.build()).enqueue(object : Callback {
+
+                override fun onResponse(call: Call, response: Response) {
+                    when (response.code()) {
+                        200 -> {
+                            val bodyAsString = response.body()!!.string()
+                            @Suppress("NAME_SHADOWING") val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                            val version = body?.get("version") as? String
+                            if (version != null) {
+                                snodeVersions[snode] = version
+                                deferred.resolve(version)
+                            } else {
+                                deferred.reject(LokiAPI.Error.MissingSnodeVersion)
+                            }
+                        } else -> {
+                        Log.d("Loki", "Couldn't reach $snode.")
+                        deferred.reject(LokiAPI.Error.Generic)
+                    }
+                    }
+                }
+
+                override fun onFailure(call: Call, exception: IOException) {
+                    Log.d("Loki", "Couldn't reach $snode.")
+                    deferred.reject(exception)
+                }
+            })
             return deferred.promise
         }
         // endregion
