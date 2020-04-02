@@ -16,7 +16,8 @@ import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 
-internal class LokiFileServerProxy(val server: String) : LokiHTTPClient(60) {
+internal class LokiFileServerProxy(val server: String, private val isFileUpload: Boolean = false) : LokiHTTPClient(60) {
+
     private val keyPair = curve.generateKeyPair()
 
     companion object {
@@ -33,8 +34,9 @@ internal class LokiFileServerProxy(val server: String) : LokiHTTPClient(60) {
         val deferred = deferred<Response, Exception>()
         Thread {
             val symmetricKey = curve.calculateAgreement(lokiServerPublicKey, keyPair.privateKey)
+            val getProxyPromise = if (isFileUpload) LokiSwarmAPI.getFileServerProxy() else LokiSwarmAPI.getRandomSnode()
             // Kovenant propagates a context to chained promises, so LokiPublicChatAPI.sharedContext should be used for all of the below
-            LokiSwarmAPI.getFileServerProxy().bind(LokiAPI.sharedContext) { proxy ->
+            getProxyPromise.bind(LokiAPI.sharedContext) { proxy ->
                 val url = "${proxy.address}:${proxy.port}/file_proxy"
                 Log.d("Loki", "Proxying file server request through $proxy.")
                 val endpoint = request.url().toString().removePrefix(server).removePrefix("/")
