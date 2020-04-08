@@ -29,7 +29,7 @@ import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 import java.util.*
 
 /**
- * Abstract base class that provides utilities for .NET based APIs.
+ * Base class that provides utilities for .NET based APIs.
  */
 open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol) {
 

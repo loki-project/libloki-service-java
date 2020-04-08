@@ -15,7 +15,7 @@ import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
 import org.whispersystems.signalservice.loki.api.http.HTTP
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
-import java.nio.charset.Charset
+import org.whispersystems.signalservice.loki.utilities.recover
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -267,6 +267,15 @@ object OnionRequestAPI {
             deferred.reject(exception)
         }
         val promise = deferred.promise
+        promise.fail { exception ->
+            if (exception is HTTP.HTTPRequestFailedException) {
+                dropPathContaining(guardSnode)
+            }
+        }
+        promise.recover { exception ->
+            @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtTargetSnodeException ?: throw exception
+            throw LokiAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, hexEncodedPublicKey)
+        }
         return promise
     }
     // endregion

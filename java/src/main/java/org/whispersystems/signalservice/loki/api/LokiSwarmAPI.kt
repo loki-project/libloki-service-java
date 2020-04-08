@@ -13,13 +13,12 @@ import okhttp3.Response
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.http.HTTP
-import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 import java.io.IOException
 import java.security.SecureRandom
 
-internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, private val broadcaster: Broadcaster) {
+internal class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol) {
 
     companion object {
         internal var failureCount: MutableMap<LokiAPITarget, Int> = mutableMapOf()
@@ -30,6 +29,14 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
         private val targetSnodeCount = 3
 
         internal val failureThreshold = 2
+        // endregion
+
+        // region Initialization
+        lateinit var shared: LokiSwarmAPI
+
+        fun configure(database: LokiAPIDatabaseProtocol) {
+            shared = LokiSwarmAPI(database)
+        }
         // endregion
 
         // region Clearnet Setup
@@ -170,7 +177,7 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
     }
 
     // region Caching
-    internal fun dropIfNeeded(target: LokiAPITarget, hexEncodedPublicKey: String) {
+    internal fun dropSnodeIfNeeded(target: LokiAPITarget, hexEncodedPublicKey: String) {
         val swarm = database.getSwarmCache(hexEncodedPublicKey)?.toMutableSet()
         if (swarm != null && swarm.contains(target)) {
             swarm.remove(target)
@@ -189,7 +196,7 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
         } else {
             val parameters = mapOf( "pubKey" to hexEncodedPublicKey )
             return getRandomSnode().bind {
-                LokiAPI(hexEncodedPublicKey, database, broadcaster).invoke(LokiAPITarget.Method.GetSwarm, it, hexEncodedPublicKey, parameters)
+                LokiAPI.shared.invoke(LokiAPITarget.Method.GetSwarm, it, hexEncodedPublicKey, parameters)
             }.map(LokiAPI.sharedContext) {
                 parseTargets(it).toSet()
             }.success {

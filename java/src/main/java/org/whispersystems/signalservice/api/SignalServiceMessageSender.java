@@ -1223,8 +1223,7 @@ public class SignalServiceMessageSender {
       // TODO: PoW indicator
       // Update the message and thread if needed
       if (isFriendRequestMessage && updateFriendRequestStatus && eventListener.isPresent()) { eventListener.get().onFriendRequestSending(messageID, threadID); }
-      LokiAPI api = new LokiAPI(userHexEncodedPublicKey, apiDatabase, broadcaster);
-      api.sendSignalMessage(messageInfo, new Function0<Unit>() {
+      LokiAPI.shared.sendSignalMessage(messageInfo, new Function0<Unit>() {
 
         @Override
         public Unit invoke() {
