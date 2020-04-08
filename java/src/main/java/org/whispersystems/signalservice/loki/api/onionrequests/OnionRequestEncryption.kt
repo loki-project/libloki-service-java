@@ -13,10 +13,9 @@ import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-
 object OnionRequestEncryption {
-    private val ivSize = 12
-    private val gcmTagSize = 128
+    internal val gcmTagSize = 128
+    internal val ivSize = 12
 
     internal data class EncryptionResult(
         internal val ciphertext: ByteArray,

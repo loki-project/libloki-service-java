@@ -8,12 +8,17 @@ import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Base64
+import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.LokiAPI
 import org.whispersystems.signalservice.loki.api.LokiAPITarget
 import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
 import org.whispersystems.signalservice.loki.api.http.HTTP
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
+import java.nio.charset.Charset
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 // region Type Aliases
 private typealias Path = List<LokiAPITarget>
@@ -221,7 +226,7 @@ object OnionRequestAPI {
             val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
             val finalEncryptionResult = result.finalEncryptionResult
             val onion = finalEncryptionResult.ciphertext
-            val parameters = mapOf(
+            @Suppress("NAME_SHADOWING") val parameters = mapOf(
                 "ciphertext" to Base64.encodeBytes(onion),
                 "ephemeral_key" to Hex.toStringCondensed(finalEncryptionResult.ephemeralPublicKey)
             )
@@ -229,6 +234,30 @@ object OnionRequestAPI {
             Thread {
                 try {
                     val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
+                    val base64EncodedIVAndCiphertext = json["result"] as? String ?: return@Thread deferred.reject(Exception("Invalid JSON"))
+                    val ivAndCiphertext = Base64.decode(base64EncodedIVAndCiphertext)
+                    val iv = ivAndCiphertext.sliceArray(0 until OnionRequestEncryption.ivSize)
+                    val ciphertext = ivAndCiphertext.sliceArray(OnionRequestEncryption.ivSize until ivAndCiphertext.lastIndex)
+                    try {
+                        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(targetSnodeSymmetricKey, "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
+                        val plaintext = cipher.doFinal(ciphertext)
+                        try {
+                            @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(plaintext.toString(Charsets.UTF_8), Map::class.java)
+                            val bodyAsString = json["body"] as String
+                            val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                            val statusCode = json["status"] as Int
+                            if (statusCode != 200) {
+                                val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, body)
+                                return@Thread deferred.reject(exception)
+                            }
+                            deferred.resolve(body)
+                        } catch (exception: Exception) {
+                            deferred.reject(Exception("Invalid JSON."))
+                        }
+                    } catch (exception: Exception) {
+                        deferred.reject(exception)
+                    }
                     deferred.resolve(json)
                 } catch (exception: Exception) {
                     deferred.reject(exception)

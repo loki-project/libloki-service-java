@@ -16,7 +16,7 @@ object FileUtilities {
 
   fun downloadFile(destination: File, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
     val outputStream = FileOutputStream(destination) // Throws
-      downloadFile(outputStream, url, maxSize, listener)
+    downloadFile(outputStream, url, maxSize, listener)
   }
 
   fun downloadFile(outputStream: OutputStream, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
