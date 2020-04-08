@@ -32,7 +32,7 @@ internal class LokiSnodeProxy(private val target: LokiAPITarget, timeout: Long) 
         val canonicalRequestHeaders = getCanonicalHeaders(request)
         val deferred = deferred<Response, Exception>()
         Thread {
-            val symmetricKey = curve.calculateAgreement(Hex.fromStringCondensed(targetHexEncodedPublicKeySet.encryptionKey), keyPair.privateKey)
+            val symmetricKey = curve.calculateAgreement(Hex.fromStringCondensed(targetHexEncodedPublicKeySet.x25519Key), keyPair.privateKey)
             lateinit var proxy: LokiAPITarget
             // Kovenant propagates a context to chained promises, so LokiPublicChatAPI.sharedContext should be used for all of the below
             LokiSwarmAPI.getRandomSnode().bind(LokiAPI.sharedContext) { p ->
@@ -45,7 +45,7 @@ internal class LokiSnodeProxy(private val target: LokiAPITarget, timeout: Long) 
                     .url(url)
                     .post(RequestBody.create(MediaType.get("application/octet-stream"), ivAndCipherText))
                     .header("X-Sender-Public-Key", Hex.toStringCondensed(keyPair.publicKey))
-                    .header("X-Target-Snode-Key", targetHexEncodedPublicKeySet.idKey)
+                    .header("X-Target-Snode-Key", targetHexEncodedPublicKeySet.ed25519Key)
                     .build()
                 execute(proxyRequest, getClearnetConnection())
             }.map(LokiAPI.sharedContext) { response ->

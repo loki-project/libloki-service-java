@@ -11,10 +11,11 @@ class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet
          * Only supported by snode targets.
          */
         GetMessages("retrieve"),
-        SendMessage("store")
+        SendMessage("store"),
+        GetStats("get_stats")
     }
 
-    data class KeySet(val idKey: String, val encryptionKey: String)
+    data class KeySet(val ed25519Key: String, val x25519Key: String)
 
     override fun equals(other: Any?): Boolean {
         return if (other is LokiAPITarget) {

@@ -36,12 +36,12 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
         var userHexEncodedPublicKeyCache = mutableMapOf<Long, Set<String>>() // Thread ID to set of user hex encoded public keys
 
         // region Settings
-        private val apiVersion = "v1"
-        private val maxRetryCount = 8
+        private val maxRetryCount = 4
         private val longPollingTimeout: Long = 40
+
         internal val defaultTimeout: Long = 20
         internal val defaultMessageTTL = 24 * 60 * 60 * 1000
-        internal var powDifficulty = 4
+        internal var powDifficulty = 2
         // endregion
 
         // region User ID Caching
@@ -112,7 +112,7 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
      */
     internal fun invoke(method: LokiAPITarget.Method, target: LokiAPITarget, hexEncodedPublicKey: String,
         parameters: Map<String, String>, headers: Headers? = null, timeout: Long? = null): RawResponsePromise {
-        val url = "${target.address}:${target.port}/storage_rpc/$apiVersion"
+        val url = "${target.address}:${target.port}/storage_rpc/v1"
         val body = RequestBody.create(MediaType.get("application/json"), "{ \"method\" : \"${method.rawValue}\", \"params\" : ${JsonUtil.toJson(parameters)} }")
         val request = Request.Builder().url(url).post(body)
         if (headers != null) { request.headers(headers) }
@@ -218,18 +218,20 @@ class LokiAPI(private val userHexEncodedPublicKey: String, private val database:
                     swarmAPI.getTargetSnodes(destination).map { swarm ->
                         swarm.map { target ->
                             broadcast("sendingMessage")
-                            sendLokiMessage(lokiMessageWithPoW, target).map { rawResponse ->
-                                val json = rawResponse as? Map<*, *>
-                                val powDifficulty = json?.get("difficulty") as? Int
-                                if (powDifficulty != null) {
-                                    if (powDifficulty != LokiAPI.powDifficulty) {
-                                        Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
-                                        LokiAPI.powDifficulty = powDifficulty
+                            retryIfNeeded(maxRetryCount) {
+                                sendLokiMessage(lokiMessageWithPoW, target).map { rawResponse ->
+                                    val json = rawResponse as? Map<*, *>
+                                    val powDifficulty = json?.get("difficulty") as? Int
+                                    if (powDifficulty != null) {
+                                        if (powDifficulty != LokiAPI.powDifficulty) {
+                                            Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
+                                            LokiAPI.powDifficulty = powDifficulty
+                                        }
+                                    } else {
+                                        Log.d("Loki", "Failed to update proof of work difficulty from: ${rawResponse.prettifiedDescription()}.")
                                     }
-                                } else {
-                                    Log.d("Loki", "Failed to update proof of work difficulty from: ${rawResponse.prettifiedDescription()}.")
+                                    rawResponse
                                 }
-                                rawResponse
                             }
                         }.toSet()
                     }
