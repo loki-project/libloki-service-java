@@ -15,7 +15,8 @@ import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
 
 // region Type Aliases
 private typealias Path = List<LokiAPITarget>
-private typealias Snode = LokiAPITarget
+
+internal typealias Snode = LokiAPITarget
 // endregion
 
 /**
