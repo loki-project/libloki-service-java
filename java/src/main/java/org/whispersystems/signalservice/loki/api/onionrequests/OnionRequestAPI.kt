@@ -6,6 +6,8 @@ import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
+import org.whispersystems.libsignal.util.Hex
+import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.loki.api.LokiAPI
 import org.whispersystems.signalservice.loki.api.LokiAPITarget
 import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
@@ -46,6 +48,12 @@ object OnionRequestAPI {
     class HTTPRequestFailedAtTargetSnodeException(val statusCode: Int, val json: Map<*, *>)
         : Exception("HTTP request failed at target snode with status code $statusCode.")
     class InsufficientSnodesException : Exception("Couldn't find enough snodes to build a path.")
+
+    private data class OnionBuildingResult(
+        internal val guardSnode: Snode,
+        internal val finalEncryptionResult: OnionRequestEncryption.EncryptionResult,
+        internal val targetSnodeSymmetricKey: ByteArray
+    )
 
     // region Private API
     /**
@@ -161,6 +169,76 @@ object OnionRequestAPI {
 
     private fun dropPathContaining(snode: Snode) {
         paths = paths.filter { !it.contains(snode) }.toSet()
+    }
+
+    /**
+     * Builds an onion around `payload` and returns the result.
+     */
+    private fun buildOnionForTargetSnode(payload: Map<*, *>, snode: Snode): Promise<OnionBuildingResult, Exception> {
+        lateinit var guardSnode: Snode
+        lateinit var targetSnodeSymmetricKey: ByteArray // Needed by invoke(_:on:associatedWith:parameters:) to decrypt the response sent back by the target snode
+        lateinit var encryptionResult: OnionRequestEncryption.EncryptionResult
+        return getPath(snode).bind(LokiAPI.sharedContext) { path ->
+            guardSnode = path.first()
+            // Encrypt in reverse order, i.e. the target snode first
+            OnionRequestEncryption.encryptPayloadForTargetSnode(payload, snode).bind(LokiAPI.sharedContext) { r ->
+                targetSnodeSymmetricKey = r.symmetricKey
+                // Recursively encrypt the layers of the onion (again in reverse order)
+                encryptionResult = r
+                var path = path
+                var rhs = snode
+                fun addLayer(): Promise<OnionRequestEncryption.EncryptionResult, Exception> {
+                    if (path.isEmpty()) {
+                        return Promise.of(encryptionResult)
+                    } else {
+                        val lhs = path.last()
+                        path = path.dropLast(1)
+                        return OnionRequestEncryption.encryptHop(lhs, rhs, encryptionResult).bind(LokiAPI.sharedContext) { r ->
+                            encryptionResult = r
+                            rhs = lhs
+                            addLayer()
+                        }
+                    }
+                }
+                addLayer()
+            }
+        }.map(LokiAPI.sharedContext) { OnionBuildingResult(guardSnode, encryptionResult, targetSnodeSymmetricKey) }
+    }
+    // endregion
+
+    // region Internal API
+    /**
+     * Sends an onion request to `snode`. Builds new paths as needed.
+     *
+     * `hexEncodedPublicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
+     */
+    internal fun sendOnionRequest(method: LokiAPITarget.Method, snode: Snode, hexEncodedPublicKey: String, parameters: Map<*, *>): Promise<Map<*, *>, Exception> {
+        val deferred = deferred<Map<*, *>, Exception>()
+        lateinit var guardSnode: Snode
+        val payload = mapOf( "method" to method.rawValue, "params" to parameters )
+        buildOnionForTargetSnode(payload, snode).success { result ->
+            guardSnode = result.guardSnode
+            val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
+            val finalEncryptionResult = result.finalEncryptionResult
+            val onion = finalEncryptionResult.ciphertext
+            val parameters = mapOf(
+                "ciphertext" to Base64.encodeBytes(onion),
+                "ephemeral_key" to Hex.toStringCondensed(finalEncryptionResult.ephemeralPublicKey)
+            )
+            val targetSnodeSymmetricKey = result.targetSnodeSymmetricKey
+            Thread {
+                try {
+                    val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
+                    deferred.resolve(json)
+                } catch (exception: Exception) {
+                    deferred.reject(exception)
+                }
+            }.start()
+        }.fail { exception ->
+            deferred.reject(exception)
+        }
+        val promise = deferred.promise
+        return promise
     }
     // endregion
 }
