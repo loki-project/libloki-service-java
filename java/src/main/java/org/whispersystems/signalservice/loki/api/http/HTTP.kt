@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.http
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope

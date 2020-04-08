@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.utilities
 
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -12,11 +12,11 @@ import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
 
-object LokiFileUtilities {
+object FileUtilities {
 
   fun downloadFile(destination: File, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
     val outputStream = FileOutputStream(destination) // Throws
-    downloadFile(outputStream, url, maxSize, listener)
+      downloadFile(outputStream, url, maxSize, listener)
   }
 
   fun downloadFile(outputStream: OutputStream, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {

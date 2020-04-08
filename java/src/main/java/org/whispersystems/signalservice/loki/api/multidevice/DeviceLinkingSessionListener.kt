@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.multidevice
 
 interface DeviceLinkingSessionListener {
 

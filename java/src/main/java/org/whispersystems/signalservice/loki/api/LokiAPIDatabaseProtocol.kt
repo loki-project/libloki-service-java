@@ -1,5 +1,7 @@
 package org.whispersystems.signalservice.loki.api
 
+import org.whispersystems.signalservice.loki.api.multidevice.DeviceLink
+
 interface LokiAPIDatabaseProtocol {
 
     fun getSwarmCache(hexEncodedPublicKey: String): Set<LokiAPITarget>?

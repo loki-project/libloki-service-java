@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.fileserver
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
@@ -14,6 +14,10 @@ import org.whispersystems.libsignal.loki.DiffieHellman
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
+import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.LokiHTTPClient
+import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
+import org.whispersystems.signalservice.loki.api.isSuccessfulHTTPStatusCode
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 
 internal class LokiFileServerProxy(val server: String, private val isFileUpload: Boolean = false) : LokiHTTPClient(60) {

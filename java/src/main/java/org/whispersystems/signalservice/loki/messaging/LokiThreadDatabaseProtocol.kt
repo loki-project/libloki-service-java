@@ -1,6 +1,6 @@
 package org.whispersystems.signalservice.loki.messaging
 
-import org.whispersystems.signalservice.loki.api.LokiPublicChat
+import org.whispersystems.signalservice.loki.api.publicchats.LokiPublicChat
 
 interface LokiThreadDatabaseProtocol {
 

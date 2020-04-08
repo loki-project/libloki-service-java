@@ -1,9 +1,12 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.rssfeeds
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.functional.map
 import okhttp3.Request
 import org.whispersystems.signalservice.internal.util.JsonUtil
+import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.LokiHTTPClient
+import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerProxy
 
 object LokiRSSFeedProxy {
 
