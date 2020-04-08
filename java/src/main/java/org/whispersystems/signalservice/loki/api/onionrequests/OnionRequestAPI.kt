@@ -181,7 +181,7 @@ object OnionRequestAPI {
      */
     private fun buildOnionForTargetSnode(payload: Map<*, *>, snode: Snode): Promise<OnionBuildingResult, Exception> {
         lateinit var guardSnode: Snode
-        lateinit var targetSnodeSymmetricKey: ByteArray // Needed by invoke(_:on:associatedWith:parameters:) to decrypt the response sent back by the target snode
+        lateinit var targetSnodeSymmetricKey: ByteArray // Needed by LokiAPI to decrypt the response sent back by the target snode
         lateinit var encryptionResult: OnionRequestEncryption.EncryptionResult
         return getPath(snode).bind(LokiAPI.sharedContext) { path ->
             guardSnode = path.first()

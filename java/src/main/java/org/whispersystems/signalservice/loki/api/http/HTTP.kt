@@ -53,7 +53,7 @@ object HTTP {
             }
         } catch (exception: Exception) {
             Log.d("Loki", "${verb.rawValue} request to $url failed due to error: ${exception.localizedMessage}.")
-            // Override the actual error so that we can correctly catch failed requests in sendOnionRequest(invoking:on:with:)
+            // Override the actual error so that we can correctly catch failed requests in OnionRequestAPI
             throw HTTPRequestFailedException(0, null)
         }
     }

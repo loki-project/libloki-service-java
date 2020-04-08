@@ -6,14 +6,12 @@ import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import nl.komponents.kovenant.task
-import okhttp3.Headers
-import okhttp3.MediaType
-import okhttp3.Request
-import okhttp3.RequestBody
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
+import org.whispersystems.signalservice.loki.api.http.HTTP
+import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import org.whispersystems.signalservice.loki.messaging.*
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.createContext
@@ -44,6 +42,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
         // region Settings
         private val maxRetryCount = 4
         private val longPollingTimeout: Long = 40
+        private val useOnionRequests = true
 
         internal val defaultTimeout: Long = 20
         internal val defaultMessageTTL = 24 * 60 * 60 * 1000
@@ -116,41 +115,39 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
     /**
      * `hexEncodedPublicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
-    internal fun invoke(method: LokiAPITarget.Method, target: LokiAPITarget, hexEncodedPublicKey: String,
-        parameters: Map<String, String>, headers: Headers? = null, timeout: Long? = null): RawResponsePromise {
+    internal fun invoke(method: LokiAPITarget.Method, target: LokiAPITarget, hexEncodedPublicKey: String, parameters: Map<String, String>): RawResponsePromise {
         val url = "${target.address}:${target.port}/storage_rpc/v1"
-        val body = RequestBody.create(MediaType.get("application/json"), "{ \"method\" : \"${method.rawValue}\", \"params\" : ${JsonUtil.toJson(parameters)} }")
-        val request = Request.Builder().url(url).post(body)
-        if (headers != null) { request.headers(headers) }
-        val headersDescription = headers?.toMultimap()?.mapValues { it.value.prettifiedDescription() }?.prettifiedDescription() ?: "no custom headers specified"
-        Log.d("Loki", "Invoking ${method.rawValue} on $target with ${parameters.prettifiedDescription()} ($headersDescription).")
-        return LokiSnodeProxy(target, timeout ?: defaultTimeout).execute(request.build()).fail { exception ->
-            if (exception is ConnectException || exception is SocketTimeoutException) {
-                dropSnodeIfNeeded(target, hexEncodedPublicKey)
-            } else {
-                Log.d("Loki", "Unhandled exception: $exception.")
-            }
-        }.map { response ->
-            if (response.isSuccess) {
-                @Suppress("NAME_SHADOWING") val jsonAsString = response.body ?: throw Error.ResponseBodyMissing
-                return@map JsonUtil.fromJson(jsonAsString, Map::class.java)
-            } else {
-                val jsonAsString = response.body
-                var json: Map<*, *>? = null
-                if (jsonAsString != null) {
-                    json = JsonUtil.fromJson(jsonAsString, Map::class.java)
+        if (useOnionRequests) {
+            return OnionRequestAPI.sendOnionRequest(method, target, hexEncodedPublicKey, parameters)
+        } else {
+            val deferred = deferred<Map<*, *>, Exception>()
+            Thread {
+                val payload = mapOf( "method" to method.rawValue, "params" to JsonUtil.toJson(parameters) )
+                try {
+                    val json = HTTP.execute(HTTP.Verb.POST, url, payload)
+                    deferred.resolve(json)
+                } catch (exception: Exception) {
+                    if (exception is ConnectException || exception is SocketTimeoutException) {
+                        dropSnodeIfNeeded(target, hexEncodedPublicKey)
+                    } else {
+                        val httpRequestFailedException = exception as? HTTP.HTTPRequestFailedException
+                        if (httpRequestFailedException != null) {
+                            @Suppress("NAME_SHADOWING") val exception = handleSnodeError(httpRequestFailedException.statusCode, httpRequestFailedException.json, target, hexEncodedPublicKey)
+                            return@Thread deferred.reject(exception)
+                        }
+                        Log.d("Loki", "Unhandled exception: $exception.")
+                    }
+                    deferred.reject(exception)
                 }
-                throw handleSnodeError(response.statusCode, json, target, hexEncodedPublicKey)
-            }
+            }.start()
+            return deferred.promise
         }
     }
 
     internal fun getRawMessages(target: LokiAPITarget, useLongPolling: Boolean): RawResponsePromise {
         val lastHashValue = database.getLastMessageHashValue(target) ?: ""
         val parameters = mapOf( "pubKey" to userHexEncodedPublicKey, "lastHash" to lastHashValue )
-        val headers: Headers? = if (useLongPolling) Headers.of("X-Loki-Long-Poll", "true") else null
-        val timeout: Long? = if (useLongPolling) longPollingTimeout else null
-        return invoke(LokiAPITarget.Method.GetMessages, target, userHexEncodedPublicKey, parameters, headers, timeout)
+        return invoke(LokiAPITarget.Method.GetMessages, target, userHexEncodedPublicKey, parameters)
     }
     // endregion
 
