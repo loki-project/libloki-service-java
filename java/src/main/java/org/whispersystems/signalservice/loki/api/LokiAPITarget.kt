@@ -11,8 +11,7 @@ class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet
          * Only supported by snode targets.
          */
         GetMessages("retrieve"),
-        SendMessage("store"),
-        GetStats("get_stats")
+        SendMessage("store")
     }
 
     data class KeySet(val ed25519Key: String, val x25519Key: String)

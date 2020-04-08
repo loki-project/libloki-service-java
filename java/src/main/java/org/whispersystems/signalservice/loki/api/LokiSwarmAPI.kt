@@ -14,6 +14,7 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.http.HTTP
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
+import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 import java.io.IOException
 import java.security.SecureRandom
@@ -51,9 +52,10 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                     )
                 )
                 val deferred = deferred<LokiAPITarget, Exception>()
+                deferred<LokiAPITarget, Exception>(LokiAPI.sharedContext)
                 Thread {
                     try {
-                        val json = HTTP.performSync(HTTP.Verb.POST, url, parameters)
+                        val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
                         val intermediate = json["result"] as? Map<*, *>
                         val rawTargets = intermediate?.get("service_node_states") as? List<*>
                         if (rawTargets != null) {
@@ -61,24 +63,23 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                                 val rawTargetAsJSON = rawTarget as? Map<*, *>
                                 val address = rawTargetAsJSON?.get("public_ip") as? String
                                 val port = rawTargetAsJSON?.get("storage_port") as? Int
-                                val idKey = rawTargetAsJSON?.get("pubkey_ed25519") as? String
-                                val encryptionKey = rawTargetAsJSON?.get("pubkey_x25519") as? String
-                                if (address != null && port != null && idKey != null && encryptionKey != null && address != "0.0.0.0") {
-                                    LokiAPITarget("https://$address", port, LokiAPITarget.KeySet(idKey, encryptionKey))
+                                val ed25519Key = rawTargetAsJSON?.get("pubkey_ed25519") as? String
+                                val x25519Key = rawTargetAsJSON?.get("pubkey_x25519") as? String
+                                if (address != null && port != null && ed25519Key != null && x25519Key != null && address != "0.0.0.0") {
+                                    LokiAPITarget("https://$address", port, LokiAPITarget.KeySet(ed25519Key, x25519Key))
                                 } else {
                                     Log.d("Loki", "Failed to parse: ${rawTarget?.prettifiedDescription()}.")
                                     null
                                 }
                             }.toMutableSet()
                             try {
-                                val index = SecureRandom().nextInt(randomSnodePool.size) // SecureRandom() should be cryptographically secure
-                                deferred.resolve(randomSnodePool.elementAt(index))
+                                deferred.resolve(randomSnodePool.getRandomElement())
                             } catch (exception: Exception) {
-                                Log.d("Loki", "Got an empty random snode pool from: $target.")
+                                Log.d("Loki", "Got an empty snode pool from: $target.")
                                 deferred.reject(LokiAPI.Error.Generic)
                             }
                         } else {
-                            Log.d("Loki", "Failed to update random snode pool from: ${(rawTargets as List<*>?)?.prettifiedDescription()}.")
+                            Log.d("Loki", "Failed to update snode pool from: ${(rawTargets as List<*>?)?.prettifiedDescription()}.")
                             deferred.reject(LokiAPI.Error.Generic)
                         }
                     } catch (exception: Exception) {
@@ -87,10 +88,7 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 }.start()
                 return deferred.promise
             } else {
-                return task {
-                    val index = SecureRandom().nextInt(randomSnodePool.size) // SecureRandom() should be cryptographically secure
-                    randomSnodePool.elementAt(index)
-                }
+                return Promise.of(randomSnodePool.getRandomElement())
             }
         }
 
@@ -221,10 +219,10 @@ internal class LokiSwarmAPI(private val database: LokiAPIDatabaseProtocol, priva
                 val address = rawSnodeAsJSON?.get("ip") as? String
                 val portAsString = rawSnodeAsJSON?.get("port") as? String
                 val port = portAsString?.toInt()
-                val idKey = rawSnodeAsJSON?.get("pubkey_ed25519") as? String
-                val encryptionKey = rawSnodeAsJSON?.get("pubkey_x25519") as? String
-                if (address != null && port != null && idKey != null && encryptionKey != null && address != "0.0.0.0") {
-                    LokiAPITarget("https://$address", port, LokiAPITarget.KeySet(idKey, encryptionKey))
+                val ed25519Key = rawSnodeAsJSON?.get("pubkey_ed25519") as? String
+                val x25519Key = rawSnodeAsJSON?.get("pubkey_x25519") as? String
+                if (address != null && port != null && ed25519Key != null && x25519Key != null && address != "0.0.0.0") {
+                    LokiAPITarget("https://$address", port, LokiAPITarget.KeySet(ed25519Key, x25519Key))
                 } else {
                     Log.d("Loki", "Failed to parse target from: ${rawSnode?.prettifiedDescription()}.")
                     null

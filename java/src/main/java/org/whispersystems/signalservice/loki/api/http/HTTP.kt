@@ -1,8 +1,5 @@
 package org.whispersystems.signalservice.loki.api.http
 
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -22,13 +19,10 @@ object HTTP {
         GET("GET"), PUT("PUT"), POST("POST"), DELETE("DELETE")
     }
 
-    fun performAsync(verb: Verb, url: String, parameters: Map<String, Any>? = null): Deferred<Map<*, *>> {
-        return GlobalScope.async {
-            performSync(verb, url, parameters)
-        }
-    }
-
-    fun performSync(verb: Verb, url: String, parameters: Map<String, Any>? = null): Map<*, *> {
+    /**
+     * Sync. Don't call from the main thread.
+     */
+    fun execute(verb: Verb, url: String, parameters: Map<String, Any>? = null): Map<*, *> {
         val request = Request.Builder().url(url)
         when (verb) {
             Verb.GET -> request.get()
