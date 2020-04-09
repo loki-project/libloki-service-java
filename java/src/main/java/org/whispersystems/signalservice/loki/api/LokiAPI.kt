@@ -34,7 +34,8 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
         // region Initialization
         lateinit var shared: LokiAPI
 
-        fun configure(userHexEncodedPublicKey: String, database: LokiAPIDatabaseProtocol, broadcaster: Broadcaster) {
+        fun configureIfNeeded(userHexEncodedPublicKey: String, database: LokiAPIDatabaseProtocol, broadcaster: Broadcaster) {
+            if (::shared.isInitialized) { return; }
             shared = LokiAPI(userHexEncodedPublicKey, database, broadcaster)
         }
         // endregion

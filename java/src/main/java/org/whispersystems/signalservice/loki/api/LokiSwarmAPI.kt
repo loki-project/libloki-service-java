@@ -18,7 +18,7 @@ import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 import java.io.IOException
 import java.security.SecureRandom
 
-internal class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol) {
+class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol) {
 
     companion object {
         internal var failureCount: MutableMap<LokiAPITarget, Int> = mutableMapOf()
@@ -34,7 +34,8 @@ internal class LokiSwarmAPI private constructor(private val database: LokiAPIDat
         // region Initialization
         lateinit var shared: LokiSwarmAPI
 
-        fun configure(database: LokiAPIDatabaseProtocol) {
+        fun configureIfNeeded(database: LokiAPIDatabaseProtocol) {
+            if (::shared.isInitialized) { return; }
             shared = LokiSwarmAPI(database)
         }
         // endregion
