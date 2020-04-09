@@ -8,6 +8,7 @@ import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.internal.util.Util
+import org.whispersystems.signalservice.loki.utilities.toHexString
 import javax.crypto.Cipher
 import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
@@ -76,7 +77,7 @@ object OnionRequestEncryption {
             try {
                 val payload = mapOf(
                     "ciphertext" to Base64.encodeBytes(previousEncryptionResult.ciphertext),
-                    "ephemeral_key" to Hex.toStringCondensed(previousEncryptionResult.ephemeralPublicKey),
+                    "ephemeral_key" to previousEncryptionResult.ephemeralPublicKey.toHexString(),
                     "destination" to rhs.publicKeySet!!.ed25519Key
                 )
                 val plaintext = JsonUtil.toJson(payload).toByteArray()

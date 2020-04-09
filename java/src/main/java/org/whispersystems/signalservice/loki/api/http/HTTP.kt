@@ -6,11 +6,35 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 
 object HTTP {
-    private val connection = OkHttpClient()
 
-    const val timeout: Long = 20
+    private val connection by lazy {
+        // Snode to snode communication uses self-signed certificates but clients can safely ignore this
+        val trustManager = object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
+            override fun checkServerTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
+            override fun getAcceptedIssuers(): Array<X509Certificate> {
+                return arrayOf()
+            }
+        }
+        val sslContext = SSLContext.getInstance("SSL")
+        sslContext.init(null, arrayOf( trustManager ), SecureRandom())
+        OkHttpClient().newBuilder()
+            .sslSocketFactory(sslContext.socketFactory, trustManager)
+            .hostnameVerifier { _, _ -> true }
+            .connectTimeout(timeout, TimeUnit.SECONDS)
+            .readTimeout(timeout, TimeUnit.SECONDS)
+            .writeTimeout(timeout, TimeUnit.SECONDS)
+            .build()
+    }
+
+    private const val timeout: Long = 10
 
     class HTTPRequestFailedException(val statusCode: Int, val json: Map<*, *>?)
         : kotlin.Exception("HTTP request failed with status code $statusCode.")
@@ -42,8 +66,7 @@ object HTTP {
                     try {
                         return JsonUtil.fromJson(bodyAsString, Map::class.java)
                     } catch (exception: Exception) {
-                        Log.d("Loki", "Couldn't parse JSON returned by ${verb.rawValue} request to $url.")
-                        throw Exception("Invalid JSON.")
+                        return mapOf( "result" to bodyAsString)
                     }
                 }
                 else -> {

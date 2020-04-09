@@ -16,6 +16,7 @@ import org.whispersystems.signalservice.loki.api.http.HTTP
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
 import org.whispersystems.signalservice.loki.utilities.recover
+import org.whispersystems.signalservice.loki.utilities.toHexString
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -220,7 +221,7 @@ object OnionRequestAPI {
     internal fun sendOnionRequest(method: LokiAPITarget.Method, snode: Snode, hexEncodedPublicKey: String, parameters: Map<*, *>): Promise<Map<*, *>, Exception> {
         val deferred = deferred<Map<*, *>, Exception>()
         lateinit var guardSnode: Snode
-        val payload = mapOf( "method" to method.rawValue, "params" to parameters )
+        val payload = mapOf( "method" to method.rawValue, "params" to JsonUtil.toJson(parameters) )
         buildOnionForTargetSnode(payload, snode).success { result ->
             guardSnode = result.guardSnode
             val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
@@ -228,7 +229,7 @@ object OnionRequestAPI {
             val onion = finalEncryptionResult.ciphertext
             @Suppress("NAME_SHADOWING") val parameters = mapOf(
                 "ciphertext" to Base64.encodeBytes(onion),
-                "ephemeral_key" to Hex.toStringCondensed(finalEncryptionResult.ephemeralPublicKey)
+                "ephemeral_key" to finalEncryptionResult.ephemeralPublicKey.toHexString()
             )
             val targetSnodeSymmetricKey = result.targetSnodeSymmetricKey
             Thread {
