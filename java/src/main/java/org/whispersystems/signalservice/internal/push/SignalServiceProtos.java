@@ -37942,6 +37942,70 @@ public final class SignalServiceProtos {
      */
     com.google.protobuf.ByteString
         getAdminsBytes(int index);
+
+    // repeated string newMembers = 998;
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    java.util.List<java.lang.String>
+    getNewMembersList();
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    int getNewMembersCount();
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    java.lang.String getNewMembers(int index);
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getNewMembersBytes(int index);
+
+    // repeated string removedMembers = 999;
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    java.util.List<java.lang.String>
+    getRemovedMembersList();
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    int getRemovedMembersCount();
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    java.lang.String getRemovedMembers(int index);
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    com.google.protobuf.ByteString
+        getRemovedMembersBytes(int index);
   }
   /**
    * Protobuf type {@code signalservice.GroupContext}
@@ -38044,6 +38108,22 @@ public final class SignalServiceProtos {
               admins_.add(input.readBytes());
               break;
             }
+            case 7986: {
+              if (!((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+                newMembers_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000040;
+              }
+              newMembers_.add(input.readBytes());
+              break;
+            }
+            case 7994: {
+              if (!((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
+                removedMembers_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000080;
+              }
+              removedMembers_.add(input.readBytes());
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -38057,6 +38137,12 @@ public final class SignalServiceProtos {
         }
         if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           admins_ = new com.google.protobuf.UnmodifiableLazyStringList(admins_);
+        }
+        if (((mutable_bitField0_ & 0x00000040) == 0x00000040)) {
+          newMembers_ = new com.google.protobuf.UnmodifiableLazyStringList(newMembers_);
+        }
+        if (((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
+          removedMembers_ = new com.google.protobuf.UnmodifiableLazyStringList(removedMembers_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -38356,6 +38442,90 @@ public final class SignalServiceProtos {
       return admins_.getByteString(index);
     }
 
+    // repeated string newMembers = 998;
+    public static final int NEWMEMBERS_FIELD_NUMBER = 998;
+    private com.google.protobuf.LazyStringList newMembers_;
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    public java.util.List<java.lang.String>
+        getNewMembersList() {
+      return newMembers_;
+    }
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    public int getNewMembersCount() {
+      return newMembers_.size();
+    }
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    public java.lang.String getNewMembers(int index) {
+      return newMembers_.get(index);
+    }
+    /**
+     * <code>repeated string newMembers = 998;</code>
+     *
+     * <pre>
+     * Loki Android - These fields are used only internally for the android code base
+     * This is so that we can differentiate adding/kicking
+     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getNewMembersBytes(int index) {
+      return newMembers_.getByteString(index);
+    }
+
+    // repeated string removedMembers = 999;
+    public static final int REMOVEDMEMBERS_FIELD_NUMBER = 999;
+    private com.google.protobuf.LazyStringList removedMembers_;
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    public java.util.List<java.lang.String>
+        getRemovedMembersList() {
+      return removedMembers_;
+    }
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    public int getRemovedMembersCount() {
+      return removedMembers_.size();
+    }
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    public java.lang.String getRemovedMembers(int index) {
+      return removedMembers_.get(index);
+    }
+    /**
+     * <code>repeated string removedMembers = 999;</code>
+     */
+    public com.google.protobuf.ByteString
+        getRemovedMembersBytes(int index) {
+      return removedMembers_.getByteString(index);
+    }
+
     private void initFields() {
       id_ = com.google.protobuf.ByteString.EMPTY;
       type_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.GroupContext.Type.UNKNOWN;
@@ -38363,6 +38533,8 @@ public final class SignalServiceProtos {
       members_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       avatar_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.AttachmentPointer.getDefaultInstance();
       admins_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      newMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      removedMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -38393,6 +38565,12 @@ public final class SignalServiceProtos {
       }
       for (int i = 0; i < admins_.size(); i++) {
         output.writeBytes(6, admins_.getByteString(i));
+      }
+      for (int i = 0; i < newMembers_.size(); i++) {
+        output.writeBytes(998, newMembers_.getByteString(i));
+      }
+      for (int i = 0; i < removedMembers_.size(); i++) {
+        output.writeBytes(999, removedMembers_.getByteString(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -38436,6 +38614,24 @@ public final class SignalServiceProtos {
         }
         size += dataSize;
         size += 1 * getAdminsList().size();
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < newMembers_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeBytesSizeNoTag(newMembers_.getByteString(i));
+        }
+        size += dataSize;
+        size += 2 * getNewMembersList().size();
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < removedMembers_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeBytesSizeNoTag(removedMembers_.getByteString(i));
+        }
+        size += dataSize;
+        size += 2 * getRemovedMembersList().size();
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -38570,6 +38766,10 @@ public final class SignalServiceProtos {
         bitField0_ = (bitField0_ & ~0x00000010);
         admins_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000020);
+        newMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        removedMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
 
@@ -38630,6 +38830,18 @@ public final class SignalServiceProtos {
           bitField0_ = (bitField0_ & ~0x00000020);
         }
         result.admins_ = admins_;
+        if (((bitField0_ & 0x00000040) == 0x00000040)) {
+          newMembers_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              newMembers_);
+          bitField0_ = (bitField0_ & ~0x00000040);
+        }
+        result.newMembers_ = newMembers_;
+        if (((bitField0_ & 0x00000080) == 0x00000080)) {
+          removedMembers_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              removedMembers_);
+          bitField0_ = (bitField0_ & ~0x00000080);
+        }
+        result.removedMembers_ = removedMembers_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -38677,6 +38889,26 @@ public final class SignalServiceProtos {
           } else {
             ensureAdminsIsMutable();
             admins_.addAll(other.admins_);
+          }
+          onChanged();
+        }
+        if (!other.newMembers_.isEmpty()) {
+          if (newMembers_.isEmpty()) {
+            newMembers_ = other.newMembers_;
+            bitField0_ = (bitField0_ & ~0x00000040);
+          } else {
+            ensureNewMembersIsMutable();
+            newMembers_.addAll(other.newMembers_);
+          }
+          onChanged();
+        }
+        if (!other.removedMembers_.isEmpty()) {
+          if (removedMembers_.isEmpty()) {
+            removedMembers_ = other.removedMembers_;
+            bitField0_ = (bitField0_ & ~0x00000080);
+          } else {
+            ensureRemovedMembersIsMutable();
+            removedMembers_.addAll(other.removedMembers_);
           }
           onChanged();
         }
@@ -39152,6 +39384,246 @@ public final class SignalServiceProtos {
   }
   ensureAdminsIsMutable();
         admins_.add(value);
+        onChanged();
+        return this;
+      }
+
+      // repeated string newMembers = 998;
+      private com.google.protobuf.LazyStringList newMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureNewMembersIsMutable() {
+        if (!((bitField0_ & 0x00000040) == 0x00000040)) {
+          newMembers_ = new com.google.protobuf.LazyStringArrayList(newMembers_);
+          bitField0_ |= 0x00000040;
+         }
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public java.util.List<java.lang.String>
+          getNewMembersList() {
+        return java.util.Collections.unmodifiableList(newMembers_);
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public int getNewMembersCount() {
+        return newMembers_.size();
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public java.lang.String getNewMembers(int index) {
+        return newMembers_.get(index);
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getNewMembersBytes(int index) {
+        return newMembers_.getByteString(index);
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public Builder setNewMembers(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureNewMembersIsMutable();
+        newMembers_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public Builder addNewMembers(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureNewMembersIsMutable();
+        newMembers_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public Builder addAllNewMembers(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureNewMembersIsMutable();
+        super.addAll(values, newMembers_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public Builder clearNewMembers() {
+        newMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string newMembers = 998;</code>
+       *
+       * <pre>
+       * Loki Android - These fields are used only internally for the android code base
+       * This is so that we can differentiate adding/kicking
+       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * </pre>
+       */
+      public Builder addNewMembersBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureNewMembersIsMutable();
+        newMembers_.add(value);
+        onChanged();
+        return this;
+      }
+
+      // repeated string removedMembers = 999;
+      private com.google.protobuf.LazyStringList removedMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureRemovedMembersIsMutable() {
+        if (!((bitField0_ & 0x00000080) == 0x00000080)) {
+          removedMembers_ = new com.google.protobuf.LazyStringArrayList(removedMembers_);
+          bitField0_ |= 0x00000080;
+         }
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public java.util.List<java.lang.String>
+          getRemovedMembersList() {
+        return java.util.Collections.unmodifiableList(removedMembers_);
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public int getRemovedMembersCount() {
+        return removedMembers_.size();
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public java.lang.String getRemovedMembers(int index) {
+        return removedMembers_.get(index);
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public com.google.protobuf.ByteString
+          getRemovedMembersBytes(int index) {
+        return removedMembers_.getByteString(index);
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public Builder setRemovedMembers(
+          int index, java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRemovedMembersIsMutable();
+        removedMembers_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public Builder addRemovedMembers(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRemovedMembersIsMutable();
+        removedMembers_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public Builder addAllRemovedMembers(
+          java.lang.Iterable<java.lang.String> values) {
+        ensureRemovedMembersIsMutable();
+        super.addAll(values, removedMembers_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public Builder clearRemovedMembers() {
+        removedMembers_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000080);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>repeated string removedMembers = 999;</code>
+       */
+      public Builder addRemovedMembersBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureRemovedMembersIsMutable();
+        removedMembers_.add(value);
         onChanged();
         return this;
       }
@@ -43744,28 +44216,30 @@ public final class SignalServiceProtos {
       "\030\005 \001(\014\022\016\n\006digest\030\006 \001(\014\022\020\n\010fileName\030\007 \001(\t" +
       "\022\r\n\005flags\030\010 \001(\r\022\r\n\005width\030\t \001(\r\022\016\n\006height" +
       "\030\n \001(\r\022\017\n\007caption\030\013 \001(\t\022\013\n\003url\030e \001(\t\"\032\n\005" +
-      "Flags\022\021\n\rVOICE_MESSAGE\020\001\"\365\001\n\014GroupContex",
+      "Flags\022\021\n\rVOICE_MESSAGE\020\001\"\243\002\n\014GroupContex",
       "t\022\n\n\002id\030\001 \001(\014\022.\n\004type\030\002 \001(\0162 .signalserv" +
       "ice.GroupContext.Type\022\014\n\004name\030\003 \001(\t\022\017\n\007m" +
       "embers\030\004 \003(\t\0220\n\006avatar\030\005 \001(\0132 .signalser" +
-      "vice.AttachmentPointer\022\016\n\006admins\030\006 \003(\t\"H" +
-      "\n\004Type\022\013\n\007UNKNOWN\020\000\022\n\n\006UPDATE\020\001\022\013\n\007DELIV" +
-      "ER\020\002\022\010\n\004QUIT\020\003\022\020\n\014REQUEST_INFO\020\004\"\231\002\n\016Con" +
-      "tactDetails\022\016\n\006number\030\001 \001(\t\022\014\n\004name\030\002 \001(" +
-      "\t\0224\n\006avatar\030\003 \001(\0132$.signalservice.Contac" +
-      "tDetails.Avatar\022\r\n\005color\030\004 \001(\t\022)\n\010verifi" +
-      "ed\030\005 \001(\0132\027.signalservice.Verified\022\022\n\npro",
-      "fileKey\030\006 \001(\014\022\017\n\007blocked\030\007 \001(\010\022\023\n\013expire" +
-      "Timer\030\010 \001(\r\022\020\n\010nickname\030e \001(\t\032-\n\006Avatar\022" +
-      "\023\n\013contentType\030\001 \001(\t\022\016\n\006length\030\002 \001(\r\"\367\001\n" +
-      "\014GroupDetails\022\n\n\002id\030\001 \001(\014\022\014\n\004name\030\002 \001(\t\022" +
-      "\017\n\007members\030\003 \003(\t\0222\n\006avatar\030\004 \001(\0132\".signa" +
-      "lservice.GroupDetails.Avatar\022\024\n\006active\030\005" +
-      " \001(\010:\004true\022\023\n\013expireTimer\030\006 \001(\r\022\r\n\005color" +
-      "\030\007 \001(\t\022\017\n\007blocked\030\010 \001(\010\022\016\n\006admins\030\t \003(\t\032" +
-      "-\n\006Avatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006length" +
-      "\030\002 \001(\rBE\n.org.whispersystems.signalservi",
-      "ce.internal.pushB\023SignalServiceProtos"
+      "vice.AttachmentPointer\022\016\n\006admins\030\006 \003(\t\022\023" +
+      "\n\nnewMembers\030\346\007 \003(\t\022\027\n\016removedMembers\030\347\007" +
+      " \003(\t\"H\n\004Type\022\013\n\007UNKNOWN\020\000\022\n\n\006UPDATE\020\001\022\013\n" +
+      "\007DELIVER\020\002\022\010\n\004QUIT\020\003\022\020\n\014REQUEST_INFO\020\004\"\231" +
+      "\002\n\016ContactDetails\022\016\n\006number\030\001 \001(\t\022\014\n\004nam" +
+      "e\030\002 \001(\t\0224\n\006avatar\030\003 \001(\0132$.signalservice." +
+      "ContactDetails.Avatar\022\r\n\005color\030\004 \001(\t\022)\n\010",
+      "verified\030\005 \001(\0132\027.signalservice.Verified\022" +
+      "\022\n\nprofileKey\030\006 \001(\014\022\017\n\007blocked\030\007 \001(\010\022\023\n\013" +
+      "expireTimer\030\010 \001(\r\022\020\n\010nickname\030e \001(\t\032-\n\006A" +
+      "vatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006length\030\002 \001" +
+      "(\r\"\367\001\n\014GroupDetails\022\n\n\002id\030\001 \001(\014\022\014\n\004name\030" +
+      "\002 \001(\t\022\017\n\007members\030\003 \003(\t\0222\n\006avatar\030\004 \001(\0132\"" +
+      ".signalservice.GroupDetails.Avatar\022\024\n\006ac" +
+      "tive\030\005 \001(\010:\004true\022\023\n\013expireTimer\030\006 \001(\r\022\r\n" +
+      "\005color\030\007 \001(\t\022\017\n\007blocked\030\010 \001(\010\022\016\n\006admins\030" +
+      "\t \003(\t\032-\n\006Avatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006",
+      "length\030\002 \001(\rBE\n.org.whispersystems.signa" +
+      "lservice.internal.pushB\023SignalServicePro" +
+      "tos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -44011,7 +44485,7 @@ public final class SignalServiceProtos {
           internal_static_signalservice_GroupContext_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_GroupContext_descriptor,
-              new java.lang.String[] { "Id", "Type", "Name", "Members", "Avatar", "Admins", });
+              new java.lang.String[] { "Id", "Type", "Name", "Members", "Avatar", "Admins", "NewMembers", "RemovedMembers", });
           internal_static_signalservice_ContactDetails_descriptor =
             getDescriptor().getMessageTypes().get(15);
           internal_static_signalservice_ContactDetails_fieldAccessorTable = new
