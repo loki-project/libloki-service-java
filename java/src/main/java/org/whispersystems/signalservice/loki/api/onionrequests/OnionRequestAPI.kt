@@ -238,7 +238,7 @@ object OnionRequestAPI {
                     val base64EncodedIVAndCiphertext = json["result"] as? String ?: return@Thread deferred.reject(Exception("Invalid JSON"))
                     val ivAndCiphertext = Base64.decode(base64EncodedIVAndCiphertext)
                     val iv = ivAndCiphertext.sliceArray(0 until OnionRequestEncryption.ivSize)
-                    val ciphertext = ivAndCiphertext.sliceArray(OnionRequestEncryption.ivSize until ivAndCiphertext.lastIndex)
+                    val ciphertext = ivAndCiphertext.sliceArray(OnionRequestEncryption.ivSize until ivAndCiphertext.count())
                     try {
                         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
                         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(targetSnodeSymmetricKey, "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
@@ -259,7 +259,6 @@ object OnionRequestAPI {
                     } catch (exception: Exception) {
                         deferred.reject(exception)
                     }
-                    deferred.resolve(json)
                 } catch (exception: Exception) {
                     deferred.reject(exception)
                 }

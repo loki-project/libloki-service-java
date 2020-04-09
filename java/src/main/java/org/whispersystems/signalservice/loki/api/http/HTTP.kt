@@ -1,9 +1,6 @@
 package org.whispersystems.signalservice.loki.api.http
 
-import okhttp3.MediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
+import okhttp3.*
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import java.security.SecureRandom
@@ -58,26 +55,27 @@ object HTTP {
             }
             Verb.DELETE -> request.delete()
         }
+        lateinit var response: Response
         try {
-            val response = connection.newCall(request.build()).execute()
-            when (val statusCode = response.code()) {
-                200 -> {
-                    val bodyAsString = response.body()?.string() ?: throw Exception("An error occurred.")
-                    try {
-                        return JsonUtil.fromJson(bodyAsString, Map::class.java)
-                    } catch (exception: Exception) {
-                        return mapOf( "result" to bodyAsString)
-                    }
-                }
-                else -> {
-                    Log.d("Loki", "${verb.rawValue} request to $url failed with status code: $statusCode.")
-                    throw HTTPRequestFailedException(statusCode, null)
-                }
-            }
+            response = connection.newCall(request.build()).execute()
         } catch (exception: Exception) {
             Log.d("Loki", "${verb.rawValue} request to $url failed due to error: ${exception.localizedMessage}.")
             // Override the actual error so that we can correctly catch failed requests in OnionRequestAPI
             throw HTTPRequestFailedException(0, null)
+        }
+        when (val statusCode = response.code()) {
+            200 -> {
+                val bodyAsString = response.body()?.string() ?: throw Exception("An error occurred.")
+                try {
+                    return JsonUtil.fromJson(bodyAsString, Map::class.java)
+                } catch (exception: Exception) {
+                    return mapOf( "result" to bodyAsString)
+                }
+            }
+            else -> {
+                Log.d("Loki", "${verb.rawValue} request to $url failed with status code: $statusCode.")
+                throw HTTPRequestFailedException(statusCode, null)
+            }
         }
     }
 }
