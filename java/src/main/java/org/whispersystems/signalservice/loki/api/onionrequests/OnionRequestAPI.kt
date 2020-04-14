@@ -177,6 +177,10 @@ object OnionRequestAPI {
         paths = paths.filter { !it.contains(snode) }.toSet()
     }
 
+    private fun dropGuardSnode(snode: Snode) {
+        guardSnodes = guardSnodes.filter { it != snode }.toSet()
+    }
+
     /**
      * Builds an onion around `payload` and returns the result.
      */
@@ -270,6 +274,7 @@ object OnionRequestAPI {
         promise.fail { exception ->
             if (exception is HTTP.HTTPRequestFailedException) {
                 dropPathContaining(guardSnode)
+                dropGuardSnode(guardSnode)
             }
         }
         promise.recover { exception ->
