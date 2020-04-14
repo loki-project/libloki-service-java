@@ -9,7 +9,6 @@ import nl.komponents.kovenant.task
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.http.HTTP
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import org.whispersystems.signalservice.loki.messaging.*
@@ -123,7 +122,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
         } else {
             val deferred = deferred<Map<*, *>, Exception>()
             Thread {
-                val payload = mapOf( "method" to method.rawValue, "params" to JsonUtil.toJson(parameters) )
+                val payload = mapOf( "method" to method.rawValue, "params" to parameters )
                 try {
                     val json = HTTP.execute(HTTP.Verb.POST, url, payload)
                     deferred.resolve(json)

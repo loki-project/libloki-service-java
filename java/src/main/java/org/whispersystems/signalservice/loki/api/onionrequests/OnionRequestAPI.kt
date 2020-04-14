@@ -225,7 +225,7 @@ object OnionRequestAPI {
     internal fun sendOnionRequest(method: LokiAPITarget.Method, snode: Snode, hexEncodedPublicKey: String, parameters: Map<*, *>): Promise<Map<*, *>, Exception> {
         val deferred = deferred<Map<*, *>, Exception>()
         lateinit var guardSnode: Snode
-        val payload = mapOf( "method" to method.rawValue, "params" to JsonUtil.toJson(parameters) )
+        val payload = mapOf( "method" to method.rawValue, "params" to parameters )
         buildOnionForTargetSnode(payload, snode).success { result ->
             guardSnode = result.guardSnode
             val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
