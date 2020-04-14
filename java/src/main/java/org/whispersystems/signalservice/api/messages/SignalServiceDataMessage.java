@@ -10,7 +10,7 @@ import org.whispersystems.libsignal.state.PreKeyBundle;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.loki.api.DeviceLink;
+import org.whispersystems.signalservice.loki.api.multidevice.DeviceLink;
 
 import java.util.LinkedList;
 import java.util.List;

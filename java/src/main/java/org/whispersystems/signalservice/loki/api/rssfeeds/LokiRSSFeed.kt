@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.rssfeeds
 
 public data class LokiRSSFeed(
     public val id: String,

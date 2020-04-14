@@ -28,7 +28,7 @@ import org.whispersystems.signalservice.internal.sticker.StickerProtos;
 import org.whispersystems.signalservice.internal.util.StaticCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Util;
 import org.whispersystems.signalservice.internal.websocket.WebSocketConnection;
-import org.whispersystems.signalservice.loki.api.LokiFileUtilities;
+import org.whispersystems.signalservice.loki.utilities.FileUtilities;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -117,14 +117,14 @@ public class SignalServiceMessageReceiver {
   public InputStream retrieveProfileAvatar(String path, File destination, byte[] profileKey, int maxSizeBytes)
     throws IOException
   {
-    LokiFileUtilities.INSTANCE.downloadFile(destination, path, maxSizeBytes, null);
+    FileUtilities.INSTANCE.downloadFile(destination, path, maxSizeBytes, null);
     return new ProfileCipherInputStream(new FileInputStream(destination), profileKey);
   }
 
   public InputStream retrievePublicProfilePicture(String path, File destination, int maxSizeBytes)
     throws IOException
   {
-    LokiFileUtilities.INSTANCE.downloadFile(destination, path, maxSizeBytes, null);
+    FileUtilities.INSTANCE.downloadFile(destination, path, maxSizeBytes, null);
     return new FileInputStream(destination);
   }
 
@@ -145,7 +145,7 @@ public class SignalServiceMessageReceiver {
   {
     // Loki - Fetch attachment
     if (pointer.getUrl().isEmpty()) throw new InvalidMessageException("Missing attachment URL.");
-    LokiFileUtilities.INSTANCE.downloadFile(destination, pointer.getUrl(), maxSizeBytes, listener);
+    FileUtilities.INSTANCE.downloadFile(destination, pointer.getUrl(), maxSizeBytes, listener);
 
     // Loki - Assume we're retrieving an attachment for a public chat server if the digest is not set
     if (!pointer.getDigest().isPresent()) { return new FileInputStream(destination); }

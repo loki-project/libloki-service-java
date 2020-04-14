@@ -22,12 +22,14 @@ import org.whispersystems.signalservice.internal.push.http.ProfileCipherOutputSt
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
+import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI
+import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerProxy
 import org.whispersystems.signalservice.loki.utilities.recover
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 import java.util.*
 
 /**
- * Abstract base class that provides utilities for .NET based APIs.
+ * Base class that provides utilities for .NET based APIs.
  */
 open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol) {
 

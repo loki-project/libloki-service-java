@@ -1,10 +1,14 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.fileserver
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
+import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.LokiAPIDatabaseProtocol
+import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
+import org.whispersystems.signalservice.loki.api.multidevice.DeviceLink
 import org.whispersystems.signalservice.loki.utilities.PublicKeyValidation
 import org.whispersystems.signalservice.loki.utilities.recover
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
@@ -19,7 +23,9 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
         private val deviceLinkRequestCache = ConcurrentHashMap<String, Promise<Set<DeviceLink>, Exception>>()
         private val deviceLinkUpdateInterval = 60 * 1000
         private val deviceLinkType = "network.loki.messenger.devicemapping"
-        internal val maxRetryCount = 8
+
+        internal val maxRetryCount = 4
+
         public val maxFileSize = 10_000_000 // 10 MB
         // endregion
 
@@ -30,7 +36,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
          * Must be called before `LokiAPI` is used.
          */
         fun configure(isDebugMode: Boolean, userHexEncodedPublicKey: String, userPrivateKey: ByteArray, database: LokiAPIDatabaseProtocol) {
-            if (::shared.isInitialized) { return }
+            if (Companion::shared.isInitialized) { return }
             val server = if (isDebugMode) "https://file-dev.lokinet.org" else "https://file.getsession.org"
             shared = LokiFileServerAPI(server, userHexEncodedPublicKey, userPrivateKey, database)
         }

@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.publicchats
 
 import org.whispersystems.signalservice.internal.util.JsonUtil
 

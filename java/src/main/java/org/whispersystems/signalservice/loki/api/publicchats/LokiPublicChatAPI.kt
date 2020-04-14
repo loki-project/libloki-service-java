@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.publicchats
 
 import nl.komponents.kovenant.Kovenant
 import nl.komponents.kovenant.Promise
@@ -9,6 +9,9 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
+import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.LokiAPIDatabaseProtocol
+import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
 import org.whispersystems.signalservice.loki.messaging.LokiUserDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded

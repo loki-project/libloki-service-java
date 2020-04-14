@@ -1,8 +1,9 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.multidevice
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
+import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI
 
 object LokiDeviceLinkUtilities {
 

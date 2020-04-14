@@ -79,15 +79,14 @@ import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.internal.util.StaticCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Util;
 import org.whispersystems.signalservice.internal.util.concurrent.SettableFuture;
-import org.whispersystems.signalservice.loki.api.DeviceLink;
+import org.whispersystems.signalservice.loki.api.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.api.LokiAPI;
 import org.whispersystems.signalservice.loki.api.LokiAPIDatabaseProtocol;
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI;
-import org.whispersystems.signalservice.loki.api.LokiFileServerAPI;
-import org.whispersystems.signalservice.loki.api.LokiPublicChat;
-import org.whispersystems.signalservice.loki.api.LokiPublicChatAPI;
-import org.whispersystems.signalservice.loki.api.LokiPublicChatMessage;
-import org.whispersystems.signalservice.loki.api.LokiSnodeProxy;
+import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI;
+import org.whispersystems.signalservice.loki.api.publicchats.LokiPublicChat;
+import org.whispersystems.signalservice.loki.api.publicchats.LokiPublicChatAPI;
+import org.whispersystems.signalservice.loki.api.publicchats.LokiPublicChatMessage;
 import org.whispersystems.signalservice.loki.messaging.LokiMessageDatabaseProtocol;
 import org.whispersystems.signalservice.loki.messaging.LokiPreKeyBundleDatabaseProtocol;
 import org.whispersystems.signalservice.loki.messaging.LokiSyncMessage;
@@ -1224,8 +1223,7 @@ public class SignalServiceMessageSender {
       // TODO: PoW indicator
       // Update the message and thread if needed
       if (isFriendRequestMessage && updateFriendRequestStatus && eventListener.isPresent()) { eventListener.get().onFriendRequestSending(messageID, threadID); }
-      LokiAPI api = new LokiAPI(userHexEncodedPublicKey, apiDatabase, broadcaster);
-      api.sendSignalMessage(messageInfo, new Function0<Unit>() {
+      LokiAPI.shared.sendSignalMessage(messageInfo, new Function0<Unit>() {
 
         @Override
         public Unit invoke() {
