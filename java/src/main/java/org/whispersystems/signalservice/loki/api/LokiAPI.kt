@@ -250,8 +250,12 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
     private fun updateLastMessageHashValueIfPossible(target: LokiAPITarget, rawMessages: List<*>) {
         val lastMessageAsJSON = rawMessages.lastOrNull() as? Map<*, *>
         val hashValue = lastMessageAsJSON?.get("hash") as? String
+        val expiration = lastMessageAsJSON?.get("expiration") as? Int
         if (hashValue != null) {
             database.setLastMessageHashValue(target, hashValue)
+            if (expiration != null) {
+                LokiPushNotificationAcknowledgement.acknowledgeDeliveryForMessageWith(hashValue, expiration, userHexEncodedPublicKey)
+            }
         } else if (rawMessages.isNotEmpty()) {
             Log.d("Loki", "Failed to update last message hash value from: ${rawMessages.prettifiedDescription()}.")
         }
