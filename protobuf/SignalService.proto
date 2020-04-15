@@ -385,6 +385,12 @@ message GroupContext {
   repeated string            members = 4;
   optional AttachmentPointer avatar  = 5;
   repeated string            admins  = 6;
+
+  // Loki Android - These fields are used only internally for the android code base
+  // This is so that we can differentiate adding/kicking
+  // DO NOT USE THEM WHEN SENDING MESSAGES
+  repeated string           newMembers = 998;
+  repeated string           removedMembers = 999;
 }
 
 message ContactDetails {
