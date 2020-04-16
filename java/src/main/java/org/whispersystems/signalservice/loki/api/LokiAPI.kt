@@ -255,7 +255,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
             database.setLastMessageHashValue(target, hashValue)
             // FIXME: Move this out of here
             if (expiration != null) {
-                LokiPushNotificationAcknowledgement.acknowledgeDeliveryForMessageWith(hashValue, expiration, userHexEncodedPublicKey)
+                LokiPushNotificationAcknowledgement.shared.acknowledgeDeliveryForMessageWith(hashValue, expiration, userHexEncodedPublicKey)
             }
         } else if (rawMessages.isNotEmpty()) {
             Log.d("Loki", "Failed to update last message hash value from: ${rawMessages.prettifiedDescription()}.")
