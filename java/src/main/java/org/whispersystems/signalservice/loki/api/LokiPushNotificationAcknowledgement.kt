@@ -32,7 +32,7 @@ public class LokiPushNotificationAcknowledgement private constructor(public val 
                         val json = JsonUtil.fromJson(bodyAsString, Map::class.java)
                         val code  = json?.get("code") as? Int
                         if (code == null || code == 0) {
-                            Log.d("Loki", "Couldn't acknowledge delivery for message with hash: $hash due to error: ${json?.get("message") as? String ?: "nil"}.")
+                            Log.d("Loki", "Couldn't acknowledge delivery for message with hash: $hash due to error: ${json?.get("message") as? String ?: "null"}.")
                         }
                     }
                 }
