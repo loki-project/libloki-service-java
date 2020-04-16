@@ -253,6 +253,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
         val expiration = lastMessageAsJSON?.get("expiration") as? Int
         if (hashValue != null) {
             database.setLastMessageHashValue(target, hashValue)
+            // FIXME: Move this out of here
             if (expiration != null) {
                 LokiPushNotificationAcknowledgement.acknowledgeDeliveryForMessageWith(hashValue, expiration, userHexEncodedPublicKey)
             }

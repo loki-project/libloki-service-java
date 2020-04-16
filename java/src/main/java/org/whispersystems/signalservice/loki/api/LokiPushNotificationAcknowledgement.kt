@@ -5,14 +5,22 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import java.io.IOException
 
-object LokiPushNotificationAcknowledgement {
-    //const val server = "https://live.apns.getsession.org/"
-    const val server = "https://dev.apns.getsession.org/"
+public class LokiPushNotificationAcknowledgement private constructor(public val server: String) {
     private val connection = OkHttpClient()
 
+    companion object {
+        lateinit var shared: LokiPushNotificationAcknowledgement
+
+        fun configureIfNeeded(isDebugMode: Boolean) {
+            if (::shared.isInitialized) { return; }
+            val server = if (isDebugMode) "https://dev.apns.getsession.org" else "https://live.apns.getsession.org"
+            shared = LokiPushNotificationAcknowledgement(server)
+        }
+    }
+
     fun acknowledgeDeliveryForMessageWith(hash: String, expiration: Int, hexEncodedPublicKey: String) {
-        val parameters = mapOf("hash" to hash, "pubKey" to hexEncodedPublicKey, "expiration" to expiration)
-        val url = "${server}acknowledge_message_delivery"
+        val parameters = mapOf( "hash" to hash, "pubKey" to hexEncodedPublicKey, "expiration" to expiration )
+        val url = "${server}/acknowledge_message_delivery"
         val body = RequestBody.create(MediaType.get("application/json"), JsonUtil.toJson(parameters))
         val request = Request.Builder().url(url).post(body).build()
         connection.newCall(request).enqueue(object : Callback {
@@ -24,14 +32,14 @@ object LokiPushNotificationAcknowledgement {
                         val json = JsonUtil.fromJson(bodyAsString, Map::class.java)
                         val code  = json?.get("code") as? Int
                         if (code == null || code == 0) {
-                            Log.d("Loki", "Couldn't acknowledge the delivery for message due to error: ${json?.get("message") as? String}.")
+                            Log.d("Loki", "Couldn't acknowledge delivery for message with hash: $hash due to error: ${json?.get("message") as? String ?: "nil"}.")
                         }
                     }
                 }
             }
 
             override fun onFailure(call: Call, exception: IOException) {
-                Log.d("Loki", "Couldn't acknowledge the delivery for message with last hash: ${hash}")
+                Log.d("Loki", "Couldn't acknowledge delivery for message with hash: $hash.")
             }
         })
     }
