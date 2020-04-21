@@ -45,7 +45,6 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
         private val useOnionRequests = true
 
         internal val defaultTimeout: Long = 20
-        internal val defaultMessageTTL = 24 * 60 * 60 * 1000
         internal var powDifficulty = 2
         // endregion
 

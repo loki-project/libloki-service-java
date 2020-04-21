@@ -1,6 +1,7 @@
 package org.whispersystems.signalservice.api.messages;
 
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.loki.messaging.TTLUtilities;
 
 public class SignalServiceTypingMessage {
 
@@ -38,6 +39,5 @@ public class SignalServiceTypingMessage {
     return action == Action.STOPPED;
   }
 
-  // 1 minute
-  public int getTTL() { return 2 * 60 * 1000; }
+  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.TypingIndicator); }
 }

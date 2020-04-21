@@ -7,6 +7,7 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.loki.crypto.ProofOfWork
 import org.whispersystems.signalservice.loki.messaging.LokiMessageWrapper
 import org.whispersystems.signalservice.loki.messaging.SignalMessageInfo
+import org.whispersystems.signalservice.loki.messaging.TTLUtilities
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 
 internal data class LokiMessage(
@@ -45,7 +46,7 @@ internal data class LokiMessage(
                 val wrappedMessage = LokiMessageWrapper.wrap(message)
                 val data = Base64.encodeBytes(wrappedMessage)
                 val destination = message.recipientID
-                var ttl = LokiAPI.defaultMessageTTL
+                var ttl = TTLUtilities.fallbackMessageTTL
                 val messageTTL = message.ttl
                 if (messageTTL != null && messageTTL != 0) { ttl = messageTTL }
                 val isPing = message.isPing
