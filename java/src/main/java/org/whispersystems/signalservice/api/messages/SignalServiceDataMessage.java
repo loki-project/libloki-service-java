@@ -11,6 +11,7 @@ import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.loki.api.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.messaging.TTLUtilities;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -289,11 +290,12 @@ public class SignalServiceDataMessage {
   }
 
   public int getTTL() {
-    int minute = 60 * 1000;
-    int day = 24 * 60 * minute;
-    if (deviceLink.isPresent()) { return 2 * minute; }
-    if (isFriendRequest || isUnlinkingRequest) { return 4 * day; }
-    return day;
+    TTLUtilities.MessageType messageType = TTLUtilities.MessageType.Regular;
+    if (deviceLink.isPresent()) { messageType = TTLUtilities.MessageType.LinkDevice; }
+    else if (isFriendRequest) { messageType = TTLUtilities.MessageType.FriendRequest; }
+    else if (isUnlinkingRequest) { messageType = TTLUtilities.MessageType.UnlinkDevice; }
+    else if (isSessionRequest) { messageType = TTLUtilities.MessageType.SessionRequest; }
+    return TTLUtilities.getTTL$signal_service_java(messageType);
   }
 
   public boolean hasData() {
