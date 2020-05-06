@@ -9,6 +9,7 @@ package org.whispersystems.signalservice.api.messages.multidevice;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChat;
+import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -244,5 +245,5 @@ public class SignalServiceSyncMessage {
 
   public Optional<List<LokiPublicChat>> getOpenGroups() { return openGroups; }
 
-  public int getTTL() { return 24 * 60 * 60 * 1000; }
+  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.SignalServiceSyncMessage); }
 }

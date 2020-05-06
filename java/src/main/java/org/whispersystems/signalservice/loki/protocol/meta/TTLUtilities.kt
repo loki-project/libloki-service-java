@@ -14,8 +14,12 @@ internal object TTLUtilities {
         LinkDevice,
         Regular,
         SessionRequest,
+        SignalServiceCallMessage, // TODO: Apparently these are a thing too
+        SignalServiceReceiptMessage,
+        SignalServiceSyncMessage,
         TypingIndicator,
-        UnlinkDevice
+        UnlinkDevice,
+        VerifiedMessage // TODO: I'm not sure when these are sent
     }
 
     @JvmStatic
@@ -30,8 +34,12 @@ internal object TTLUtilities {
             MessageType.LinkDevice -> 4 * minuteInMs
             MessageType.Regular -> 2 * dayInMs
             MessageType.SessionRequest -> 4 * dayInMs - 1 * hourInMs
+            MessageType.SignalServiceCallMessage -> 2 * minuteInMs
+            MessageType.SignalServiceReceiptMessage -> dayInMs
+            MessageType.SignalServiceSyncMessage -> dayInMs
             MessageType.TypingIndicator -> 1 * minuteInMs
             MessageType.UnlinkDevice -> 4 * dayInMs
+            MessageType.VerifiedMessage -> dayInMs
         }
     }
 }

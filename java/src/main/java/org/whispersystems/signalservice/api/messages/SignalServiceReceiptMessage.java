@@ -1,6 +1,8 @@
 package org.whispersystems.signalservice.api.messages;
 
 
+import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
+
 import java.util.List;
 
 public class SignalServiceReceiptMessage {
@@ -39,5 +41,5 @@ public class SignalServiceReceiptMessage {
     return type == Type.READ;
   }
 
-  public int getTTL() { return 24 * 60 * 60 * 1000; }
+  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.SignalServiceReceiptMessage); }
 }

@@ -13,7 +13,6 @@ import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceMessage;
 
 public class SignalServiceContent {
-
   private final String  sender;
   private final int     senderDevice;
   private final long    timestamp;
@@ -33,73 +32,68 @@ public class SignalServiceContent {
   public Optional<String> senderProfilePictureURL = Optional.absent();
 
   public SignalServiceContent(LokiServiceMessage lokiServiceMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest) {
-    this.sender          = sender;
-    this.senderDevice    = senderDevice;
-    this.timestamp       = timestamp;
-    this.needsReceipt    = needsReceipt;
-    this.isFriendRequest = isFriendRequest;
-
-    this.message              = Optional.absent();
-    this.synchronizeMessage   = Optional.absent();
-    this.callMessage          = Optional.absent();
-    this.readMessage          = Optional.absent();
-    this.typingMessage        = Optional.absent();
-    this.deviceLink = Optional.absent();
-    this.lokiServiceMessage   = Optional.fromNullable(lokiServiceMessage);
+    this.sender             = sender;
+    this.senderDevice       = senderDevice;
+    this.timestamp          = timestamp;
+    this.needsReceipt       = needsReceipt;
+    this.isFriendRequest    = isFriendRequest;
+    this.message            = Optional.absent();
+    this.synchronizeMessage = Optional.absent();
+    this.callMessage        = Optional.absent();
+    this.readMessage        = Optional.absent();
+    this.typingMessage      = Optional.absent();
+    this.deviceLink         = Optional.absent();
+    this.lokiServiceMessage = Optional.fromNullable(lokiServiceMessage);
   }
 
   public SignalServiceContent(SignalServiceDataMessage message, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest) {
-    this.sender          = sender;
-    this.senderDevice    = senderDevice;
-    this.timestamp       = timestamp;
-    this.needsReceipt    = needsReceipt;
-    this.isFriendRequest = isFriendRequest;
-
+    this.sender             = sender;
+    this.senderDevice       = senderDevice;
+    this.timestamp          = timestamp;
+    this.needsReceipt       = needsReceipt;
+    this.isFriendRequest    = isFriendRequest;
     this.message            = Optional.fromNullable(message);
     this.synchronizeMessage = Optional.absent();
     this.callMessage        = Optional.absent();
     this.readMessage        = Optional.absent();
     this.typingMessage      = Optional.absent();
-    this.deviceLink = Optional.absent();
+    this.deviceLink         = Optional.absent();
   }
 
   public SignalServiceContent(SignalServiceSyncMessage synchronizeMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest) {
-    this.sender          = sender;
-    this.senderDevice    = senderDevice;
-    this.timestamp       = timestamp;
-    this.needsReceipt    = needsReceipt;
-    this.isFriendRequest = isFriendRequest;
-
+    this.sender             = sender;
+    this.senderDevice       = senderDevice;
+    this.timestamp          = timestamp;
+    this.needsReceipt       = needsReceipt;
+    this.isFriendRequest    = isFriendRequest;
     this.message            = Optional.absent();
     this.synchronizeMessage = Optional.fromNullable(synchronizeMessage);
     this.callMessage        = Optional.absent();
     this.readMessage        = Optional.absent();
     this.typingMessage      = Optional.absent();
-    this.deviceLink = Optional.absent();
+    this.deviceLink         = Optional.absent();
   }
 
   public SignalServiceContent(SignalServiceCallMessage callMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest) {
-    this.sender          = sender;
-    this.senderDevice    = senderDevice;
-    this.timestamp       = timestamp;
-    this.needsReceipt    = needsReceipt;
-    this.isFriendRequest = isFriendRequest;
-
+    this.sender             = sender;
+    this.senderDevice       = senderDevice;
+    this.timestamp          = timestamp;
+    this.needsReceipt       = needsReceipt;
+    this.isFriendRequest    = isFriendRequest;
     this.message            = Optional.absent();
     this.synchronizeMessage = Optional.absent();
     this.callMessage        = Optional.of(callMessage);
     this.readMessage        = Optional.absent();
     this.typingMessage      = Optional.absent();
-    this.deviceLink = Optional.absent();
+    this.deviceLink         = Optional.absent();
   }
 
   public SignalServiceContent(SignalServiceReceiptMessage receiptMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest) {
-    this.sender          = sender;
-    this.senderDevice    = senderDevice;
-    this.timestamp       = timestamp;
-    this.needsReceipt    = needsReceipt;
-    this.isFriendRequest = isFriendRequest;
-
+    this.sender             = sender;
+    this.senderDevice       = senderDevice;
+    this.timestamp          = timestamp;
+    this.needsReceipt       = needsReceipt;
+    this.isFriendRequest    = isFriendRequest;
     this.message            = Optional.absent();
     this.synchronizeMessage = Optional.absent();
     this.callMessage        = Optional.absent();
@@ -109,12 +103,11 @@ public class SignalServiceContent {
   }
 
   public SignalServiceContent(SignalServiceTypingMessage typingMessage, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest) {
-    this.sender          = sender;
-    this.senderDevice    = senderDevice;
-    this.timestamp       = timestamp;
-    this.needsReceipt    = needsReceipt;
-    this.isFriendRequest = isFriendRequest;
-
+    this.sender             = sender;
+    this.senderDevice       = senderDevice;
+    this.timestamp          = timestamp;
+    this.needsReceipt       = needsReceipt;
+    this.isFriendRequest    = isFriendRequest;
     this.message            = Optional.absent();
     this.synchronizeMessage = Optional.absent();
     this.callMessage        = Optional.absent();
@@ -124,12 +117,11 @@ public class SignalServiceContent {
   }
 
   public SignalServiceContent(DeviceLink deviceLink, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest) {
-    this.sender          = sender;
-    this.senderDevice    = senderDevice;
-    this.timestamp       = timestamp;
-    this.needsReceipt    = needsReceipt;
-    this.isFriendRequest = isFriendRequest;
-
+    this.sender             = sender;
+    this.senderDevice       = senderDevice;
+    this.timestamp          = timestamp;
+    this.needsReceipt       = needsReceipt;
+    this.isFriendRequest    = isFriendRequest;
     this.message            = Optional.absent();
     this.synchronizeMessage = Optional.absent();
     this.callMessage        = Optional.absent();
@@ -176,10 +168,12 @@ public class SignalServiceContent {
     return needsReceipt;
   }
 
+  // Loki
   public boolean isFriendRequest() { return isFriendRequest; }
 
-  // Loki
   public void setLokiServiceMessage(LokiServiceMessage lokiServiceMessage) { this.lokiServiceMessage = Optional.fromNullable(lokiServiceMessage); }
+
   public void setSenderDisplayName(String displayName) { senderDisplayName = Optional.fromNullable(displayName); }
+
   public void setSenderProfilePictureURL(String url) { senderProfilePictureURL = Optional.fromNullable(url); }
 }
