@@ -6,13 +6,12 @@ import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
-import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.LokiAPI
 import org.whispersystems.signalservice.loki.api.LokiAPITarget
 import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
-import org.whispersystems.signalservice.loki.api.http.HTTP
+import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
 import org.whispersystems.signalservice.loki.utilities.recover

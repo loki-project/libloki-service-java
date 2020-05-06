@@ -9,9 +9,10 @@ import nl.komponents.kovenant.task
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.loki.api.http.HTTP
+import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
-import org.whispersystems.signalservice.loki.messaging.*
+import org.whispersystems.signalservice.loki.api.p2p.LokiP2PAPI
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription

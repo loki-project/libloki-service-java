@@ -80,11 +80,11 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMe
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.TypingMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
 import org.whispersystems.signalservice.internal.util.Base64;
-import org.whispersystems.signalservice.loki.api.multidevice.DeviceLink;
-import org.whispersystems.signalservice.loki.api.publicchats.LokiPublicChat;
-import org.whispersystems.signalservice.loki.messaging.LokiServiceAddressMessage;
-import org.whispersystems.signalservice.loki.messaging.LokiServiceMessage;
-import org.whispersystems.signalservice.loki.messaging.LokiServicePreKeyBundleMessage;
+import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChat;
+import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceAddressMessage;
+import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceMessage;
+import org.whispersystems.signalservice.loki.protocol.meta.LokiServicePreKeyBundleMessage;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;

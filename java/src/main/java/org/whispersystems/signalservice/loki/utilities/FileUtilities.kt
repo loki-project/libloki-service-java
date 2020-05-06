@@ -14,11 +14,17 @@ import java.util.concurrent.TimeUnit
 
 object FileUtilities {
 
+  /**
+   * Blocks the calling thread.
+   */
   fun downloadFile(destination: File, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
     val outputStream = FileOutputStream(destination) // Throws
     downloadFile(outputStream, url, maxSize, listener)
   }
 
+  /**
+   * Blocks the calling thread.
+   */
   fun downloadFile(outputStream: OutputStream, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
     // We need to throw a PushNetworkException or NonSuccessfulResponseCodeException
     // because the underlying Signal logic requires these to work correctly

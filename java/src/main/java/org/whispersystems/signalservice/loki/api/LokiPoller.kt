@@ -4,6 +4,7 @@ import nl.komponents.kovenant.*
 import nl.komponents.kovenant.functional.bind
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import java.security.SecureRandom
 import java.util.*
 

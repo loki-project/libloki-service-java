@@ -71,7 +71,7 @@ fun <V> Promise<V, Exception>.timeout(millis: Long): Promise<V, Exception> {
       deferred.reject(TimeoutException("Promise timed out."))
     }
   }.start()
-  this.success {
+  success {
     if (!deferred.promise.isDone()) { deferred.resolve(it) }
   }.fail {
     if (!deferred.promise.isDone()) { deferred.reject(it) }

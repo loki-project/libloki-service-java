@@ -1,7 +1,7 @@
 package org.whispersystems.signalservice.api.messages;
 
 import org.whispersystems.libsignal.util.guava.Optional;
-import org.whispersystems.signalservice.loki.messaging.TTLUtilities;
+import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 
 public class SignalServiceTypingMessage {
 

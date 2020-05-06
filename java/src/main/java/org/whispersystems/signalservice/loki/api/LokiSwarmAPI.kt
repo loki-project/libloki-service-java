@@ -12,7 +12,8 @@ import okhttp3.Request
 import okhttp3.Response
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.loki.api.http.HTTP
+import org.whispersystems.signalservice.loki.api.utilities.HTTP
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 import java.io.IOException

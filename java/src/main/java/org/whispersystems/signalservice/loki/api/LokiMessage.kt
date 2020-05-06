@@ -4,10 +4,8 @@ import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.loki.crypto.ProofOfWork
-import org.whispersystems.signalservice.loki.messaging.LokiMessageWrapper
-import org.whispersystems.signalservice.loki.messaging.SignalMessageInfo
-import org.whispersystems.signalservice.loki.messaging.TTLUtilities
+import org.whispersystems.signalservice.loki.api.crypto.ProofOfWork
+import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 
 internal data class LokiMessage(
