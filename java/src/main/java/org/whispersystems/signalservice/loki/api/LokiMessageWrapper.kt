@@ -29,9 +29,7 @@ object LokiMessageWrapper {
             val webSocketMessage = createWebSocketMessage(envelope)
             return webSocketMessage.toByteArray()
         } catch (e: Exception) {
-            throw if (e is Error) { e } else {
-                Error.FailedToWrapData
-            }
+            throw if (e is Error) { e } else { Error.FailedToWrapData }
         }
     }
 
