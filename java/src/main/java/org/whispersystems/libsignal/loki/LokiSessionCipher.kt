@@ -12,7 +12,7 @@ import org.whispersystems.libsignal.state.SignalProtocolStore
  * A wrapper class for `SessionCipher`.
  * This applies session reset logic on decryption.
  */
-class LokiSessionCipher(private val protocolStore: SignalProtocolStore, private var sessionResetProtocol: LokiSessionResetProtocol, val address: SignalProtocolAddress): SessionCipher(protocolStore, address) {
+class LokiSessionCipher(private val protocolStore: SignalProtocolStore, private var sessionResetProtocol: LokiSessionResetProtocol, val address: SignalProtocolAddress) : SessionCipher(protocolStore, address) {
 
     override fun decrypt(ciphertext: PreKeySignalMessage?, callback: DecryptionCallback?): ByteArray {
         // Record the current session state as it may change during decryption

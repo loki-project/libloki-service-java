@@ -2,7 +2,7 @@ package org.whispersystems.libsignal.loki
 
 import org.whispersystems.libsignal.protocol.CiphertextMessage
 
-class LokiFriendRequestMessage(private val paddedMessageBody: ByteArray): CiphertextMessage {
+class LokiFriendRequestMessage(private val paddedMessageBody: ByteArray) : CiphertextMessage {
 
     override fun serialize(): ByteArray {
         return paddedMessageBody
