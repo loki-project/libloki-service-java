@@ -11,6 +11,7 @@ import com.google.protobuf.ByteString;
 import org.whispersystems.libsignal.InvalidVersionException;
 import org.whispersystems.libsignal.logging.Log;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope;
 import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.internal.util.Hex;
@@ -94,6 +95,29 @@ public class SignalServiceEnvelope {
 
       this.envelope = Envelope.parseFrom(getPlaintext(input, cipherKey));
     }
+  }
+
+  public SignalServiceEnvelope(SignalServiceProtos.Envelope proto) {
+    Envelope.Builder builder = Envelope.newBuilder();
+    builder.setType(Envelope.Type.valueOf(proto.getType().getNumber()));
+    if (proto.getSource() != null) {
+      builder.setSource(proto.getSource());
+    }
+    if (proto.getSourceDevice() > 0) {
+      builder.setSourceDevice(proto.getSourceDevice());
+    }
+    builder.setTimestamp(proto.getTimestamp());
+    builder.setServerTimestamp(proto.getServerTimestamp());
+    if (proto.getServerGuid() != null) {
+      builder.setServerGuid(proto.getServerGuid());
+    }
+    if (proto.getLegacyMessage() != null) {
+      builder.setLegacyMessage(ByteString.copyFrom(proto.getLegacyMessage().toByteArray()));
+    }
+    if (proto.getContent() != null) {
+      builder.setContent(ByteString.copyFrom(proto.getContent().toByteArray()));
+    }
+    this.envelope = builder.build();
   }
 
   public SignalServiceEnvelope(int type, String sender, int senderDevice, long timestamp, byte[] legacyMessage, byte[] content, long serverTimestamp, String uuid) {
