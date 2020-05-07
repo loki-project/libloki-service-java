@@ -40,11 +40,9 @@ class LokiSessionCipher(private val protocolStore: SignalProtocolStore, private 
 
     private fun handleSessionResetRequestIfNeeded(oldSession: SessionState?) {
         if (oldSession == null) { return }
-
         val hexEncodedPublicKey = address.name
         val currentSessionResetStatus = sessionResetProtocol.getSessionResetStatus(hexEncodedPublicKey)
         if (currentSessionResetStatus == LokiSessionResetStatus.NONE) return
-
         val currentSession = getCurrentSessionState()
         if (currentSession == null || currentSession.aliceBaseKey?.contentEquals(oldSession.aliceBaseKey) != true) {
             if (currentSessionResetStatus == LokiSessionResetStatus.REQUEST_RECEIVED) {

@@ -174,6 +174,7 @@ public class SignalServiceCipher {
         Plaintext plaintext = decrypt(envelope, envelope.getContent());
         Content   message   = Content.parseFrom(plaintext.getData());
 
+        // Loki - Parse pre key bundle message if needed
         LokiServicePreKeyBundleMessage lokiPreKeyBundleMessage = null;
         if (message.hasPreKeyBundleMessage()) {
           SignalServiceProtos.PrekeyBundleMessage preKeyBundleMessage = message.getPreKeyBundleMessage();
@@ -188,14 +189,18 @@ public class SignalServiceCipher {
           );
         }
 
+        // Loki - Parse address message if needed
         LokiServiceAddressMessage lokiAddressMessage = null;
         if (message.hasLokiAddressMessage()) {
           SignalServiceProtos.LokiAddressMessage addressMessage = message.getLokiAddressMessage();
           lokiAddressMessage = new LokiServiceAddressMessage(addressMessage.getPtpAddress(), addressMessage.getPtpPort());
         }
 
+        // Loki - Create Loki service message
         LokiServiceMessage lokiServiceMessage = new LokiServiceMessage(lokiPreKeyBundleMessage, lokiAddressMessage);
+
         if (message.hasPairingAuthorisation()) {
+          // Loki - Parse device link message
           SignalServiceProtos.PairingAuthorisationMessage deviceLinkMessage = message.getPairingAuthorisation();
           String masterHexEncodedPublicKey = deviceLinkMessage.getPrimaryDevicePublicKey();
           String slaveHexEncodedPublicKey = deviceLinkMessage.getSecondaryDevicePublicKey();
@@ -204,19 +209,24 @@ public class SignalServiceCipher {
           DeviceLink deviceLink = new DeviceLink(masterHexEncodedPublicKey, slaveHexEncodedPublicKey, requestSignature, authorizationSignature);
           SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
           SignalServiceContent content = new SignalServiceContent(deviceLink, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp(), false, metadata.isFriendRequest());
+
+          // Loki - Attach service message
           content.setLokiServiceMessage(lokiServiceMessage);
 
+          // Loki - Attach sync message if needed
           if (message.hasSyncMessage() && message.getSyncMessage().hasContacts()) {
             SignalServiceSyncMessage syncMessage = createSynchronizeMessage(metadata, message.getSyncMessage());
             content.setSyncMessage(syncMessage);
           }
 
+          // Loki - Attach profile & data message if needed
           if (message.hasDataMessage()) {
             setProfile(message.getDataMessage(), content);
             SignalServiceDataMessage dataMessage = createSignalServiceMessage(metadata, message.getDataMessage(), envelope.isFriendRequest());
             content.setDataMessage(dataMessage);
           }
 
+          // Return
           return content;
         } else if (message.hasDataMessage()) {
           DataMessage dataMessage = message.getDataMessage();
@@ -231,7 +241,9 @@ public class SignalServiceCipher {
               plaintext.getMetadata().isNeedsReceipt(),
               plaintext.getMetadata().isFriendRequest());
 
+          // Loki - Attach service message
           content.setLokiServiceMessage(lokiServiceMessage);
+          // Loki - Attach profile if needed
           setProfile(dataMessage, content);
 
           return content;
@@ -245,7 +257,7 @@ public class SignalServiceCipher {
               plaintext.getMetadata().isNeedsReceipt(),
               plaintext.getMetadata().isFriendRequest());
 
-          // Loki - Update profile if needed
+          // Loki - Attach profile if needed
           if (message.getSyncMessage().hasSent() && message.getSyncMessage().getSent().hasMessage()) {
             DataMessage dataMessage = message.getSyncMessage().getSent().getMessage();
             setProfile(dataMessage, content);
@@ -276,7 +288,7 @@ public class SignalServiceCipher {
         }
 
       // Check if we have any of the Loki specific data set. If so then return that content.
-      // This will be triggered on desktop friend request background messages.
+      // This will be triggered on e.g. desktop friend request background messages.
       if (lokiServiceMessage.isValid()) {
         SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
         return new SignalServiceContent(lokiServiceMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp(), false, metadata.isFriendRequest());

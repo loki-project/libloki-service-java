@@ -157,22 +157,22 @@ public class SignalServiceDataMessage {
                                   Sticker sticker, boolean isFriendRequest, PreKeyBundle preKeyBundle, DeviceLink deviceLink,
                                   boolean isUnlinkingRequest, boolean isSessionRestorationRequest, boolean isSessionRequest)
   {
-    this.timestamp             = timestamp;
-    this.body                  = Optional.fromNullable(body);
-    this.group                 = Optional.fromNullable(group);
-    this.endSession            = endSession;
-    this.expiresInSeconds      = expiresInSeconds;
-    this.expirationUpdate      = expirationUpdate;
-    this.profileKey            = Optional.fromNullable(profileKey);
-    this.profileKeyUpdate      = profileKeyUpdate;
-    this.quote                 = Optional.fromNullable(quote);
-    this.sticker               = Optional.fromNullable(sticker);
-    this.isFriendRequest       = isFriendRequest;
-    this.preKeyBundle          = Optional.fromNullable(preKeyBundle);
-    this.deviceLink            = Optional.fromNullable(deviceLink);
-    this.isUnlinkingRequest    = isUnlinkingRequest;
-    this.isSessionRestorationRequest  = isSessionRestorationRequest;
-    this.isSessionRequest      = isSessionRequest;
+    this.timestamp                   = timestamp;
+    this.body                        = Optional.fromNullable(body);
+    this.group                       = Optional.fromNullable(group);
+    this.endSession                  = endSession;
+    this.expiresInSeconds            = expiresInSeconds;
+    this.expirationUpdate            = expirationUpdate;
+    this.profileKey                  = Optional.fromNullable(profileKey);
+    this.profileKeyUpdate            = profileKeyUpdate;
+    this.quote                       = Optional.fromNullable(quote);
+    this.sticker                     = Optional.fromNullable(sticker);
+    this.isFriendRequest             = isFriendRequest;
+    this.preKeyBundle                = Optional.fromNullable(preKeyBundle);
+    this.deviceLink                  = Optional.fromNullable(deviceLink);
+    this.isUnlinkingRequest          = isUnlinkingRequest;
+    this.isSessionRestorationRequest = isSessionRestorationRequest;
+    this.isSessionRequest            = isSessionRequest;
 
     if (attachments != null && !attachments.isEmpty()) {
       this.attachments = Optional.of(attachments);
@@ -320,7 +320,7 @@ public class SignalServiceDataMessage {
     private PreKeyBundle         preKeyBundle;
     private DeviceLink           deviceLink;
     private boolean              isUnlinkingRequest;
-    private boolean isSessionRestorationRequest;
+    private boolean              isSessionRestorationRequest;
     private boolean              isSessionRequest;
 
     private Builder() {}
