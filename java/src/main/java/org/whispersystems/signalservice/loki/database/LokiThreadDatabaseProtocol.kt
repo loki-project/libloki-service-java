@@ -10,4 +10,5 @@ interface LokiThreadDatabaseProtocol {
     fun getPublicChat(threadID: Long): LokiPublicChat?
     fun setPublicChat(publicChat: LokiPublicChat, threadID: Long)
     fun removePublicChat(threadID: Long)
+    fun isClosedGroup(threadID: Long): Boolean
 }

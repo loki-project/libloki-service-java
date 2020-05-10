@@ -10,9 +10,8 @@ import org.whispersystems.libsignal.state.PreKeyBundle;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.loki.protocol.meta.SessionMetaProtocol;
-import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
+import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -283,14 +282,6 @@ public class SignalServiceDataMessage {
   public Optional<PreKeyBundle> getPreKeyBundle() { return preKeyBundle; }
 
   public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
-
-  public boolean canSyncMessage() {
-    return SessionMetaProtocol.canSyncDataMessage(this);
-  }
-
-  private boolean canSyncGroupMessage() {
-      return SessionMetaProtocol.canSyncGroupDataMessage(this);
-  }
 
   public int getTTL() {
     TTLUtilities.MessageType messageType = TTLUtilities.MessageType.Regular;
