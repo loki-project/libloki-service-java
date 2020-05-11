@@ -643,7 +643,7 @@ public class SignalServiceMessageSender {
     }
     if (displayName != null) { profile.setDisplayName(displayName); }
     String profilePictureURL = userDatabase.getProfilePictureURL(userHexEncodedPublicKey);
-    Boolean shouldIncludeProfilePicture = !message.isFriendRequest() && profilePictureURL != null;
+    boolean shouldIncludeProfilePicture = !message.isFriendRequest() && profilePictureURL != null;
     profile.setAvatar(shouldIncludeProfilePicture ? profilePictureURL : "");
     builder.setProfile(profile);
 

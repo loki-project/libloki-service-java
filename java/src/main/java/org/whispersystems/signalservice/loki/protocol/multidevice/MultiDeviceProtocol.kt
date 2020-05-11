@@ -22,6 +22,12 @@ public class MultiDeviceProtocol(private val apiDatabase: LokiAPIDatabaseProtoco
         return deviceLinks.firstOrNull { it.slaveHexEncodedPublicKey == hexEncodedPublicKey }?.masterHexEncodedPublicKey
     }
 
+    public fun getSlaveDevices(hexEncodedPublicKey: String): Set<String> {
+        val deviceLinks = apiDatabase.getDeviceLinks(hexEncodedPublicKey)
+        if (deviceLinks.isEmpty()) { return setOf() }
+        return deviceLinks.map { it.slaveHexEncodedPublicKey }.toSet()
+    }
+
     public fun getAllLinkedDevices(hexEncodedPublicKey: String): Set<String> {
         val deviceLinks = apiDatabase.getDeviceLinks(hexEncodedPublicKey)
         if (deviceLinks.isEmpty()) { return setOf( hexEncodedPublicKey ) }
