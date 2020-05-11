@@ -3,8 +3,19 @@ package org.whispersystems.signalservice.loki.protocol.mentions
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 
-public object MentionsManager {
+class MentionsManager(private val userHexEncodedPublicKey: String, private val threadDatabase: LokiThreadDatabaseProtocol,
+        private val userDatabase: LokiUserDatabaseProtocol) {
     var userHexEncodedPublicKeyCache = mutableMapOf<Long, Set<String>>() // Thread ID to set of user hex encoded public keys
+
+    companion object {
+
+        public lateinit var shared: MentionsManager
+
+        public fun configureIfNeeded(userHexEncodedPublicKey: String, threadDatabase: LokiThreadDatabaseProtocol, userDatabase: LokiUserDatabaseProtocol) {
+            if (::shared.isInitialized) { return; }
+            shared = MentionsManager(userHexEncodedPublicKey, threadDatabase, userDatabase)
+        }
+    }
 
     fun cache(hexEncodedPublicKey: String, threadID: Long) {
         val cache = userHexEncodedPublicKeyCache[threadID]
@@ -15,7 +26,7 @@ public object MentionsManager {
         }
     }
 
-    fun getMentionCandidates(query: String, threadID: Long, userHexEncodedPublicKey: String, threadDatabase: LokiThreadDatabaseProtocol, userDatabase: LokiUserDatabaseProtocol): List<Mention> {
+    fun getMentionCandidates(query: String, threadID: Long): List<Mention> {
         // Prepare
         val cache = userHexEncodedPublicKeyCache[threadID] ?: return listOf()
         // Gather candidates

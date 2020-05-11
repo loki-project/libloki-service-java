@@ -10,7 +10,7 @@ import java.io.OutputStream
  * For encrypted attachments, see `AttachmentCipherOutputStreamFactory`.
  * For encrypted profiles, see `ProfileCipherOutputStreamFactory`.
  */
-class BasicOutputStreamFactory : OutputStreamFactory {
+class PlaintextOutputStreamFactory : OutputStreamFactory {
 
   override fun createFor(outputStream: OutputStream?): DigestingOutputStream {
     return object : DigestingOutputStream(outputStream) { }

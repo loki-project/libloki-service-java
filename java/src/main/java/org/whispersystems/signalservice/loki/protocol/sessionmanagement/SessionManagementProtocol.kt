@@ -8,23 +8,34 @@ import org.whispersystems.signalservice.api.SignalServiceMessageSender
 import org.whispersystems.signalservice.api.push.SignalServiceAddress
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol
 
-public class SessionManagementProtocol(private val sessionResetImpl: LokiSessionResetProtocol, private val threadDatabase: LokiThreadDatabaseProtocol) {
+public class SessionManagementProtocol(private val sessionResetImpl: LokiSessionResetProtocol, private val threadDatabase: LokiThreadDatabaseProtocol,
+        private val delegate: Delegate) {
+
+    // region Delegate
+    interface Delegate {
+
+        fun sendSessionRequest(publicKey: String)
+    }
+    // endregion
 
     // region Initialization
     companion object {
 
         public lateinit var shared: SessionManagementProtocol
 
-        public fun configureIfNeeded(sessionResetImpl: LokiSessionResetProtocol, threadDatabase: LokiThreadDatabaseProtocol) {
+        public fun configureIfNeeded(sessionResetImpl: LokiSessionResetProtocol, threadDatabase: LokiThreadDatabaseProtocol, delegate: Delegate) {
             if (::shared.isInitialized) { return; }
-            shared = SessionManagementProtocol(sessionResetImpl, threadDatabase)
+            shared = SessionManagementProtocol(sessionResetImpl, threadDatabase, delegate)
         }
     }
     // endregion
 
     // region Sending
-    public fun startSessionReset(recipient: SignalServiceAddress, eventListener: Optional<SignalServiceMessageSender.EventListener>) {
-        // TODO: Refactor
+    /**
+     * Called after an end session message is sent.
+     */
+    public fun setSessionResetStatusToInProgressIfNeeded(recipient: SignalServiceAddress,
+            eventListener: Optional<SignalServiceMessageSender.EventListener>) {
         val publicKey = recipient.number
         val sessionResetStatus = sessionResetImpl.getSessionResetStatus(publicKey)
         if (sessionResetStatus == LokiSessionResetStatus.REQUEST_RECEIVED) { return }
@@ -34,20 +45,19 @@ public class SessionManagementProtocol(private val sessionResetImpl: LokiSession
         eventListener.get().onSecurityEvent(recipient)
     }
 
-    public fun repairSessionIfNeeded(recipient: SignalServiceAddress) {
-        val threadID = threadDatabase.getThreadID(recipient.number)
-        if (!threadDatabase.isClosedGroup(threadID)) { return; }
-        // TODO: Send session request
+    public fun repairSessionIfNeeded(recipient: SignalServiceAddress, isClosedGroup: Boolean) {
+        val publicKey = recipient.number
+        if (!isClosedGroup) { return }
+        delegate.sendSessionRequest(publicKey)
     }
 
-    public fun shouldIgnoreMissingPreKeyBundleException(recipient: SignalServiceAddress): Boolean {
+    public fun shouldIgnoreMissingPreKeyBundleException(isClosedGroup: Boolean): Boolean {
         // When a closed group is created, members try to establish sessions with eachother in the background through
         // session requests. Until ALL users those session requests were sent to have come online, stored the pre key
         // bundles contained in the session requests and replied with background messages to finalize the session
         // creation, a given user won't be able to successfully send a message to all members of a group. This check
         // is so that until we can do better on this front the user at least won't see this as an error in the UI.
-        val threadID = threadDatabase.getThreadID(recipient.number)
-        return threadDatabase.isClosedGroup(threadID)
+        return isClosedGroup
     }
     // endregion
 }
