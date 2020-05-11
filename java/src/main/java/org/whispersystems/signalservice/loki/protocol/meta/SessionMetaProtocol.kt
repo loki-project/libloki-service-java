@@ -1,7 +1,5 @@
 package org.whispersystems.signalservice.loki.protocol.meta
 
-import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage
-import org.whispersystems.signalservice.api.messages.SignalServiceGroup
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.protocol.multidevice.MultiDeviceProtocol
 
@@ -22,18 +20,6 @@ public class SessionMetaProtocol(private val apiDatabase: LokiAPIDatabaseProtoco
     // region Utilities
     public fun isNoteToSelf(publicKey: String): Boolean {
         return MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey).contains(publicKey)
-    }
-    // endregion
-
-    // region Sending
-    /**
-     * Note: This is called only if based on Signal's logic we'd want to send a sync message.
-     */
-    public fun shouldSyncMessage(message: SignalServiceDataMessage): Boolean {
-        val isOpenGroupMessage = message.group.isPresent && message.group.get().groupType == SignalServiceGroup.GroupType.PUBLIC_CHAT
-        if (isOpenGroupMessage) { return false }
-        val usesMultiDevice = apiDatabase.getDeviceLinks(userPublicKey).isNotEmpty()
-        return usesMultiDevice
     }
     // endregion
 }

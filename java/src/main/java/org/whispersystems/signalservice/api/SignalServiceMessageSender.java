@@ -95,7 +95,7 @@ import org.whispersystems.signalservice.loki.protocol.meta.SessionMetaProtocol;
 import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.SessionManagementProtocol;
-import org.whispersystems.signalservice.loki.protocol.syncmessages.LokiSyncMessage;
+import org.whispersystems.signalservice.loki.protocol.syncmessages.SyncMessagesProtocol;
 import org.whispersystems.signalservice.loki.utilities.BasicOutputStreamFactory;
 import org.whispersystems.signalservice.loki.utilities.Broadcaster;
 
@@ -143,7 +143,7 @@ public class SignalServiceMessageSender {
   private final LokiThreadDatabaseProtocol                          threadDatabase;
   private final LokiMessageDatabaseProtocol                         messageDatabase;
   private final LokiPreKeyBundleDatabaseProtocol                    preKeyBundleDatabase;
-  private final LokiSessionResetProtocol sessionResetImpl;
+  private final LokiSessionResetProtocol                            sessionResetImpl;
   private final LokiUserDatabaseProtocol                            userDatabase;
   private final Broadcaster                                         broadcaster;
 
@@ -209,7 +209,7 @@ public class SignalServiceMessageSender {
     this.threadDatabase            = threadDatabase;
     this.messageDatabase           = messageDatabase;
     this.preKeyBundleDatabase      = preKeyBundleDatabase;
-    this.sessionResetImpl = sessionResetImpl;
+    this.sessionResetImpl          = sessionResetImpl;
     this.userDatabase              = userDatabase;
     this.broadcaster               = broadcaster;
   }
@@ -259,7 +259,6 @@ public class SignalServiceMessageSender {
     sendMessage(0, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL());
   }
 
-
   /**
    * Send a call setup message to a single recipient.
    *
@@ -287,8 +286,7 @@ public class SignalServiceMessageSender {
   public SendMessageResult sendMessage(long                             messageID,
                                        SignalServiceAddress             recipient,
                                        Optional<UnidentifiedAccessPair> unidentifiedAccess,
-                                       SignalServiceDataMessage         message,
-                                       Optional<LokiSyncMessage>        lokiSyncMessage)
+                                       SignalServiceDataMessage         message)
       throws UntrustedIdentityException, IOException
   {
     byte[]            content                         = createMessageContent(message, recipient);
@@ -296,11 +294,10 @@ public class SignalServiceMessageSender {
     boolean           shouldUpdateFriendRequestStatus = FriendRequestProtocol.shared.shouldUpdateFriendRequestStatusFromMessage(message, recipient.getNumber());
     SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.isFriendRequest(), shouldUpdateFriendRequestStatus, message.getDeviceLink().isPresent());
 
-    if ((result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent()) {
-      if (lokiSyncMessage.isPresent() && SessionMetaProtocol.shared.shouldSyncMessage(message)) {
-        byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.of(lokiSyncMessage.get().getRecipient()), timestamp, Collections.singletonList(result));
-        sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
-      }
+    boolean wouldSignalSendSyncMessage = (result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent();
+    if (wouldSignalSendSyncMessage && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
+      byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.of(recipient), timestamp, Collections.singletonList(result));
+      sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
     }
 
     // Loki - Start a session reset if needed
@@ -324,6 +321,8 @@ public class SignalServiceMessageSender {
                                              SignalServiceDataMessage               message)
       throws IOException, UntrustedIdentityException
   {
+    // Loki - We only need the first recipient in the line below. This is because the recipient is only used to determine
+    // whether an attachment is being sent to an open group or not.
     byte[]                  content            = createMessageContent(message, recipients.get(0));
     long                    timestamp          = message.getTimestamp();
     List<SendMessageResult> results            = sendMessage(messageID, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL());
@@ -336,7 +335,7 @@ public class SignalServiceMessageSender {
       }
     }
 
-    if (needsSyncInResults && SessionMetaProtocol.shared.shouldSyncMessage(message)) {
+    if (needsSyncInResults && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.<SignalServiceAddress>absent(), timestamp, results);
       sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
     }
@@ -372,7 +371,7 @@ public class SignalServiceMessageSender {
       throw new IOException("Unsupported sync message!");
     }
 
-      sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), System.currentTimeMillis(), content, false, message.getTTL());
+    sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), System.currentTimeMillis(), content, false, message.getTTL());
   }
 
   public void setSoTimeoutMillis(long soTimeoutMillis) {
@@ -1071,7 +1070,7 @@ public class SignalServiceMessageSender {
     try {
       // Loki: Take into account multi device
       if (SessionMetaProtocol.shared.isNoteToSelf(recipient.getNumber()) && !isDeviceLinkMessage) {
-        return SendMessageResult.success(recipient, false, false);
+        return SendMessageResult.success(recipient, false, true);
       } else if (publicChat != null) {
         return sendMessageToPublicChat(messageID, recipient, timestamp, content, publicChat);
       } else {
@@ -1285,7 +1284,7 @@ public class SignalServiceMessageSender {
     @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
     try {
       f.get(1, TimeUnit.MINUTES);
-      return SendMessageResult.success(recipient, false, false);
+      return SendMessageResult.success(recipient, false, true);
     } catch (Exception exception) {
       Throwable underlyingError = exception.getCause();
       if (underlyingError instanceof LokiAPI.Error) {

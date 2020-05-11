@@ -24,6 +24,7 @@ public class SessionManagementProtocol(private val sessionResetImpl: LokiSession
 
     // region Sending
     public fun startSessionReset(recipient: SignalServiceAddress, eventListener: Optional<SignalServiceMessageSender.EventListener>) {
+        // TODO: Refactor
         val publicKey = recipient.number
         val sessionResetStatus = sessionResetImpl.getSessionResetStatus(publicKey)
         if (sessionResetStatus == LokiSessionResetStatus.REQUEST_RECEIVED) { return }

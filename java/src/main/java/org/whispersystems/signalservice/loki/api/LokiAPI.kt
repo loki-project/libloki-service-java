@@ -9,9 +9,9 @@ import nl.komponents.kovenant.task
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import org.whispersystems.signalservice.loki.api.p2p.LokiP2PAPI
+import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.createContext
@@ -41,11 +41,10 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
 
         // region Settings
         private val maxRetryCount = 4
-        private val longPollingTimeout: Long = 40
         private val useOnionRequests = true
 
         internal val defaultTimeout: Long = 20
-        internal var powDifficulty = 2
+        internal var powDifficulty = 1
         // endregion
 
         // region User ID Caching

@@ -34,12 +34,12 @@ internal object TTLUtilities {
             MessageType.LinkDevice -> 4 * minuteInMs
             MessageType.Regular -> 2 * dayInMs
             MessageType.SessionRequest -> 4 * dayInMs - 1 * hourInMs
-            MessageType.SignalServiceCallMessage -> 2 * minuteInMs
-            MessageType.SignalServiceReceiptMessage -> dayInMs
-            MessageType.SignalServiceSyncMessage -> dayInMs
+            MessageType.SignalServiceCallMessage -> 1 * minuteInMs
+            MessageType.SignalServiceReceiptMessage -> 4 * dayInMs - 1 * hourInMs
+            MessageType.SignalServiceSyncMessage -> 4 * dayInMs - 1 * hourInMs
             MessageType.TypingIndicator -> 1 * minuteInMs
-            MessageType.UnlinkDevice -> 4 * dayInMs
-            MessageType.VerifiedMessage -> dayInMs
+            MessageType.UnlinkDevice -> 4 * dayInMs - 1 * hourInMs
+            MessageType.VerifiedMessage -> 4 * dayInMs - 1 * hourInMs
         }
     }
 }
