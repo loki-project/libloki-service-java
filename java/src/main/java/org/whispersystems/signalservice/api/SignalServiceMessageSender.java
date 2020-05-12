@@ -299,7 +299,12 @@ public class SignalServiceMessageSender {
     boolean wouldSignalSendSyncMessage = (result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent();
     if (wouldSignalSendSyncMessage && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.of(recipient), timestamp, Collections.singletonList(result));
-      sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
+      // Loki - Customize multi device logic
+      Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
+      for (String device : linkedDevices) {
+        SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
+        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
+      }
     }
 
     // Loki - Start a session reset if needed
@@ -340,7 +345,12 @@ public class SignalServiceMessageSender {
 
     if (needsSyncInResults && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.<SignalServiceAddress>absent(), timestamp, results);
-      sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
+      // Loki - Customize multi device logic
+      Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
+      for (String device : linkedDevices) {
+        SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
+        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
+      }
     }
 
     return results;
@@ -374,10 +384,9 @@ public class SignalServiceMessageSender {
       throw new IOException("Unsupported sync message!");
     }
 
-    // Loki - Take into account multi device
+    // Loki - Customize multi device logic
     long timestamp = System.currentTimeMillis();
     Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
-    linkedDevices.remove(userHexEncodedPublicKey);
     for (String device : linkedDevices) {
       SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
       sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL());
@@ -1080,7 +1089,7 @@ public class SignalServiceMessageSender {
     long threadID = threadDatabase.getThreadID(recipient.getNumber());
     LokiPublicChat publicChat = threadDatabase.getPublicChat(threadID);
     try {
-      // Loki: Take into account multi device
+      // Loki - In the note to self case mark the send as a success and send a sync transcript
       if (SessionMetaProtocol.shared.isNoteToSelf(recipient.getNumber()) && !isDeviceLinkMessage) {
         return SendMessageResult.success(recipient, false, true);
       } else if (publicChat != null) {
