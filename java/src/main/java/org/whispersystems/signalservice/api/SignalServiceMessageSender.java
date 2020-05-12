@@ -94,6 +94,7 @@ import org.whispersystems.signalservice.loki.protocol.friendrequests.FriendReque
 import org.whispersystems.signalservice.loki.protocol.meta.SessionMetaProtocol;
 import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.protocol.multidevice.MultiDeviceProtocol;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.SessionManagementProtocol;
 import org.whispersystems.signalservice.loki.protocol.syncmessages.SyncMessagesProtocol;
 import org.whispersystems.signalservice.loki.utilities.PlaintextOutputStreamFactory;
@@ -373,7 +374,14 @@ public class SignalServiceMessageSender {
       throw new IOException("Unsupported sync message!");
     }
 
-    sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), System.currentTimeMillis(), content, false, message.getTTL());
+    // Loki - Take into account multi device
+    long timestamp = System.currentTimeMillis();
+    Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
+    linkedDevices.remove(userHexEncodedPublicKey);
+    for (String device : linkedDevices) {
+      SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
+      sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL());
+    }
   }
 
   public void setSoTimeoutMillis(long soTimeoutMillis) {
