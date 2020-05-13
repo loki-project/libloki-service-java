@@ -9,21 +9,14 @@ import org.whispersystems.signalservice.api.push.SignalServiceAddress
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol
 
 public class SessionManagementProtocol(private val sessionResetImpl: LokiSessionResetProtocol, private val threadDatabase: LokiThreadDatabaseProtocol,
-        private val delegate: Delegate) {
-
-    // region Delegate
-    interface Delegate {
-
-        fun sendSessionRequest(publicKey: String)
-    }
-    // endregion
+        private val delegate: SessionManagementProtocolDelegate) {
 
     // region Initialization
     companion object {
 
         public lateinit var shared: SessionManagementProtocol
 
-        public fun configureIfNeeded(sessionResetImpl: LokiSessionResetProtocol, threadDatabase: LokiThreadDatabaseProtocol, delegate: Delegate) {
+        public fun configureIfNeeded(sessionResetImpl: LokiSessionResetProtocol, threadDatabase: LokiThreadDatabaseProtocol, delegate: SessionManagementProtocolDelegate) {
             if (::shared.isInitialized) { return; }
             shared = SessionManagementProtocol(sessionResetImpl, threadDatabase, delegate)
         }
