@@ -652,12 +652,7 @@ public class SignalServiceMessageSender {
     // Loki - Set display name & profile picture (exclude the profile picture if this is a friend request
     // to prevent unsolicited content from being sent)
     LokiProfile.Builder profile = LokiProfile.newBuilder();
-    String displayName;
-    if (masterHexEncodedPublicKey != null) {
-        displayName = userDatabase.getDisplayName(masterHexEncodedPublicKey);
-    } else {
-        displayName = userDatabase.getDisplayName(userHexEncodedPublicKey);
-    }
+    String displayName = userDatabase.getDisplayName(userHexEncodedPublicKey);
     if (displayName != null) { profile.setDisplayName(displayName); }
     String profilePictureURL = userDatabase.getProfilePictureURL(userHexEncodedPublicKey);
     boolean shouldIncludeProfilePicture = !message.isFriendRequest() && profilePictureURL != null;
