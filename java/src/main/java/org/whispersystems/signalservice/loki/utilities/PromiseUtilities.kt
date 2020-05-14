@@ -1,4 +1,4 @@
-@file:JvmName("PromiseUtil")
+@file:JvmName("PromiseUtilities")
 package org.whispersystems.signalservice.loki.utilities
 
 import nl.komponents.kovenant.*
