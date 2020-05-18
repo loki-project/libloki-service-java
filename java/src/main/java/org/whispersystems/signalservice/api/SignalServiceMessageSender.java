@@ -1215,6 +1215,14 @@ public class SignalServiceMessageSender {
           return SendMessageResult.success(recipient, false, false);
       }
       // ========
+      Set<String> userLinkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
+      if (recipient.getNumber().equals(userHexEncodedPublicKey)) {
+        Log.d("Loki", "Sending message to self (id: " + messageID + ", ttl: " + ttl + ", isFriendRequest: " + isFriendRequest + ").");
+      } else if (userLinkedDevices.contains(recipient.getNumber())) {
+        Log.d("Loki", "Sending message to linked device (id: " + messageID + ", ttl: " + ttl + ", isFriendRequest: " + isFriendRequest + ").");
+      } else {
+        Log.d("Loki", "Sending message to " + recipient.getNumber() + " (id: " + messageID + ", ttl: " + ttl + ", isFriendRequest: " + isFriendRequest + ").");
+      }
       OutgoingPushMessage message = messages.getMessages().get(0);
       final SignalServiceProtos.Envelope.Type type = SignalServiceProtos.Envelope.Type.valueOf(message.type);
       final boolean isFriendRequestMessage = isFriendRequest;
@@ -1477,9 +1485,9 @@ public class SignalServiceMessageSender {
       LokiFriendRequestMessage message = new LokiFriendRequestMessage(bytes);
       byte[] ciphertext = sealedSessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), message);
       return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE, deviceID, 0, Base64.encodeBytes(ciphertext));
+    } else {
+      return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.FRIEND_REQUEST_VALUE, deviceID, 0, Base64.encodeBytes(bytes));
     }
-
-    return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.FRIEND_REQUEST_VALUE, deviceID, 0, Base64.encodeBytes(bytes));
   }
 
   private void handleMismatchedDevices(PushServiceSocket socket, SignalServiceAddress recipient,
