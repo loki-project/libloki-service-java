@@ -208,7 +208,7 @@ public class SignalServiceCipher {
           byte[] authorizationSignature = deviceLinkMessage.hasGrantSignature() ? deviceLinkMessage.getGrantSignature().toByteArray() : null;
           DeviceLink deviceLink = new DeviceLink(masterHexEncodedPublicKey, slaveHexEncodedPublicKey, requestSignature, authorizationSignature);
           SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
-          SignalServiceContent content = new SignalServiceContent(deviceLink, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp(), false, metadata.isFriendRequest());
+          SignalServiceContent content = new SignalServiceContent(deviceLink, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
 
           // Loki - Attach service message
           content.setLokiServiceMessage(lokiServiceMessage);
@@ -231,15 +231,17 @@ public class SignalServiceCipher {
         } else if (message.hasDataMessage()) {
           DataMessage dataMessage = message.getDataMessage();
 
-          SignalServiceContent content = new SignalServiceContent(createSignalServiceMessage(
-              plaintext.getMetadata(),
-              dataMessage,
-              envelope.isFriendRequest()),
+          SignalServiceDataMessage signalServiceDataMessage = createSignalServiceMessage(plaintext.getMetadata(), dataMessage, envelope.isFriendRequest());
+          SignalServiceContent content = new SignalServiceContent(
+              signalServiceDataMessage,
               plaintext.getMetadata().getSender(),
               plaintext.getMetadata().getSenderDevice(),
               plaintext.getMetadata().getTimestamp(),
               plaintext.getMetadata().isNeedsReceipt(),
-              plaintext.getMetadata().isFriendRequest());
+              plaintext.getMetadata().isFriendRequest(),
+              signalServiceDataMessage.isSessionRequest(),
+              signalServiceDataMessage.isSessionRestorationRequest(),
+              signalServiceDataMessage.isUnlinkingRequest());
 
           // Loki - Attach service message
           content.setLokiServiceMessage(lokiServiceMessage);
@@ -253,9 +255,7 @@ public class SignalServiceCipher {
               message.getSyncMessage()),
               plaintext.getMetadata().getSender(),
               plaintext.getMetadata().getSenderDevice(),
-              plaintext.getMetadata().getTimestamp(),
-              plaintext.getMetadata().isNeedsReceipt(),
-              plaintext.getMetadata().isFriendRequest());
+              plaintext.getMetadata().getTimestamp());
 
           // Loki - Attach profile if needed
           if (message.getSyncMessage().hasSent() && message.getSyncMessage().getSent().hasMessage()) {
@@ -268,30 +268,24 @@ public class SignalServiceCipher {
           return new SignalServiceContent(createCallMessage(message.getCallMessage()),
                                           plaintext.getMetadata().getSender(),
                                           plaintext.getMetadata().getSenderDevice(),
-                                          plaintext.getMetadata().getTimestamp(),
-                                          plaintext.getMetadata().isNeedsReceipt(),
-                                          plaintext.getMetadata().isFriendRequest());
+                                          plaintext.getMetadata().getTimestamp());
         } else if (message.hasReceiptMessage()) {
           return new SignalServiceContent(createReceiptMessage(plaintext.getMetadata(), message.getReceiptMessage()),
                                           plaintext.getMetadata().getSender(),
                                           plaintext.getMetadata().getSenderDevice(),
-                                          plaintext.getMetadata().getTimestamp(),
-                                          plaintext.getMetadata().isNeedsReceipt(),
-                                          plaintext.getMetadata().isFriendRequest());
+                                          plaintext.getMetadata().getTimestamp());
         } else if (message.hasTypingMessage()) {
           return new SignalServiceContent(createTypingMessage(plaintext.getMetadata(), message.getTypingMessage()),
                                           plaintext.getMetadata().getSender(),
                                           plaintext.getMetadata().getSenderDevice(),
-                                          plaintext.getMetadata().getTimestamp(),
-                                          false,
-                                          plaintext.getMetadata().isFriendRequest());
+                                          plaintext.getMetadata().getTimestamp());
         }
 
       // Check if we have any of the Loki specific data set. If so then return that content.
       // This will be triggered on e.g. desktop friend request background messages.
       if (lokiServiceMessage.isValid()) {
         SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
-        return new SignalServiceContent(lokiServiceMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp(), false, metadata.isFriendRequest());
+        return new SignalServiceContent(lokiServiceMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
       }
 
       // Loki - No content is set at all; return null
@@ -377,9 +371,9 @@ public class SignalServiceCipher {
     List<SharedContact>            sharedContacts              = createSharedContacts(content);
     List<Preview>                  previews                    = createPreviews(content);
     Sticker                        sticker                     = createSticker(content);
-    boolean                        isUnlinkingRequest          = ((content.getFlags() & DataMessage.Flags.UNPAIRING_REQUEST_VALUE     ) != 0);
-    boolean                        isSessionRestorationRequest = ((content.getFlags() & DataMessage.Flags.SESSION_RESTORE_VALUE       ) != 0);
-    boolean                        isSessionRequest            = ((content.getFlags() & DataMessage.Flags.SESSION_REQUEST_VALUE       ) != 0);
+    boolean                        isUnlinkingRequest          = ((content.getFlags() & DataMessage.Flags.UNPAIRING_REQUEST_VALUE      ) != 0);
+    boolean                        isSessionRestorationRequest = ((content.getFlags() & DataMessage.Flags.SESSION_RESTORE_VALUE        ) != 0);
+    boolean                        isSessionRequest            = ((content.getFlags() & DataMessage.Flags.SESSION_REQUEST_VALUE        ) != 0);
 
     for (AttachmentPointer pointer : content.getAttachmentsList()) {
       attachments.add(createAttachmentPointer(pointer));
