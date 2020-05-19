@@ -25,7 +25,7 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
         val sharedContext = Kovenant.createContext("LokiPublicChatAPISharedContext")
 
         // region Settings
-        private val fallbackBatchCount = 64
+        private val fallbackBatchCount = 16
         private val maxRetryCount = 8
         // endregion
 
