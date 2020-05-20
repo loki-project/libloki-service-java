@@ -230,7 +230,7 @@ public class SignalServiceMessageSender {
   {
     byte[] content = createReceiptContent(message);
 
-    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getWhen(), content, false, message.getTTL());
+    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getWhen(), content, false, message.getTTL(), false);
   }
 
   /**
@@ -248,7 +248,7 @@ public class SignalServiceMessageSender {
   {
     byte[] content = createTypingContent(message);
 
-    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL());
+    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL(), false);
   }
 
   public void sendTyping(List<SignalServiceAddress>             recipients,
@@ -273,7 +273,7 @@ public class SignalServiceMessageSender {
       throws IOException, UntrustedIdentityException
   {
     byte[] content = createCallContent(message);
-    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), System.currentTimeMillis(), content, false, message.getTTL());
+    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), System.currentTimeMillis(), content, false, message.getTTL(), false);
   }
 
   /**
@@ -294,7 +294,7 @@ public class SignalServiceMessageSender {
     long              timestamp                       = message.getTimestamp();
     boolean           shouldUpdateFriendRequestStatus = FriendRequestProtocol.shared.shouldUpdateFriendRequestStatusFromMessage(message, recipient.getNumber());
     boolean           isClosedGroup                   = message.group.isPresent() && message.group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
-    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.isFriendRequest(), shouldUpdateFriendRequestStatus, message.getDeviceLink().isPresent(), isClosedGroup);
+    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.isFriendRequest(), shouldUpdateFriendRequestStatus, message.getDeviceLink().isPresent(), isClosedGroup, false);
 
     boolean wouldSignalSendSyncMessage = (result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent();
     if (wouldSignalSendSyncMessage && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
@@ -303,7 +303,7 @@ public class SignalServiceMessageSender {
       Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
       for (String device : linkedDevices) {
         SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
-        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
+        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL(), true);
       }
     }
 
@@ -349,7 +349,7 @@ public class SignalServiceMessageSender {
       Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
       for (String device : linkedDevices) {
         SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
-        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL());
+        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL(), true);
       }
     }
 
@@ -389,7 +389,7 @@ public class SignalServiceMessageSender {
     Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
     for (String device : linkedDevices) {
       SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
-      sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL());
+      sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL(), true);
     }
   }
 
@@ -466,11 +466,11 @@ public class SignalServiceMessageSender {
                             .build()
                             .toByteArray();
 
-    SendMessageResult result = sendMessage(new SignalServiceAddress(message.getDestination()), getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, false, message.getTTL());
+    SendMessageResult result = sendMessage(new SignalServiceAddress(message.getDestination()), getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, false, message.getTTL(), false);
 
     if (result.getSuccess().isNeedsSync()) {
       byte[] syncMessage = createMultiDeviceVerifiedContent(message, nullMessage.toByteArray());
-      sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), message.getTimestamp(), syncMessage, false, message.getTTL());
+      sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), message.getTimestamp(), syncMessage, false, message.getTTL(), false);
     }
   }
 
@@ -1042,7 +1042,7 @@ public class SignalServiceMessageSender {
       SignalServiceAddress recipient = recipientIterator.next();
 
       try {
-        SendMessageResult result = sendMessage(messageID, recipient, unidentifiedAccessIterator.next(), timestamp, content, online, ttl, false, false, false, isClosedGroup);
+        SendMessageResult result = sendMessage(messageID, recipient, unidentifiedAccessIterator.next(), timestamp, content, online, ttl, false, false, false, isClosedGroup, false);
         results.add(result);
       } catch (UnregisteredUserException e) {
         Log.w(TAG, e);
@@ -1061,11 +1061,12 @@ public class SignalServiceMessageSender {
                                         long                         timestamp,
                                         byte[]                       content,
                                         boolean                      online,
-                                        int                          ttl)
+                                        int                          ttl,
+                                        boolean                      isSyncMessage)
       throws IOException
   {
     // Loki - This method is only invoked for various types of control messages
-    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, false, false);
+    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, false, false, isSyncMessage);
   }
 
   private SendMessageResult sendMessage(final long                   messageID,
@@ -1078,14 +1079,15 @@ public class SignalServiceMessageSender {
                                         boolean                      isFriendRequest,
                                         boolean                      shouldUpdateFriendRequestStatus,
                                         boolean                      isDeviceLinkMessage,
-                                        boolean                      isClosedGroup)
+                                        boolean                      isClosedGroup,
+                                        boolean                      isSyncMessage)
       throws IOException
   {
     long threadID = threadDatabase.getThreadID(recipient.getNumber());
     LokiPublicChat publicChat = threadDatabase.getPublicChat(threadID);
     try {
       // Loki - In the note to self case mark the send as a success and send a sync transcript
-      if (SessionMetaProtocol.shared.isNoteToSelf(recipient.getNumber()) && !isDeviceLinkMessage) {
+      if (SessionMetaProtocol.shared.isNoteToSelf(recipient.getNumber()) && !isSyncMessage && !isDeviceLinkMessage) {
         return SendMessageResult.success(recipient, false, true);
       } else if (publicChat != null) {
         return sendMessageToPublicChat(messageID, recipient, timestamp, content, publicChat);
@@ -1236,7 +1238,9 @@ public class SignalServiceMessageSender {
       SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
       // TODO: PoW indicator
       // Update the message and thread if needed
-      if (isFriendRequestMessage && shouldUpdateFriendRequestStatus && eventListener.isPresent()) { eventListener.get().onFriendRequestSending(messageID, threadID); }
+      if (isFriendRequestMessage && shouldUpdateFriendRequestStatus && eventListener.isPresent()) {
+        eventListener.get().onFriendRequestSending(messageID, threadID);
+      }
       LokiAPI.shared.sendSignalMessage(messageInfo, new Function0<Unit>() {
 
         @Override

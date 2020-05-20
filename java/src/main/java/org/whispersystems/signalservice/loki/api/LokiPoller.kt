@@ -16,7 +16,7 @@ class LokiPoller(private val userHexEncodedPublicKey: String, private val databa
 
     // region Settings
     companion object {
-        private val retryInterval: Long = 4 * 1000
+        private val retryInterval: Long = 1 * 1000
     }
     // endregion
 
