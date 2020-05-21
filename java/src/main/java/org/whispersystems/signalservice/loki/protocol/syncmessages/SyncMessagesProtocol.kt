@@ -23,6 +23,7 @@ public class SyncMessagesProtocol(private val apiDatabase: LokiAPIDatabaseProtoc
      * Note: This is called only if based on Signal's logic we'd want to send a sync message.
      */
     public fun shouldSyncMessage(message: SignalServiceDataMessage): Boolean {
+        if (message.deviceLink.isPresent) { return false }
         val isOpenGroupMessage = message.group.isPresent && message.group.get().groupType == SignalServiceGroup.GroupType.PUBLIC_CHAT
         if (isOpenGroupMessage) { return false }
         val usesMultiDevice = apiDatabase.getDeviceLinks(userPublicKey).isNotEmpty()

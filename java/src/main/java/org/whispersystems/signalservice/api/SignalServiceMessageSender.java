@@ -1204,9 +1204,6 @@ public class SignalServiceMessageSender {
                                                      boolean                      isClosedGroup)
       throws IOException, UntrustedIdentityException
   {
-    if (shouldUpdateFriendRequestStatus && messageID == 0) {
-      Log.d("Loki", "Missing message ID.");
-    }
     final SettableFuture<?>[] future = { new SettableFuture<Unit>() };
     final long threadID = threadDatabase.getThreadID(recipient.getNumber());
     try {
