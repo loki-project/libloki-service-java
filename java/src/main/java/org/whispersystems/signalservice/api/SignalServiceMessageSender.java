@@ -90,7 +90,6 @@ import org.whispersystems.signalservice.loki.database.LokiPreKeyBundleDatabasePr
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol;
 import org.whispersystems.signalservice.loki.protocol.friendrequests.FriendRequestProtocol;
-import org.whispersystems.signalservice.loki.protocol.meta.SessionMetaProtocol;
 import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.multidevice.MultiDeviceProtocol;
@@ -1090,10 +1089,7 @@ public class SignalServiceMessageSender {
     long threadID = threadDatabase.getThreadID(recipient.getNumber());
     LokiPublicChat publicChat = threadDatabase.getPublicChat(threadID);
     try {
-      // Loki - In the note to self case mark the send as a success and send a sync transcript
-      if (SessionMetaProtocol.shared.isNoteToSelf(recipient.getNumber()) && !isSyncMessage && !isDeviceLinkMessage) {
-        return SendMessageResult.success(recipient, false, true);
-      } else if (publicChat != null) {
+      if (publicChat != null) {
         return sendMessageToPublicChat(messageID, recipient, timestamp, content, publicChat);
       } else {
         return sendMessageToPrivateChat(messageID, recipient, unidentifiedAccess, timestamp, content, online, ttl, isFriendRequest, shouldUpdateFriendRequestStatus, isClosedGroup);
