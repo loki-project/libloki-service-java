@@ -65,7 +65,6 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Conten
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.GroupContext;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos.NullMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ReceiptMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage;
@@ -97,8 +96,8 @@ import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.multidevice.MultiDeviceProtocol;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.SessionManagementProtocol;
 import org.whispersystems.signalservice.loki.protocol.syncmessages.SyncMessagesProtocol;
-import org.whispersystems.signalservice.loki.utilities.PlaintextOutputStreamFactory;
 import org.whispersystems.signalservice.loki.utilities.Broadcaster;
+import org.whispersystems.signalservice.loki.utilities.PlaintextOutputStreamFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -296,6 +295,7 @@ public class SignalServiceMessageSender {
     boolean           isClosedGroup                   = message.group.isPresent() && message.group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
     SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.isFriendRequest(), shouldUpdateFriendRequestStatus, message.getDeviceLink().isPresent(), isClosedGroup, false);
 
+    // Loki - This shouldn't get invoked for note to self
     boolean wouldSignalSendSyncMessage = (result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent();
     if (wouldSignalSendSyncMessage && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.of(recipient), timestamp, Collections.singletonList(result));
@@ -360,6 +360,7 @@ public class SignalServiceMessageSender {
       throws IOException, UntrustedIdentityException
   {
     byte[] content;
+    long timestamp = System.currentTimeMillis();
 
     if (message.getContacts().isPresent()) {
       content = createMultiDeviceContactsContent(message.getContacts().get().getContactsStream().asStream(), message.getContacts().get().isComplete());
@@ -375,6 +376,7 @@ public class SignalServiceMessageSender {
       content = createMultiDeviceConfigurationContent(message.getConfiguration().get());
     } else if (message.getSent().isPresent()) {
       content = createMultiDeviceSentTranscriptContent(message.getSent().get(), unidentifiedAccess);
+      timestamp = message.getSent().get().getTimestamp();
     } else if (message.getStickerPackOperations().isPresent()) {
       content = createMultiDeviceStickerPackOperationContent(message.getStickerPackOperations().get());
     } else if (message.getVerified().isPresent()) {
@@ -385,11 +387,10 @@ public class SignalServiceMessageSender {
     }
 
     // Loki - Customize multi device logic
-    long timestamp = System.currentTimeMillis();
     Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
     for (String device : linkedDevices) {
       SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
-      sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL(), true);
+      sendMessageToPrivateChat(0, deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL(), false, false, false);
     }
   }
 
@@ -452,6 +453,8 @@ public class SignalServiceMessageSender {
   private void sendMessage(VerifiedMessage message, Optional<UnidentifiedAccessPair> unidentifiedAccess)
       throws IOException, UntrustedIdentityException
   {
+    return;
+    /*
     byte[] nullMessageBody = DataMessage.newBuilder()
                                         .setBody(Base64.encodeBytes(Util.getRandomLengthBytes(140)))
                                         .build()
@@ -472,6 +475,7 @@ public class SignalServiceMessageSender {
       byte[] syncMessage = createMultiDeviceVerifiedContent(message, nullMessage.toByteArray());
       sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), message.getTimestamp(), syncMessage, false, message.getTTL(), false);
     }
+    */
   }
 
   private byte[] createTypingContent(SignalServiceTypingMessage message) {
@@ -1204,6 +1208,7 @@ public class SignalServiceMessageSender {
                                                      boolean                      isClosedGroup)
       throws IOException, UntrustedIdentityException
   {
+    if (recipient.getNumber().equals(userHexEncodedPublicKey)) { return SendMessageResult.success(recipient, false, false); }
     final SettableFuture<?>[] future = { new SettableFuture<Unit>() };
     final long threadID = threadDatabase.getThreadID(recipient.getNumber());
     try {
