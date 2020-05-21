@@ -342,6 +342,7 @@ public class SignalServiceMessageSender {
       }
     }
 
+    // Loki - This shouldn't get invoked for note to self
     if (needsSyncInResults && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.<SignalServiceAddress>absent(), timestamp, results);
       // Loki - Customize multi device logic
