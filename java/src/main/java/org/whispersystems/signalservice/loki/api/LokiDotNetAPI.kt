@@ -27,6 +27,7 @@ import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerProxy
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.recover
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
+import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
 import java.util.*
 
 /**
@@ -170,21 +171,23 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             .addFormDataPart("content", UUID.randomUUID().toString(), file)
             .build()
         val request = Request.Builder().url("$server/files").post(body)
-        return upload(server, request) { jsonAsString ->
-            val json = JsonUtil.fromJson(jsonAsString)
-            val data = json.get("data")
-            if (data == null) {
-                Log.d("Loki", "Couldn't parse attachment from: $jsonAsString.")
-                throw LokiAPI.Error.ParsingFailed
+        return retryIfNeeded(8) {
+            upload(server, request) { jsonAsString ->
+                val json = JsonUtil.fromJson(jsonAsString)
+                val data = json.get("data")
+                if (data == null) {
+                    Log.d("Loki", "Couldn't parse attachment from: $jsonAsString.")
+                    throw LokiAPI.Error.ParsingFailed
+                }
+                val id = data.get("id").asLong()
+                val url = data.get("url").asText()
+                if (url.isEmpty()) {
+                    Log.d("Loki", "Couldn't parse upload from: $jsonAsString.")
+                    throw LokiAPI.Error.ParsingFailed
+                }
+                UploadResult(id, url, file.transmittedDigest)
             }
-            val id = data.get("id").asLong()
-            val url = data.get("url").asText()
-            if (url.isEmpty()) {
-                Log.d("Loki", "Couldn't parse upload from: $jsonAsString.")
-                throw LokiAPI.Error.ParsingFailed
-            }
-            UploadResult(id, url, file.transmittedDigest)
-        }
+        }.get()
     }
 
     @Throws(PushNetworkException::class, NonSuccessfulResponseCodeException::class)
@@ -199,26 +202,28 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             .addFormDataPart("content", UUID.randomUUID().toString(), file)
             .build()
         val request = Request.Builder().url("$server/files").post(body)
-        return upload(server, request) { jsonAsString ->
-            val json = JsonUtil.fromJson(jsonAsString)
-            val data = json.get("data")
-            if (data == null) {
-                Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
-                throw LokiAPI.Error.ParsingFailed
+        return retryIfNeeded(8) {
+            upload(server, request) { jsonAsString ->
+                val json = JsonUtil.fromJson(jsonAsString)
+                val data = json.get("data")
+                if (data == null) {
+                    Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
+                    throw LokiAPI.Error.ParsingFailed
+                }
+                val id = data.get("id").asLong()
+                val url = data.get("url").asText()
+                if (url.isEmpty()) {
+                    Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
+                    throw LokiAPI.Error.ParsingFailed
+                }
+                setLastProfilePictureUpload()
+                UploadResult(id, url, file.transmittedDigest)
             }
-            val id = data.get("id").asLong()
-            val url = data.get("url").asText()
-            if (url.isEmpty()) {
-                Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
-                throw LokiAPI.Error.ParsingFailed
-            }
-            setLastProfilePictureUpload()
-            UploadResult(id, url, file.transmittedDigest)
-        }
+        }.get()
     }
 
     @Throws(PushNetworkException::class, NonSuccessfulResponseCodeException::class)
-    private fun upload(server: String, request: Request.Builder, parse: (String) -> UploadResult): UploadResult {
+    private fun upload(server: String, request: Request.Builder, parse: (String) -> UploadResult): Promise<UploadResult, Exception> {
         val promise: Promise<LokiHTTPClient.Response, Exception>
         if (server == LokiFileServerAPI.shared.server) {
             request.addHeader("Authorization", "Bearer loki")
@@ -246,7 +251,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
                 throw NonSuccessfulResponseCodeException("Request returned with status code ${nestedException.code}.")
             }
             throw PushNetworkException(exception)
-        }.get()
+        }
     }
 }
 
