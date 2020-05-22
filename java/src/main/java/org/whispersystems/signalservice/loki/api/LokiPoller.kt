@@ -4,6 +4,7 @@ import nl.komponents.kovenant.*
 import nl.komponents.kovenant.functional.bind
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import java.security.SecureRandom
 import java.util.*
 
@@ -15,7 +16,7 @@ class LokiPoller(private val userHexEncodedPublicKey: String, private val databa
 
     // region Settings
     companion object {
-        private val retryInterval: Long = 4 * 1000
+        private val retryInterval: Long = 1 * 1000
     }
     // endregion
 

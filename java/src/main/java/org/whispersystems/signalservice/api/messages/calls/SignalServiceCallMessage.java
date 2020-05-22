@@ -1,6 +1,7 @@
 package org.whispersystems.signalservice.api.messages.calls;
 
 import org.whispersystems.libsignal.util.guava.Optional;
+import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -106,6 +107,5 @@ public class SignalServiceCallMessage {
     return busyMessage;
   }
 
-  // 2 minutes
-  public int getTTL() { return 2 * 60 * 1000; }
+  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.SignalServiceCallMessage); }
 }

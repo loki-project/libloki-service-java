@@ -9,9 +9,10 @@ import nl.komponents.kovenant.task
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.loki.api.http.HTTP
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
-import org.whispersystems.signalservice.loki.messaging.*
+import org.whispersystems.signalservice.loki.api.p2p.LokiP2PAPI
+import org.whispersystems.signalservice.loki.api.utilities.HTTP
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
@@ -28,7 +29,6 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
          * For operations that are shared between message sending and message polling.
          */
         val sharedContext = Kovenant.createContext("LokiAPISharedContext")
-        var userHexEncodedPublicKeyCache = mutableMapOf<Long, Set<String>>() // Thread ID to set of user hex encoded public keys
 
         // region Initialization
         lateinit var shared: LokiAPI
@@ -41,51 +41,14 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
 
         // region Settings
         private val maxRetryCount = 4
-        private val longPollingTimeout: Long = 40
         private val useOnionRequests = true
 
         internal val defaultTimeout: Long = 20
-        internal var powDifficulty = 2
+        internal var powDifficulty = 1
         // endregion
 
         // region User ID Caching
-        fun cache(hexEncodedPublicKey: String, threadID: Long) {
-            val cache = userHexEncodedPublicKeyCache[threadID]
-            if (cache != null) {
-                userHexEncodedPublicKeyCache[threadID] = cache.plus(hexEncodedPublicKey)
-            } else {
-                userHexEncodedPublicKeyCache[threadID] = setOf( hexEncodedPublicKey )
-            }
-        }
 
-        fun getMentionCandidates(query: String, threadID: Long, userHexEncodedPublicKey: String, threadDatabase: LokiThreadDatabaseProtocol, userDatabase: LokiUserDatabaseProtocol): List<Mention> {
-            // Prepare
-            val cache = userHexEncodedPublicKeyCache[threadID] ?: return listOf()
-            // Gather candidates
-            val publicChat = threadDatabase.getPublicChat(threadID)
-            var candidates: List<Mention> = cache.mapNotNull { hexEncodedPublicKey ->
-                val displayName: String?
-                if (publicChat != null) {
-                    displayName = userDatabase.getServerDisplayName(publicChat.id, hexEncodedPublicKey)
-                } else {
-                    displayName = userDatabase.getDisplayName(hexEncodedPublicKey)
-                }
-                if (displayName == null) { return@mapNotNull null }
-                if (displayName.startsWith("Anonymous")) { return@mapNotNull null }
-                Mention(hexEncodedPublicKey, displayName)
-            }
-            candidates = candidates.filter { it.hexEncodedPublicKey != userHexEncodedPublicKey }
-            // Sort alphabetically first
-            candidates.sortedBy { it.displayName }
-            if (query.length >= 2) {
-                // Filter out any non-matching candidates
-                candidates = candidates.filter { it.displayName.toLowerCase().contains(query.toLowerCase()) }
-                // Sort based on where in the candidate the query occurs
-                candidates.sortedBy { it.displayName.toLowerCase().indexOf(query.toLowerCase()) }
-            }
-            // Return
-            return candidates
-        }
         // endregion
     }
 
@@ -186,7 +149,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
                                     val powDifficulty = json?.get("difficulty") as? Int
                                     if (powDifficulty != null) {
                                         if (powDifficulty != LokiAPI.powDifficulty) {
-                                            Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
+                                            Log.d("Loki", "Setting proof of work difficulty to $powDifficulty (snode: $target).")
                                             LokiAPI.powDifficulty = powDifficulty
                                         }
                                     } else {
@@ -233,14 +196,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
         if (messages != null) {
             updateLastMessageHashValueIfPossible(target, messages)
             val newRawMessages = removeDuplicates(messages)
-            val newMessages = parseEnvelopes(newRawMessages)
-            val newMessageCount = newMessages.count()
-            if (newMessageCount == 1) {
-                Log.d("Loki", "Retrieved 1 new message.")
-            } else if (newMessageCount != 0) {
-                Log.d("Loki", "Retrieved $newMessageCount new messages.")
-            }
-            return newMessages
+            return parseEnvelopes(newRawMessages)
         } else {
             return listOf()
         }
@@ -333,7 +289,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
                 // The PoW difficulty is too low
                 val powDifficulty = json?.get("difficulty") as? Int
                 if (powDifficulty != null) {
-                    Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
+                    Log.d("Loki", "Setting proof of work difficulty to $powDifficulty (snode: $snode).")
                     LokiAPI.powDifficulty = powDifficulty
                 } else {
                     Log.d("Loki", "Failed to update proof of work difficulty.")

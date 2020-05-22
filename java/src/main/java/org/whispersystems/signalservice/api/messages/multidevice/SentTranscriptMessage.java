@@ -21,7 +21,7 @@ public class SentTranscriptMessage {
   private final SignalServiceDataMessage message;
   private final Map<String, Boolean>     unidentifiedStatus;
 
-  // Loki - Public chat
+  // Loki - Open groups
   public long messageServerID = -1;
 
   public SentTranscriptMessage(String destination, long timestamp, SignalServiceDataMessage message,

@@ -2,6 +2,7 @@ package org.whispersystems.signalservice.api.messages.multidevice;
 
 
 import org.whispersystems.libsignal.IdentityKey;
+import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 
 public class VerifiedMessage {
 
@@ -37,5 +38,5 @@ public class VerifiedMessage {
     return timestamp;
   }
 
-  public int getTTL() { return 24 * 60 * 60 * 1000; }
+  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.VerifiedMessage); }
 }

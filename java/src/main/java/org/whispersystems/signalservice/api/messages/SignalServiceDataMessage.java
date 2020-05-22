@@ -10,8 +10,8 @@ import org.whispersystems.libsignal.state.PreKeyBundle;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.loki.api.multidevice.DeviceLink;
-import org.whispersystems.signalservice.loki.messaging.TTLUtilities;
+import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
+import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -20,18 +20,17 @@ import java.util.List;
  * Represents a decrypted Signal Service data message.
  */
 public class SignalServiceDataMessage {
-
   private final long                                    timestamp;
   private final Optional<List<SignalServiceAttachment>> attachments;
   private final Optional<String>                        body;
-  private final Optional<SignalServiceGroup>            group;
+  public  final Optional<SignalServiceGroup>            group;
   private final Optional<byte[]>                        profileKey;
   private final boolean                                 endSession;
   private final boolean                                 expirationUpdate;
   private final int                                     expiresInSeconds;
   private final boolean                                 profileKeyUpdate;
   private final Optional<Quote>                         quote;
-  private final Optional<List<SharedContact>>           contacts;
+  public  final Optional<List<SharedContact>>           contacts;
   private final Optional<List<Preview>>                 previews;
   private final Optional<Sticker>                       sticker;
   // Loki
@@ -157,22 +156,22 @@ public class SignalServiceDataMessage {
                                   Sticker sticker, boolean isFriendRequest, PreKeyBundle preKeyBundle, DeviceLink deviceLink,
                                   boolean isUnlinkingRequest, boolean isSessionRestorationRequest, boolean isSessionRequest)
   {
-    this.timestamp             = timestamp;
-    this.body                  = Optional.fromNullable(body);
-    this.group                 = Optional.fromNullable(group);
-    this.endSession            = endSession;
-    this.expiresInSeconds      = expiresInSeconds;
-    this.expirationUpdate      = expirationUpdate;
-    this.profileKey            = Optional.fromNullable(profileKey);
-    this.profileKeyUpdate      = profileKeyUpdate;
-    this.quote                 = Optional.fromNullable(quote);
-    this.sticker               = Optional.fromNullable(sticker);
-    this.isFriendRequest       = isFriendRequest;
-    this.preKeyBundle          = Optional.fromNullable(preKeyBundle);
-    this.deviceLink            = Optional.fromNullable(deviceLink);
-    this.isUnlinkingRequest    = isUnlinkingRequest;
-    this.isSessionRestorationRequest  = isSessionRestorationRequest;
-    this.isSessionRequest      = isSessionRequest;
+    this.timestamp                   = timestamp;
+    this.body                        = Optional.fromNullable(body);
+    this.group                       = Optional.fromNullable(group);
+    this.endSession                  = endSession;
+    this.expiresInSeconds            = expiresInSeconds;
+    this.expirationUpdate            = expirationUpdate;
+    this.profileKey                  = Optional.fromNullable(profileKey);
+    this.profileKeyUpdate            = profileKeyUpdate;
+    this.quote                       = Optional.fromNullable(quote);
+    this.sticker                     = Optional.fromNullable(sticker);
+    this.isFriendRequest             = isFriendRequest;
+    this.preKeyBundle                = Optional.fromNullable(preKeyBundle);
+    this.deviceLink                  = Optional.fromNullable(deviceLink);
+    this.isUnlinkingRequest          = isUnlinkingRequest;
+    this.isSessionRestorationRequest = isSessionRestorationRequest;
+    this.isSessionRequest            = isSessionRequest;
 
     if (attachments != null && !attachments.isEmpty()) {
       this.attachments = Optional.of(attachments);
@@ -271,23 +270,18 @@ public class SignalServiceDataMessage {
   public boolean isFriendRequest() {
     return isFriendRequest;
   }
+
   public boolean isUnlinkingRequest() {
     return isUnlinkingRequest;
   }
-  public boolean isSessionRestorationRequest() { return isSessionRestorationRequest; }
-  public boolean isSessionRequest() { return isSessionRequest; }
-  public Optional<PreKeyBundle> getPreKeyBundle() { return preKeyBundle; }
-  public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
-  public boolean canSyncMessage() {
-    // If any of the Loki fields are present then don't sync the message
-    if (isFriendRequest || preKeyBundle.isPresent() || deviceLink.isPresent()) return false;
-    // Only sync if the message has valid content
-    return body.isPresent() || attachments.isPresent() || sticker.isPresent() || quote.isPresent() || contacts.isPresent() || previews.isPresent() || canSyncGroupMessage();
-  }
 
-  private boolean canSyncGroupMessage() {
-      return group.isPresent() && group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
-  }
+  public boolean isSessionRestorationRequest() { return isSessionRestorationRequest; }
+
+  public boolean isSessionRequest() { return isSessionRequest; }
+
+  public Optional<PreKeyBundle> getPreKeyBundle() { return preKeyBundle; }
+
+  public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
 
   public int getTTL() {
     TTLUtilities.MessageType messageType = TTLUtilities.MessageType.Regular;
@@ -298,26 +292,7 @@ public class SignalServiceDataMessage {
     return TTLUtilities.getTTL$signal_service_java(messageType);
   }
 
-  public boolean hasData() {
-    return getAttachments().isPresent() ||
-            getBody().isPresent() ||
-            getGroupInfo().isPresent() ||
-            isEndSession() ||
-            isExpirationUpdate() ||
-            isProfileKeyUpdate() ||
-            getExpiresInSeconds() > 0 ||
-            getProfileKey().isPresent() ||
-            getQuote().isPresent() ||
-            getSharedContacts().isPresent() ||
-            getPreviews().isPresent() ||
-            getSticker().isPresent() ||
-            isUnlinkingRequest() ||
-            isSessionRestorationRequest() ||
-            isSessionRequest();
-  }
-
   public static class Builder {
-
     private List<SignalServiceAttachment> attachments    = new LinkedList<SignalServiceAttachment>();
     private List<SharedContact>           sharedContacts = new LinkedList<SharedContact>();
     private List<Preview>                 previews       = new LinkedList<Preview>();
@@ -336,7 +311,7 @@ public class SignalServiceDataMessage {
     private PreKeyBundle         preKeyBundle;
     private DeviceLink           deviceLink;
     private boolean              isUnlinkingRequest;
-    private boolean              isSessionRestorationRequestRequest;
+    private boolean              isSessionRestorationRequest;
     private boolean              isSessionRequest;
 
     private Builder() {}
@@ -439,13 +414,13 @@ public class SignalServiceDataMessage {
       return this;
     }
 
-    public Builder asUnpairingRequest(boolean isUnlinkingRequest) {
+    public Builder asUnlinkingRequest(boolean isUnlinkingRequest) {
       this.isUnlinkingRequest = isUnlinkingRequest;
       return this;
     }
 
     public Builder asSessionRestorationRequest(boolean isSessionRestorationRequest) {
-      this.isSessionRestorationRequestRequest = isSessionRestorationRequest;
+      this.isSessionRestorationRequest = isSessionRestorationRequest;
       return this;
     }
 
@@ -460,7 +435,7 @@ public class SignalServiceDataMessage {
                                           expiresInSeconds, expirationUpdate, profileKey,
                                           profileKeyUpdate, quote, sharedContacts, previews,
                                           sticker, isFriendRequest, preKeyBundle, deviceLink,
-                                          isUnlinkingRequest, isSessionRestorationRequestRequest, isSessionRequest);
+                                          isUnlinkingRequest, isSessionRestorationRequest, isSessionRequest);
     }
   }
 

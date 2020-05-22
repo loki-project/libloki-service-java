@@ -1,13 +1,14 @@
 buildscript {
+    ext.gradle_version = "3.4.1"
+
     repositories {
         mavenLocal()
         google()
-        jcenter()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.1'
+        classpath "com.android.tools.build:gradle:$gradle_version"
     }
 }
 
@@ -38,11 +39,16 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 28
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
     }
 
     libraryVariants.all { variant ->

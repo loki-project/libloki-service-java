@@ -7,40 +7,39 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 object DiffieHellman {
-
-    @JvmStatic private val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-    @JvmStatic private val curve = Curve25519.getInstance(Curve25519.BEST)
-    @JvmStatic private val ivLength = 16
+    private val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    private val curve = Curve25519.getInstance(Curve25519.BEST)
+    private val ivLength = 16
 
     @JvmStatic @Throws
-    fun encrypt(plainTextData: ByteArray, symmetricKey: ByteArray): ByteArray {
+    fun encrypt(plaintext: ByteArray, symmetricKey: ByteArray): ByteArray {
         val iv = Util.getSecretBytes(ivLength)
         val ivSpec = IvParameterSpec(iv)
         val secretKeySpec = SecretKeySpec(symmetricKey, "AES")
         cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivSpec)
-        val encryptedMessageBody = cipher.doFinal(plainTextData)
-        return iv + encryptedMessageBody
+        val ciphertext = cipher.doFinal(plaintext)
+        return iv + ciphertext
     }
 
     @JvmStatic @Throws
-    fun encrypt(plainTextData: ByteArray, publicKey: ByteArray, privateKey: ByteArray): ByteArray {
+    fun encrypt(plaintext: ByteArray, publicKey: ByteArray, privateKey: ByteArray): ByteArray {
         val symmetricKey = curve.calculateAgreement(publicKey, privateKey)
-        return encrypt(plainTextData, symmetricKey)
+        return encrypt(plaintext, symmetricKey)
     }
 
     @JvmStatic @Throws
-    fun decrypt(encryptedData: ByteArray, symmetricKey: ByteArray): ByteArray {
-        val iv = encryptedData.sliceArray(0 until ivLength)
-        val encryptedMessageBody = encryptedData.sliceArray(ivLength until encryptedData.size)
+    fun decrypt(ivAndCiphertext: ByteArray, symmetricKey: ByteArray): ByteArray {
+        val iv = ivAndCiphertext.sliceArray(0 until ivLength)
+        val ciphertext = ivAndCiphertext.sliceArray(ivLength until ivAndCiphertext.size)
         val ivSpec = IvParameterSpec(iv)
         val secretKeySpec = SecretKeySpec(symmetricKey, "AES")
         cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivSpec)
-        return cipher.doFinal(encryptedMessageBody)
+        return cipher.doFinal(ciphertext)
     }
 
     @JvmStatic @Throws
-    fun decrypt(encryptedData: ByteArray, publicKey: ByteArray, privateKey: ByteArray): ByteArray {
+    fun decrypt(ivAndCiphertext: ByteArray, publicKey: ByteArray, privateKey: ByteArray): ByteArray {
         val symmetricKey = curve.calculateAgreement(publicKey, privateKey)
-        return decrypt(encryptedData, symmetricKey)
+        return decrypt(ivAndCiphertext, symmetricKey)
     }
 }
