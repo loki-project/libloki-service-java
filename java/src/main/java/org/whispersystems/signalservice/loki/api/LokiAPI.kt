@@ -149,7 +149,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
                                     val powDifficulty = json?.get("difficulty") as? Int
                                     if (powDifficulty != null) {
                                         if (powDifficulty != LokiAPI.powDifficulty) {
-                                            Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
+                                            Log.d("Loki", "Setting proof of work difficulty to $powDifficulty (snode: $target).")
                                             LokiAPI.powDifficulty = powDifficulty
                                         }
                                     } else {
@@ -289,7 +289,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
                 // The PoW difficulty is too low
                 val powDifficulty = json?.get("difficulty") as? Int
                 if (powDifficulty != null) {
-                    Log.d("Loki", "Setting proof of work difficulty to $powDifficulty.")
+                    Log.d("Loki", "Setting proof of work difficulty to $powDifficulty (snode: $snode).")
                     LokiAPI.powDifficulty = powDifficulty
                 } else {
                     Log.d("Loki", "Failed to update proof of work difficulty.")
