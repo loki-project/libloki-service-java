@@ -42,7 +42,7 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
         // endregion
 
         // region Clearnet Setup
-        private val seedNodePool: Set<String> = setOf( "http://storage.seed1.loki.network:22023", "http://storage.seed2.loki.network:38157", "http://149.56.148.124:38157" )
+        private val seedNodePool: Set<String> = setOf( "http://storage.seed1.loki.network:22023", "http://storage.seed2.loki.network:22023", "http://144.76.164.202:22023" )
 
         internal var randomSnodePool: MutableSet<LokiAPITarget> = mutableSetOf()
         // endregion
