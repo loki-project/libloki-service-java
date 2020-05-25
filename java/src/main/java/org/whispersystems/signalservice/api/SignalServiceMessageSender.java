@@ -1417,7 +1417,10 @@ public class SignalServiceMessageSender {
       if (isFriendRequest) {
         messages.add(getEncryptedFriendRequestMessage(recipient, SignalServiceAddress.DEFAULT_DEVICE_ID, plaintext, unidentifiedAccess));
       } else {
-        messages.add(getEncryptedMessage(socket, recipient, unidentifiedAccess, SignalServiceAddress.DEFAULT_DEVICE_ID, plaintext, isClosedGroup));
+        OutgoingPushMessage message = getEncryptedMessage(socket, recipient, unidentifiedAccess, SignalServiceAddress.DEFAULT_DEVICE_ID, plaintext, isClosedGroup);
+        if (message != null) { // May be null in a closed group context
+          messages.add(message);
+        }
       }
     }
 
