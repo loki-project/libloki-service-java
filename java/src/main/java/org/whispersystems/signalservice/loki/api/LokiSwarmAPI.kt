@@ -110,7 +110,7 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
         }
 
         /**
-         * WARNING: This function blocks the calling thread.
+         * Blocks the calling thread.
          */
         private fun getFileServerProxyInternal(deferred: Deferred<LokiAPITarget, Exception>, failureCount: Int = 0) {
             if (deferred.promise.isDone()) { return }
