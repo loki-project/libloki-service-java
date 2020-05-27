@@ -10,8 +10,8 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.LokiAPI
-import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
@@ -277,7 +277,11 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
                 val annotations = data.get("annotations")
                 val annotation = annotations.find { it.get("type").asText("") == channelInfoType } ?: throw LokiAPI.Error.ParsingFailed
                 val info = annotation.get("value")
-                info.get("name").asText()
+                val displayName = info.get("name").asText()
+                val countInfo = data.get("counts")
+                val memberCount = countInfo.get("subscribers").asInt()
+                apiDatabase.setUserCount(memberCount, channel, server)
+                displayName
             } catch (exception: Exception) {
                 Log.d("Loki", "Couldn't parse info for open group with ID: $channel on server: $server.")
                 throw exception
@@ -294,22 +298,6 @@ class LokiPublicChatAPI(private val userHexEncodedPublicKey: String, private val
     public fun leave(channel: Long, server: String): Promise<Unit, Exception> {
         return execute(HTTPVerb.DELETE, server, "/channels/$channel/subscribe", true).then {
             Log.d("Loki", "Left channel with ID: $channel on server: $server.")
-        }
-    }
-
-    public fun getUserCount(channel: Long, server: String): Promise<Int, Exception> {
-        val parameters = mapOf( "count" to 200 )
-        return execute(HTTPVerb.GET, server, "/channels/$channel/subscribers", true, parameters).then(sharedContext) { response ->
-            try {
-                val bodyAsString = response.body!!
-                val body = JsonUtil.fromJson(bodyAsString)
-                val userCount = body.get("data").count()
-                apiDatabase.setUserCount(userCount, channel, server)
-                userCount
-            } catch (exception: Exception) {
-                Log.d("Loki", "Couldn't parse user count for open group with ID: $channel on server: $server.")
-                throw exception
-            }
         }
     }
 
