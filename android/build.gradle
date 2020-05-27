@@ -102,12 +102,12 @@ uploadArchives {
             name 'signal-service-android'
             packaging 'aar'
             description 'Signal service communication library for Android'
-            url 'https://github.com/loki-project/loki-messenger-android-core'
+            url 'https://github.com/loki-project/session-android-service'
 
             scm {
-                url 'scm:git@github.com:loki-project/loki-messenger-android-core.git'
-                connection 'scm:git@github.com:loki-project/loki-messenger-android-core.git'
-                developerConnection 'scm:git@github.com:loki-project/loki-messenger-android-core.git'
+                url 'scm:git@github.com:loki-project/session-android-service.git'
+                connection 'scm:git@github.com:loki-project/session-android-service.git'
+                developerConnection 'scm:git@github.com:loki-project/session-android-service.git'
             }
 
             licenses {
