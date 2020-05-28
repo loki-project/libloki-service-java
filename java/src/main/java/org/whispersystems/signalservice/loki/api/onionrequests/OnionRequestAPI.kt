@@ -44,7 +44,7 @@ object OnionRequestAPI {
     /**
      * The number of snodes (including the guard snode) in a path.
      */
-    private val pathSize = 1
+    private val pathSize = 3
 
     private val guardSnodeCount
         get() = pathCount // One per path
