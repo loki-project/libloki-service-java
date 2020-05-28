@@ -23,15 +23,15 @@ import javax.crypto.spec.SecretKeySpec
 // region Type Aliases
 private typealias Path = List<LokiAPITarget>
 
-internal typealias Snode = LokiAPITarget
+public typealias Snode = LokiAPITarget
 // endregion
 
 /**
  * See the "Onion Requests" section of [The Session Whitepaper](https://arxiv.org/pdf/2002.04609.pdf) for more information.
  */
-object OnionRequestAPI {
-    private var guardSnodes = setOf<Snode>()
-    private var paths = setOf<Path>()
+public object OnionRequestAPI {
+    public var guardSnodes = setOf<Snode>()
+    public var paths = setOf<Path>()
 
     private val snodePool: Set<Snode>
         get() {
