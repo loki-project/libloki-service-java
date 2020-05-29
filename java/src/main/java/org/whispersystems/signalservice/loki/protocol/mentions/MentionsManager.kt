@@ -5,7 +5,7 @@ import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 
 class MentionsManager(private val userHexEncodedPublicKey: String, private val threadDatabase: LokiThreadDatabaseProtocol,
         private val userDatabase: LokiUserDatabaseProtocol) {
-    var userHexEncodedPublicKeyCache = mutableMapOf<Long, Set<String>>() // Thread ID to set of user hex encoded public keys
+    var userPublicKeyCache = mutableMapOf<Long, Set<String>>() // Thread ID to set of user hex encoded public keys
 
     companion object {
 
@@ -18,17 +18,17 @@ class MentionsManager(private val userHexEncodedPublicKey: String, private val t
     }
 
     fun cache(hexEncodedPublicKey: String, threadID: Long) {
-        val cache = userHexEncodedPublicKeyCache[threadID]
+        val cache = userPublicKeyCache[threadID]
         if (cache != null) {
-            userHexEncodedPublicKeyCache[threadID] = cache.plus(hexEncodedPublicKey)
+            userPublicKeyCache[threadID] = cache.plus(hexEncodedPublicKey)
         } else {
-            userHexEncodedPublicKeyCache[threadID] = setOf( hexEncodedPublicKey )
+            userPublicKeyCache[threadID] = setOf( hexEncodedPublicKey )
         }
     }
 
     fun getMentionCandidates(query: String, threadID: Long): List<Mention> {
         // Prepare
-        val cache = userHexEncodedPublicKeyCache[threadID] ?: return listOf()
+        val cache = userPublicKeyCache[threadID] ?: return listOf()
         // Gather candidates
         val publicChat = threadDatabase.getPublicChat(threadID)
         var candidates: List<Mention> = cache.mapNotNull { hexEncodedPublicKey ->
