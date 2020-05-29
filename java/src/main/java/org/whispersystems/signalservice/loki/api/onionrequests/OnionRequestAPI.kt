@@ -35,8 +35,8 @@ public object OnionRequestAPI {
 
     private val snodePool: Set<Snode>
         get() {
-            val unreliableSnodes = LokiSwarmAPI.failureCount.keys
-            return LokiSwarmAPI.randomSnodePool.minus(unreliableSnodes)
+            val unreliableSnodes = LokiSwarmAPI.shared.failureCount.keys
+            return LokiSwarmAPI.shared.snodePool.minus(unreliableSnodes)
         }
 
     // region Settings
@@ -95,7 +95,7 @@ public object OnionRequestAPI {
             return Promise.of(guardSnodes)
         } else {
             Log.d("Loki", "Populating guard snode cache.")
-            return LokiSwarmAPI.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
+            return LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
                 var unusedSnodes = snodePool
                 if (unusedSnodes.count() < guardSnodeCount) { throw InsufficientSnodesException() }
                 fun getGuardSnode(): Promise<Snode, Exception> {
@@ -135,7 +135,7 @@ public object OnionRequestAPI {
     public fun buildPaths(): Promise<List<Path>, Exception> {
         Log.d("Loki", "Building onion request paths.")
         LokiAPI.shared.broadcaster.broadcast("buildingPaths")
-        return LokiSwarmAPI.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
+        return LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
             getGuardSnodes().map(LokiAPI.sharedContext) { guardSnodes ->
                 var unusedSnodes = snodePool.minus(guardSnodes)
                 val pathSnodeCount = guardSnodeCount * pathSize - guardSnodeCount

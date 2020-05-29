@@ -38,7 +38,7 @@ internal class LokiFileServerProxy(val server: String, private val isFileUpload:
         val deferred = deferred<Response, Exception>()
         Thread {
             val symmetricKey = curve.calculateAgreement(lokiServerPublicKey, keyPair.privateKey)
-            val getProxyPromise = if (isFileUpload) LokiSwarmAPI.getFileServerProxy() else LokiSwarmAPI.getRandomSnode()
+            val getProxyPromise = if (isFileUpload) LokiSwarmAPI.shared.getFileServerProxy() else LokiSwarmAPI.shared.getRandomSnode()
             // Kovenant propagates a context to chained promises, so LokiPublicChatAPI.sharedContext should be used for all of the below
             getProxyPromise.bind(LokiAPI.sharedContext) { proxy ->
                 val url = "${proxy.address}:${proxy.port}/file_proxy"
