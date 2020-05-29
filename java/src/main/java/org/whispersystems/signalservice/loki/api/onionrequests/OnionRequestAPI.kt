@@ -31,7 +31,7 @@ public typealias Snode = LokiAPITarget
  */
 public object OnionRequestAPI {
     public var guardSnodes = setOf<Snode>()
-    public var paths = setOf<Path>()
+    public var paths = listOf<Path>()
 
     private val snodePool: Set<Snode>
         get() {
@@ -40,11 +40,11 @@ public object OnionRequestAPI {
         }
 
     // region Settings
-    private val pathCount = 2 // A main path and a backup path for the case where the target snode is in the main path
     /**
      * The number of snodes (including the guard snode) in a path.
      */
     private val pathSize = 3
+    public val pathCount = 2 // A main path and a backup path for the case where the target snode is in the main path
 
     private val guardSnodeCount
         get() = pathCount // One per path
@@ -132,8 +132,9 @@ public object OnionRequestAPI {
      * Builds and returns `pathCount` paths. The returned promise errors out if not
      * enough (reliable) snodes are available.
      */
-    private fun buildPaths(): Promise<Set<Path>, Exception> {
+    public fun buildPaths(): Promise<List<Path>, Exception> {
         Log.d("Loki", "Building onion request paths.")
+        LokiAPI.shared.broadcaster.broadcast("buildingPaths")
         return LokiSwarmAPI.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
             getGuardSnodes().map(LokiAPI.sharedContext) { guardSnodes ->
                 var unusedSnodes = snodePool.minus(guardSnodes)
@@ -148,7 +149,11 @@ public object OnionRequestAPI {
                     }
                     Log.d("Loki", "Built new onion request path: $result.")
                     result
-                }.toSet()
+                }
+            }.map { paths ->
+                OnionRequestAPI.paths = paths
+                LokiAPI.shared.broadcaster.broadcast("pathsBuilt")
+                paths
             }
         }
     }
@@ -166,14 +171,13 @@ public object OnionRequestAPI {
             return Promise.of(getPath())
         } else {
             return buildPaths().map(LokiAPI.sharedContext) { paths ->
-                OnionRequestAPI.paths = paths
                 getPath()
             }
         }
     }
 
     private fun dropPathContaining(snode: Snode) {
-        paths = paths.filter { !it.contains(snode) }.toSet()
+        paths = paths.filter { !it.contains(snode) }
     }
 
     private fun dropGuardSnode(snode: Snode) {
