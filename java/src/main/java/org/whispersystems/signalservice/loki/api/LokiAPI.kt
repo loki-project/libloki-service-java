@@ -20,7 +20,7 @@ import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
-class LokiAPI private constructor(private val userHexEncodedPublicKey: String, private val database: LokiAPIDatabaseProtocol, private val broadcaster: Broadcaster) {
+class LokiAPI private constructor(private val userHexEncodedPublicKey: String, public val database: LokiAPIDatabaseProtocol, public val broadcaster: Broadcaster) {
 
     companion object {
         val messageSendingContext = Kovenant.createContext("LokiAPIMessageSendingContext")
@@ -256,15 +256,15 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
 
     // region Error Handling
     private fun dropSnodeIfNeeded(snode: LokiAPITarget, hexEncodedPublicKey: String) {
-        val oldFailureCount = LokiSwarmAPI.failureCount[snode] ?: 0
+        val oldFailureCount = LokiSwarmAPI.shared.failureCount[snode] ?: 0
         val newFailureCount = oldFailureCount + 1
-        LokiSwarmAPI.failureCount[snode] = newFailureCount
+        LokiSwarmAPI.shared.failureCount[snode] = newFailureCount
         Log.d("Loki", "Couldn't reach snode at $snode; setting failure count to $newFailureCount.")
         if (newFailureCount >= LokiSwarmAPI.failureThreshold) {
             Log.d("Loki", "Failure threshold reached for: $snode; dropping it.")
             LokiSwarmAPI.shared.dropSnodeIfNeeded(snode, hexEncodedPublicKey) // Remove it from the swarm cache associated with the given public key
-            LokiSwarmAPI.randomSnodePool.remove(snode) // Remove it from the random snode pool
-            LokiSwarmAPI.failureCount[snode] = 0
+            LokiSwarmAPI.shared.snodePool = LokiSwarmAPI.shared.snodePool.toMutableSet().minus(snode).toSet() // Remove it from the random snode pool
+            LokiSwarmAPI.shared.failureCount[snode] = 0
         }
     }
 

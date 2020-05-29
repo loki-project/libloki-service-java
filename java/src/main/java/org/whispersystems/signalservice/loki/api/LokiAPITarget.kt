@@ -1,6 +1,6 @@
 package org.whispersystems.signalservice.loki.api
 
-class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet?) {
+public class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet?) {
 
     internal enum class Method(val rawValue: String) {
         /**
