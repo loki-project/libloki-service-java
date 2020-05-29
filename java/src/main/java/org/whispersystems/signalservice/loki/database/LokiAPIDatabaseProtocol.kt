@@ -7,6 +7,8 @@ interface LokiAPIDatabaseProtocol {
 
     fun getSnodePool(): Set<LokiAPITarget>
     fun setSnodePool(newValue: Set<LokiAPITarget>)
+    fun getPaths(): List<List<LokiAPITarget>>
+    fun setPaths(newValue: List<List<LokiAPITarget>>)
     fun getSwarmCache(hexEncodedPublicKey: String): Set<LokiAPITarget>?
     fun setSwarmCache(hexEncodedPublicKey: String, newValue: Set<LokiAPITarget>)
     fun getLastMessageHashValue(target: LokiAPITarget): String?

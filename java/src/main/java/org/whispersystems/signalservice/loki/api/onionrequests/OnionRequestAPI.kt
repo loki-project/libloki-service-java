@@ -31,7 +31,9 @@ public typealias Snode = LokiAPITarget
  */
 public object OnionRequestAPI {
     public var guardSnodes = setOf<Snode>()
-    public var paths = listOf<Path>()
+    public var paths: List<Path>
+        get() = LokiAPI.shared.database.getPaths()
+        set(newValue) { LokiAPI.shared.database.setPaths(newValue) }
 
     private val snodePool: Set<Snode>
         get() {
