@@ -20,7 +20,7 @@ import java.io.IOException
 import java.security.SecureRandom
 
 class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol) {
-    internal var failureCount: MutableMap<LokiAPITarget, Int> = mutableMapOf()
+    internal var snodeFailureCount: MutableMap<LokiAPITarget, Int> = mutableMapOf()
     internal var snodeVersions: MutableMap<LokiAPITarget, String> = mutableMapOf()
 
     internal var snodePool: Set<LokiAPITarget>
@@ -31,10 +31,14 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
         private val seedNodePool: Set<String> = setOf( "https://storage.seed1.loki.network", "https://storage.seed3.loki.network", "https://public.loki.foundation" )
 
         // region Settings
-        private val minimumSnodeCount = 2
-        private val targetSnodeCount = 3
+        private val minimumSnodePoolCount = 32
+        private val minimumSwarmSnodeCount = 2
+        private val targetSwarmSnodeCount = 3
 
-        internal val failureThreshold = 2
+        /**
+         * A snode is kicked out of a swarm and/or the snode pool if it fails this many times.
+         */
+        internal val snodeFailureThreshold = 2
         // endregion
 
         // region Initialization
@@ -49,7 +53,7 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
 
     // region Swarm API
     internal fun getRandomSnode(): Promise<LokiAPITarget, Exception> {
-        if (snodePool.isEmpty()) {
+        if (snodePool.count() < minimumSnodePoolCount) {
             val target = seedNodePool.random()
             val url = "$target/json_rpc"
             Log.d("Loki", "Populating snode pool using: $target.")
@@ -179,8 +183,8 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
     }
 
     internal fun getSwarm(hexEncodedPublicKey: String): Promise<Set<LokiAPITarget>, Exception> {
-        val cachedSwarm = database.getSwarmCache(hexEncodedPublicKey)
-        if (cachedSwarm != null && cachedSwarm.size >= minimumSnodeCount) {
+        val cachedSwarm = database.getSwarm(hexEncodedPublicKey)
+        if (cachedSwarm != null && cachedSwarm.size >= minimumSwarmSnodeCount) {
             val cachedSwarmCopy = mutableSetOf<LokiAPITarget>() // Workaround for a Kotlin compiler issue
             cachedSwarmCopy.addAll(cachedSwarm)
             return task { cachedSwarmCopy }
@@ -191,8 +195,16 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
             }.map(LokiAPI.sharedContext) {
                 parseTargets(it).toSet()
             }.success {
-                database.setSwarmCache(hexEncodedPublicKey, it)
+                database.setSwarm(hexEncodedPublicKey, it)
             }
+        }
+    }
+
+    internal fun dropSnodeFromSwarmIfNeeded(target: LokiAPITarget, hexEncodedPublicKey: String) {
+        val swarm = database.getSwarm(hexEncodedPublicKey)?.toMutableSet()
+        if (swarm != null && swarm.contains(target)) {
+            swarm.remove(target)
+            database.setSwarm(hexEncodedPublicKey, swarm)
         }
     }
 
@@ -203,17 +215,7 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
 
     internal fun getTargetSnodes(hexEncodedPublicKey: String): Promise<List<LokiAPITarget>, Exception> {
         // SecureRandom() should be cryptographically secure
-        return getSwarm(hexEncodedPublicKey).map { it.shuffled(SecureRandom()).take(targetSnodeCount) }
-    }
-    // endregion
-
-    // region Caching
-    internal fun dropSnodeIfNeeded(target: LokiAPITarget, hexEncodedPublicKey: String) {
-        val swarm = database.getSwarmCache(hexEncodedPublicKey)?.toMutableSet()
-        if (swarm != null && swarm.contains(target)) {
-            swarm.remove(target)
-            database.setSwarmCache(hexEncodedPublicKey, swarm)
-        }
+        return getSwarm(hexEncodedPublicKey).map { it.shuffled(SecureRandom()).take(targetSwarmSnodeCount) }
     }
     // endregion
 

@@ -38,7 +38,7 @@ object LokiMessageWrapper {
             val builder = Envelope.newBuilder()
             builder.type = message.type
             builder.timestamp = message.timestamp
-            builder.source = message.senderID
+            builder.source = message.senderPublicKey
             builder.sourceDevice = message.senderDeviceID
             builder.content = ByteString.copyFrom(Base64.decode(message.content))
             return builder.build()

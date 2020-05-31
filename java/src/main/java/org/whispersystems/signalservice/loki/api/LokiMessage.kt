@@ -43,7 +43,7 @@ internal data class LokiMessage(
             try {
                 val wrappedMessage = LokiMessageWrapper.wrap(message)
                 val data = Base64.encodeBytes(wrappedMessage)
-                val destination = message.recipientID
+                val destination = message.recipientPublicKey
                 var ttl = TTLUtilities.fallbackMessageTTL
                 val messageTTL = message.ttl
                 if (messageTTL != null && messageTTL != 0) { ttl = messageTTL }

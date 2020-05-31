@@ -1,5 +1,7 @@
 package org.whispersystems.signalservice.loki.api
 
+public typealias Snode = LokiAPITarget
+
 public class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet?) {
 
     internal enum class Method(val rawValue: String) {

@@ -8,6 +8,7 @@ import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.internal.util.Util
+import org.whispersystems.signalservice.loki.api.Snode
 import org.whispersystems.signalservice.loki.utilities.toHexString
 import javax.crypto.Cipher
 import javax.crypto.Mac
