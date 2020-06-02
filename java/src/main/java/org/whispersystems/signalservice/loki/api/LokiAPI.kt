@@ -262,8 +262,8 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
         Log.d("Loki", "Couldn't reach snode at $snode; setting failure count to $newFailureCount.")
         if (newFailureCount >= LokiSwarmAPI.snodeFailureThreshold) {
             Log.d("Loki", "Failure threshold reached for: $snode; dropping it.")
-            LokiSwarmAPI.shared.dropSnodeFromSwarmIfNeeded(snode, hexEncodedPublicKey) // Remove it from the swarm cache associated with the given public key
-            LokiSwarmAPI.shared.snodePool = LokiSwarmAPI.shared.snodePool.toMutableSet().minus(snode).toSet() // Remove it from the random snode pool
+            LokiSwarmAPI.shared.dropSnodeFromSwarmIfNeeded(snode, hexEncodedPublicKey)
+            LokiSwarmAPI.shared.snodePool = LokiSwarmAPI.shared.snodePool.toMutableSet().minus(snode).toSet()
             LokiSwarmAPI.shared.snodeFailureCount[snode] = 0
         }
     }

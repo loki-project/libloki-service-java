@@ -131,7 +131,7 @@ public object OnionRequestAPI {
      * Builds and returns `pathCount` paths. The returned promise errors out if not
      * enough (reliable) snodes are available.
      */
-    public fun buildPaths(): Promise<List<Path>, Exception> {
+    private fun buildPaths(): Promise<List<Path>, Exception> {
         Log.d("Loki", "Building onion request paths.")
         LokiAPI.shared.broadcaster.broadcast("buildingPaths")
         return LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
@@ -162,6 +162,9 @@ public object OnionRequestAPI {
      */
     private fun getPath(snodeToExclude: Snode): Promise<Path, Exception> {
         if (pathSize < 1) { throw Exception("Can't build path of size zero.") }
+        if (guardSnodes.isEmpty() && !paths.isEmpty()) {
+            guardSnodes = setOf( paths[0][0], paths[1][0] )
+        }
         fun getPath(): Path {
             val filteredPaths = paths.filter { !it.contains(snodeToExclude) }
             return filteredPaths.getRandomElement()
