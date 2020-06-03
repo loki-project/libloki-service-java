@@ -162,7 +162,7 @@ public object OnionRequestAPI {
      */
     private fun getPath(snodeToExclude: Snode): Promise<Path, Exception> {
         if (pathSize < 1) { throw Exception("Can't build path of size zero.") }
-        if (guardSnodes.isEmpty() && !paths.isEmpty()) {
+        if (guardSnodes.isEmpty() && paths.count() >= pathCount) {
             guardSnodes = setOf( paths[0][0], paths[1][0] )
         }
         fun getPath(): Path {
