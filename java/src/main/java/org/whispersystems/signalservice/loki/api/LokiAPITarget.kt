@@ -1,6 +1,10 @@
 package org.whispersystems.signalservice.loki.api
 
-class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet?) {
+public typealias Snode = LokiAPITarget
+
+public class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet?) {
+
+    val ip: String get() = address.removePrefix("https://")
 
     internal enum class Method(val rawValue: String) {
         /**

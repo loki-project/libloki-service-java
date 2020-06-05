@@ -11,6 +11,7 @@ import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.LokiAPI
 import org.whispersystems.signalservice.loki.api.LokiAPITarget
 import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
+import org.whispersystems.signalservice.loki.api.Snode
 import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
@@ -20,31 +21,29 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-// region Type Aliases
 private typealias Path = List<LokiAPITarget>
-
-internal typealias Snode = LokiAPITarget
-// endregion
 
 /**
  * See the "Onion Requests" section of [The Session Whitepaper](https://arxiv.org/pdf/2002.04609.pdf) for more information.
  */
-object OnionRequestAPI {
-    private var guardSnodes = setOf<Snode>()
-    private var paths = setOf<Path>()
+public object OnionRequestAPI {
+    public var guardSnodes = setOf<Snode>()
+    public var paths: List<Path> // Not a set to ensure we consistently show the same path to the user
+        get() = LokiAPI.shared.database.getOnionRequestPaths()
+        set(newValue) { LokiAPI.shared.database.setOnionRequestPaths(newValue) }
 
-    private val snodePool: Set<Snode>
+    private val reliableSnodePool: Set<Snode>
         get() {
-            val unreliableSnodes = LokiSwarmAPI.failureCount.keys
-            return LokiSwarmAPI.randomSnodePool.minus(unreliableSnodes)
+            val unreliableSnodes = LokiSwarmAPI.shared.snodeFailureCount.keys
+            return LokiSwarmAPI.shared.snodePool.minus(unreliableSnodes)
         }
 
     // region Settings
-    private val pathCount = 2 // A main path and a backup path for the case where the target snode is in the main path
     /**
      * The number of snodes (including the guard snode) in a path.
      */
-    private val pathSize = 1
+    private val pathSize = 3
+    public val pathCount = 2 // A main path and a backup path for the case where the target snode is in the main path
 
     private val guardSnodeCount
         get() = pathCount // One per path
@@ -95,8 +94,8 @@ object OnionRequestAPI {
             return Promise.of(guardSnodes)
         } else {
             Log.d("Loki", "Populating guard snode cache.")
-            return LokiSwarmAPI.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
-                var unusedSnodes = snodePool
+            return LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
+                var unusedSnodes = reliableSnodePool
                 if (unusedSnodes.count() < guardSnodeCount) { throw InsufficientSnodesException() }
                 fun getGuardSnode(): Promise<Snode, Exception> {
                     val candidate = unusedSnodes.getRandomElementOrNull()
@@ -132,11 +131,12 @@ object OnionRequestAPI {
      * Builds and returns `pathCount` paths. The returned promise errors out if not
      * enough (reliable) snodes are available.
      */
-    private fun buildPaths(): Promise<Set<Path>, Exception> {
+    private fun buildPaths(): Promise<List<Path>, Exception> {
         Log.d("Loki", "Building onion request paths.")
-        return LokiSwarmAPI.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
+        LokiAPI.shared.broadcaster.broadcast("buildingPaths")
+        return LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
             getGuardSnodes().map(LokiAPI.sharedContext) { guardSnodes ->
-                var unusedSnodes = snodePool.minus(guardSnodes)
+                var unusedSnodes = reliableSnodePool.minus(guardSnodes)
                 val pathSnodeCount = guardSnodeCount * pathSize - guardSnodeCount
                 if (unusedSnodes.count() < pathSnodeCount) { throw InsufficientSnodesException() }
                 // Don't test path snodes as this would reveal the user's IP to them
@@ -148,7 +148,11 @@ object OnionRequestAPI {
                     }
                     Log.d("Loki", "Built new onion request path: $result.")
                     result
-                }.toSet()
+                }
+            }.map { paths ->
+                OnionRequestAPI.paths = paths
+                LokiAPI.shared.broadcaster.broadcast("pathsBuilt")
+                paths
             }
         }
     }
@@ -158,6 +162,9 @@ object OnionRequestAPI {
      */
     private fun getPath(snodeToExclude: Snode): Promise<Path, Exception> {
         if (pathSize < 1) { throw Exception("Can't build path of size zero.") }
+        if (guardSnodes.isEmpty() && paths.count() >= pathCount) {
+            guardSnodes = setOf( paths[0][0], paths[1][0] )
+        }
         fun getPath(): Path {
             val filteredPaths = paths.filter { !it.contains(snodeToExclude) }
             return filteredPaths.getRandomElement()
@@ -166,14 +173,13 @@ object OnionRequestAPI {
             return Promise.of(getPath())
         } else {
             return buildPaths().map(LokiAPI.sharedContext) { paths ->
-                OnionRequestAPI.paths = paths
                 getPath()
             }
         }
     }
 
     private fun dropPathContaining(snode: Snode) {
-        paths = paths.filter { !it.contains(snode) }.toSet()
+        paths = paths.filter { !it.contains(snode) }
     }
 
     private fun dropGuardSnode(snode: Snode) {

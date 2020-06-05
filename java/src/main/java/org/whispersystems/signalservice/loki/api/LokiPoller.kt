@@ -54,7 +54,7 @@ class LokiPoller(private val userHexEncodedPublicKey: String, private val databa
     }
 
     private fun pollNextSnode(deferred: Deferred<Unit, Exception>) {
-        val swarm = database.getSwarmCache(userHexEncodedPublicKey) ?: setOf()
+        val swarm = database.getSwarm(userHexEncodedPublicKey) ?: setOf()
         val unusedSnodes = swarm.subtract(usedSnodes)
         if (unusedSnodes.isNotEmpty()) {
             val index = SecureRandom().nextInt(unusedSnodes.size)
@@ -66,7 +66,7 @@ class LokiPoller(private val userHexEncodedPublicKey: String, private val databa
                     Log.d("Loki", "Polling $nextSnode canceled.")
                 } else {
                     Log.d("Loki", "Polling $nextSnode failed; dropping it and switching to next snode.")
-                    LokiSwarmAPI.shared.dropSnodeIfNeeded(nextSnode, userHexEncodedPublicKey)
+                    LokiSwarmAPI.shared.dropSnodeFromSwarmIfNeeded(nextSnode, userHexEncodedPublicKey)
                     pollNextSnode(deferred)
                 }
             }

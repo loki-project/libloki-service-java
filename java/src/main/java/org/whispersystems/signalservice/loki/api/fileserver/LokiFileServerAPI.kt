@@ -6,8 +6,8 @@ import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.loki.api.LokiAPI
-import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
 import org.whispersystems.signalservice.loki.utilities.PublicKeyValidation
 import org.whispersystems.signalservice.loki.utilities.recover
@@ -37,7 +37,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
          */
         fun configure(isDebugMode: Boolean, userHexEncodedPublicKey: String, userPrivateKey: ByteArray, database: LokiAPIDatabaseProtocol) {
             if (Companion::shared.isInitialized) { return }
-            val server = if (isDebugMode) "https://file-dev.lokinet.org" else "https://file.getsession.org"
+            val server = "https://file.getsession.org"
             shared = LokiFileServerAPI(server, userHexEncodedPublicKey, userPrivateKey, database)
         }
         // endregion

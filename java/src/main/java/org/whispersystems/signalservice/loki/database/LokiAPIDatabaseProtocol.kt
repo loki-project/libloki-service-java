@@ -5,8 +5,12 @@ import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
 
 interface LokiAPIDatabaseProtocol {
 
-    fun getSwarmCache(hexEncodedPublicKey: String): Set<LokiAPITarget>?
-    fun setSwarmCache(hexEncodedPublicKey: String, newValue: Set<LokiAPITarget>)
+    fun getSnodePool(): Set<LokiAPITarget>
+    fun setSnodePool(newValue: Set<LokiAPITarget>)
+    fun getOnionRequestPaths(): List<List<LokiAPITarget>>
+    fun setOnionRequestPaths(newValue: List<List<LokiAPITarget>>)
+    fun getSwarm(hexEncodedPublicKey: String): Set<LokiAPITarget>?
+    fun setSwarm(hexEncodedPublicKey: String, newValue: Set<LokiAPITarget>)
     fun getLastMessageHashValue(target: LokiAPITarget): String?
     fun setLastMessageHashValue(target: LokiAPITarget, newValue: String)
     fun getReceivedMessageHashValues(): Set<String>?
