@@ -122,7 +122,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             }
             return LokiFileServerProxy(server).execute(request.build()).map { response ->
                 if (!response.isSuccess) {
-                    if (response.statusCode == 401) {
+                    if (response.statusCode == 401 || response.statusCode == 403) {
                         apiDatabase.setAuthToken(server, null)
                         throw LokiAPI.Error.TokenExpired
                     }
@@ -140,7 +140,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
 
     internal fun getUserProfiles(hexEncodedPublicKeys: Set<String>, server: String, includeAnnotations: Boolean): Promise<JsonNode, Exception> {
         val parameters = mapOf( "include_user_annotations" to includeAnnotations.toInt(), "ids" to hexEncodedPublicKeys.joinToString { "@$it" } )
-        return execute(HTTPVerb.GET, server, "users", false, parameters).map { rawResponse ->
+        return execute(HTTPVerb.GET, server, "users", parameters = parameters).map { rawResponse ->
             val bodyAsString = rawResponse.body!!
             val body = JsonUtil.fromJson(bodyAsString)
             val data = body.get("data")
