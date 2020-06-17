@@ -5,21 +5,17 @@ internal object TTLUtilities {
     /**
      * If a message type specifies an invalid TTL, this will be used.
      */
-    internal val fallbackMessageTTL = 4 * 24 * 60 * 60 * 1000
+    internal val fallbackMessageTTL = 2 * 24 * 60 * 60 * 1000
 
     internal enum class MessageType {
-        Address, // TODO: Unused?
-        Ephemeral, // TODO: Unused?
-        FriendRequest,
+        // Unimportant control messages
+        Address, SignalServiceCallMessage, TypingIndicator, VerifiedMessage,
+        // Somewhat important control messages
         LinkDevice,
-        Regular,
-        SessionRequest,
-        SignalServiceCallMessage, // TODO: Apparently these are a thing too
-        SignalServiceReceiptMessage,
-        SignalServiceSyncMessage,
-        TypingIndicator,
-        UnlinkDevice,
-        VerifiedMessage // TODO: I'm not sure when these are sent
+        // Important control messages
+        Ephemeral, SessionRequest, SignalServiceReceiptMessage, SignalServiceSyncMessage, UnlinkDevice,
+        // Visible messages
+        FriendRequest, Regular
     }
 
     @JvmStatic
@@ -28,18 +24,15 @@ internal object TTLUtilities {
         val hourInMs = 60 * minuteInMs
         val dayInMs = 24 * hourInMs
         return when (messageType) {
-            MessageType.Address -> 1 * minuteInMs
-            MessageType.Ephemeral -> 4 * dayInMs - 1 * hourInMs
-            MessageType.FriendRequest -> 4 * dayInMs
-            MessageType.LinkDevice -> 4 * minuteInMs
-            MessageType.Regular -> 2 * dayInMs
-            MessageType.SessionRequest -> 4 * dayInMs - 1 * hourInMs
-            MessageType.SignalServiceCallMessage -> 1 * minuteInMs
-            MessageType.SignalServiceReceiptMessage -> 4 * dayInMs - 1 * hourInMs
-            MessageType.SignalServiceSyncMessage -> 4 * dayInMs - 1 * hourInMs
-            MessageType.TypingIndicator -> 1 * minuteInMs
-            MessageType.UnlinkDevice -> 4 * dayInMs - 1 * hourInMs
-            MessageType.VerifiedMessage -> 4 * dayInMs - 1 * hourInMs
+            // Unimportant control messages
+            MessageType.Address, MessageType.SignalServiceCallMessage, MessageType.TypingIndicator, MessageType.VerifiedMessage -> 1 * minuteInMs
+            // Somewhat important control messages
+            MessageType.LinkDevice -> 1 * hourInMs
+            // Important control messages
+            MessageType.Ephemeral, MessageType.SessionRequest, MessageType.SignalServiceReceiptMessage,
+            MessageType.SignalServiceSyncMessage, MessageType.UnlinkDevice -> 2 * dayInMs - 1 * hourInMs
+            // Visible messages
+            MessageType.FriendRequest, MessageType.Regular -> 2 * dayInMs
         }
     }
 }

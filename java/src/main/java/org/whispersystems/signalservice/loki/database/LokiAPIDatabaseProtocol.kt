@@ -28,4 +28,6 @@ interface LokiAPIDatabaseProtocol {
     fun setUserCount(userCount: Int, group: Long, server: String)
     fun setOpenGroupAvatarURL(url: String, group: Long, server: String)
     fun getOpenGroupAvatarURL(group: Long, server: String): String?
+    fun getSessionRequestTimestamp(publicKey: String): Long?
+    fun setSessionRequestTimestamp(publicKey: String, timestamp: Long)
 }
