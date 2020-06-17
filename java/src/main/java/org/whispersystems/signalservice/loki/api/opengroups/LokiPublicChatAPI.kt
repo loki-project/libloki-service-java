@@ -1,22 +1,28 @@
 package org.whispersystems.signalservice.loki.api.opengroups
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import nl.komponents.kovenant.Kovenant
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.map
 import nl.komponents.kovenant.then
+import okhttp3.*
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.LokiAPI
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
+import org.whispersystems.signalservice.loki.api.LokiHTTPClient
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
+import org.whispersystems.signalservice.loki.database.LokiGroupDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class LokiPublicChatAPI(private val userPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol, private val userDatabase: LokiUserDatabaseProtocol) : LokiDotNetAPI(userPublicKey, userPrivateKey, apiDatabase) {
 
@@ -267,7 +273,7 @@ class LokiPublicChatAPI(private val userPublicKey: String, private val userPriva
         }
     }
 
-    public fun getChannelInfo(channel: Long, server: String): Promise<String, Exception> {
+    public fun getChannelInfo(channel: Long, server: String): Promise<LokiPublicChatInfo, Exception> {
         return retryIfNeeded(maxRetryCount) {
             val parameters = mapOf( "include_annotations" to 1 )
             execute(HTTPVerb.GET, server, "/channels/$channel", parameters = parameters).then(sharedContext) { response ->
@@ -279,16 +285,44 @@ class LokiPublicChatAPI(private val userPublicKey: String, private val userPriva
                     val annotation = annotations.find { it.get("type").asText("") == channelInfoType } ?: throw LokiAPI.Error.ParsingFailed
                     val info = annotation.get("value")
                     val displayName = info.get("name").asText()
+                    val profilePictureURL = info.get("avatar").asText()
                     val countInfo = data.get("counts")
                     val memberCount = countInfo.get("subscribers").asInt()
-                    apiDatabase.setUserCount(memberCount, channel, server)
-                    displayName
+                    val publicChatInfo = LokiPublicChatInfo(displayName, profilePictureURL, memberCount)
+                    publicChatInfo
                 } catch (exception: Exception) {
                     Log.d("Loki", "Couldn't parse info for open group with ID: $channel on server: $server.")
                     throw exception
                 }
             }
         }
+    }
+
+    public fun updateOpenGroupProfileIfNeeded(channel: Long, server: String, groupId: String, info: LokiPublicChatInfo, groupDatabase: LokiGroupDatabaseProtocol, forceUpdate: Boolean) {
+        //Save user count
+        apiDatabase.setUserCount(info.memberCount, channel, server)
+
+        //Update display name
+        groupDatabase.updateTitle(groupId, info.displayName)
+
+        //Download and update profile picture if needed
+        val oldAvatarURL = apiDatabase.getOpenGroupAvatarURL(channel, server)
+        if (!oldAvatarURL.equals(info.profilePictureURL) || forceUpdate) {
+            apiDatabase.setOpenGroupAvatarURL(info.profilePictureURL, channel, server)
+            val avatarBytes = downloadOpenGroupAvatar("$server${info.profilePictureURL}") ?: return
+            groupDatabase.updateAvatar(groupId, avatarBytes)
+        }
+    }
+
+    public fun downloadOpenGroupAvatar(url: String): ByteArray? {
+        val client = LokiHTTPClient(60).getClearnetConnection()
+        val request = Request
+            .Builder()
+            .get()
+            .url(url)
+            .build()
+        val response = client.newCall(request).execute()
+        return response.body()?.byteStream()?.readBytes()
     }
 
     public fun join(channel: Long, server: String): Promise<Unit, Exception> {
