@@ -255,13 +255,19 @@ public object OnionRequestAPI {
                         try {
                             @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(plaintext.toString(Charsets.UTF_8), Map::class.java)
                             val bodyAsString = json["body"] as String
-                            val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
                             val statusCode = json["status"] as Int
-                            if (statusCode != 200) {
+                            if (statusCode == 406) {
+                                val body = mapOf( "result" to "Your clock is out of sync with the service node network." )
                                 val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, body)
                                 return@Thread deferred.reject(exception)
+                            } else {
+                                val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                                if (statusCode != 200) {
+                                    val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, body)
+                                    return@Thread deferred.reject(exception)
+                                }
+                                deferred.resolve(body)
                             }
-                            deferred.resolve(body)
                         } catch (exception: Exception) {
                             deferred.reject(Exception("Invalid JSON."))
                         }
