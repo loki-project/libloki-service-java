@@ -65,6 +65,7 @@ class LokiPublicChatAPI(private val userPublicKey: String, private val userPriva
             parameters["since_id"] = lastMessageServerID
         } else {
             parameters["count"] = fallbackBatchCount
+            parameters["include_deleted"] = 0
         }
         return execute(HTTPVerb.GET, server, "channels/$channel/messages", parameters = parameters).then(sharedContext) { response ->
             try {
@@ -322,7 +323,10 @@ class LokiPublicChatAPI(private val userPublicKey: String, private val userPriva
             .url(url)
             .build()
         val response = client.newCall(request).execute()
-        return response.body()?.byteStream()?.readBytes()
+        val inputStream = response.body()?.byteStream()
+        val avatarBytes = inputStream?.readBytes()
+        inputStream?.close()
+        return avatarBytes
     }
 
     public fun join(channel: Long, server: String): Promise<Unit, Exception> {
