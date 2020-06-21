@@ -292,7 +292,7 @@ public class SignalServiceMessageSender {
     long              timestamp                       = message.getTimestamp();
     boolean           shouldUpdateFriendRequestStatus = FriendRequestProtocol.shared.shouldUpdateFriendRequestStatusFromMessage(message, recipient.getNumber());
     boolean           isClosedGroup                   = message.group.isPresent() && message.group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
-    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.isFriendRequest(), shouldUpdateFriendRequestStatus, message.getDeviceLink().isPresent(), isClosedGroup, false);
+    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.isFriendRequest() || message.isEndSession(), shouldUpdateFriendRequestStatus, message.getDeviceLink().isPresent(), isClosedGroup, false);
 
     // Loki - This shouldn't get invoked for note to self
     boolean wouldSignalSendSyncMessage = (result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent();
