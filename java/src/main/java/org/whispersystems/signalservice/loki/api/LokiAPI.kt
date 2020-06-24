@@ -20,7 +20,7 @@ import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
-class LokiAPI private constructor(private val userHexEncodedPublicKey: String, public val database: LokiAPIDatabaseProtocol, public val broadcaster: Broadcaster) {
+class LokiAPI private constructor(private var userHexEncodedPublicKey: String, public val database: LokiAPIDatabaseProtocol, public val broadcaster: Broadcaster) {
 
     companion object {
         val messageSendingContext = Kovenant.createContext("LokiAPIMessageSendingContext")
@@ -120,6 +120,10 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
                 getRawMessages(targetSnode, false).map(messagePollingContext) { parseRawMessagesResponse(it, targetSnode) }
             }
         }
+    }
+
+    fun updateUserHexEncodedPublicKey(newPublicKey: String) {
+        userHexEncodedPublicKey = newPublicKey
     }
 
     @kotlin.ExperimentalUnsignedTypes
