@@ -288,7 +288,7 @@ class LokiAPI private constructor(private val userHexEncodedPublicKey: String, p
             432 -> {
                 // The PoW difficulty is too low
                 val powDifficulty = json?.get("difficulty") as? Int
-                if (powDifficulty != null) {
+                if (powDifficulty != null && powDifficulty < 100) {
                     Log.d("Loki", "Setting proof of work difficulty to $powDifficulty (snode: $snode).")
                     LokiAPI.powDifficulty = powDifficulty
                 } else {
