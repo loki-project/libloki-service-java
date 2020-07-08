@@ -6,7 +6,7 @@ import org.whispersystems.libsignal.loki.LokiSessionResetStatus
 import org.whispersystems.libsignal.util.guava.Optional
 import org.whispersystems.signalservice.api.SignalServiceMessageSender
 import org.whispersystems.signalservice.api.push.SignalServiceAddress
-import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol
 
 public class SessionManagementProtocol(private val sessionResetImpl: LokiSessionResetProtocol, private val threadDatabase: LokiThreadDatabaseProtocol,
@@ -42,7 +42,7 @@ public class SessionManagementProtocol(private val sessionResetImpl: LokiSession
     public fun repairSessionIfNeeded(recipient: SignalServiceAddress, isClosedGroup: Boolean) {
         val publicKey = recipient.number
         if (!isClosedGroup) { return }
-        if (LokiAPI.shared.database.getSessionRequestTimestamp(publicKey) != null) { return }
+        if (SnodeAPI.shared.database.getSessionRequestTimestamp(publicKey) != null) { return }
         delegate.sendSessionRequest(publicKey)
     }
 

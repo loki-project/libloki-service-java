@@ -2,7 +2,7 @@ package org.whispersystems.signalservice.loki.api.crypto
 
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.SnodeAPI
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.security.MessageDigest
@@ -49,7 +49,7 @@ object ProofOfWork {
         val ttlInSeconds = (ttl / 1000).toBigInteger()
         val x3 = (ttlInSeconds * size) / x1
         val x4 = size + x3
-        val x5 = LokiAPI.powDifficulty.toBigInteger() * x4
+        val x5 = SnodeAPI.powDifficulty.toBigInteger() * x4
         return (x2 / x5).toULong()
     }
     // endregion

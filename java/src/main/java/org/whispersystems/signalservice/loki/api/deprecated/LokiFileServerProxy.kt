@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api.fileserver
+package org.whispersystems.signalservice.loki.api.deprecated
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
@@ -14,10 +14,9 @@ import org.whispersystems.libsignal.loki.DiffieHellman
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.loki.api.LokiAPI
-import org.whispersystems.signalservice.loki.api.LokiHTTPClient
-import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
-import org.whispersystems.signalservice.loki.api.isSuccessfulHTTPStatusCode
+import org.whispersystems.signalservice.loki.api.SnodeAPI
+import org.whispersystems.signalservice.loki.api.SwarmAPI
+import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 
 internal class LokiFileServerProxy(val server: String, private val isFileUpload: Boolean = false) : LokiHTTPClient(60) {
@@ -39,7 +38,7 @@ internal class LokiFileServerProxy(val server: String, private val isFileUpload:
         Thread {
             val symmetricKey = curve.calculateAgreement(lokiServerPublicKey, keyPair.privateKey)
             // Kovenant propagates a context to chained promises, so LokiPublicChatAPI.sharedContext should be used for all of the below
-            LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { proxy ->
+            SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { proxy ->
                 val url = "${proxy.address}:${proxy.port}/file_proxy"
                 Log.d("Loki", "Proxying file server request through $proxy.")
                 val endpoint = request.url().toString().removePrefix(server).removePrefix("/")
@@ -56,7 +55,7 @@ internal class LokiFileServerProxy(val server: String, private val isFileUpload:
                     .header("Connection", "close")
                     .build()
                 execute(proxyRequest, getClearnetConnection())
-            }.map(LokiAPI.sharedContext) { response ->
+            }.map(SnodeAPI.sharedContext) { response ->
                 var statusCode = response.code()
                 var body: String? = response.body()?.string()
                 if (response.isSuccessful && body != null) {

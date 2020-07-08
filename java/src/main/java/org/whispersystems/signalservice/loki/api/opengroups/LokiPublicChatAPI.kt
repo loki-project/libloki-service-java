@@ -9,7 +9,7 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
@@ -189,7 +189,7 @@ class LokiPublicChatAPI(private val userPublicKey: String, private val userPriva
         Thread {
             val signedMessage = message.sign(userPrivateKey)
             if (signedMessage == null) {
-                deferred.reject(LokiAPI.Error.MessageSigningFailed)
+                deferred.reject(SnodeAPI.Error.MessageSigningFailed)
             } else {
                 retryIfNeeded(maxRetryCount) {
                     Log.d("Loki", "Sending message to open group with ID: $channel on server: $server.")
@@ -276,7 +276,7 @@ class LokiPublicChatAPI(private val userPublicKey: String, private val userPriva
                     val body = JsonUtil.fromJson(bodyAsString)
                     val data = body.get("data")
                     val annotations = data.get("annotations")
-                    val annotation = annotations.find { it.get("type").asText("") == channelInfoType } ?: throw LokiAPI.Error.ParsingFailed
+                    val annotation = annotations.find { it.get("type").asText("") == channelInfoType } ?: throw SnodeAPI.Error.ParsingFailed
                     val info = annotation.get("value")
                     val displayName = info.get("name").asText()
                     val countInfo = data.get("counts")

@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api.p2p
+package org.whispersystems.signalservice.loki.api.shelved.p2p
 
 import java.util.*
 import kotlin.concurrent.timer

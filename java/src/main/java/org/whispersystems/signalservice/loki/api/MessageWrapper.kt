@@ -8,7 +8,7 @@ import org.whispersystems.signalservice.internal.websocket.WebSocketProtos.WebSo
 import org.whispersystems.signalservice.internal.websocket.WebSocketProtos.WebSocketRequestMessage
 import java.security.SecureRandom
 
-object LokiMessageWrapper {
+object MessageWrapper {
 
     // region Types
     sealed class Error(val description: String) : Exception() {

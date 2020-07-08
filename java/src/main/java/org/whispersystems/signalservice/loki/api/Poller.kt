@@ -10,9 +10,9 @@ import java.util.*
 
 private class PromiseCanceledException : Exception("Promise canceled.")
 
-class LokiPoller(public var userHexEncodedPublicKey: String, private val database: LokiAPIDatabaseProtocol, private val onMessagesReceived: (List<SignalServiceProtos.Envelope>) -> Unit) {
+class Poller(public var userPublicKey: String, private val database: LokiAPIDatabaseProtocol, private val onMessagesReceived: (List<SignalServiceProtos.Envelope>) -> Unit) {
     private var hasStarted: Boolean = false
-    private val usedSnodes: MutableSet<LokiAPITarget> = mutableSetOf()
+    private val usedSnodes: MutableSet<Snode> = mutableSetOf()
     public var isCaughtUp = false
 
     // region Settings
@@ -39,9 +39,9 @@ class LokiPoller(public var userHexEncodedPublicKey: String, private val databas
     // region Private API
     private fun setUpPolling() {
         val thread = Thread.currentThread()
-        LokiSwarmAPI.shared.getSwarm(userHexEncodedPublicKey).bind(LokiAPI.messagePollingContext) {
+        SwarmAPI.shared.getSwarm(userPublicKey).bind(SnodeAPI.messagePollingContext) {
             usedSnodes.clear()
-            val deferred = deferred<Unit, Exception>(LokiAPI.messagePollingContext)
+            val deferred = deferred<Unit, Exception>(SnodeAPI.messagePollingContext)
             pollNextSnode(deferred)
             deferred.promise
         }.always {
@@ -55,7 +55,7 @@ class LokiPoller(public var userHexEncodedPublicKey: String, private val databas
     }
 
     private fun pollNextSnode(deferred: Deferred<Unit, Exception>) {
-        val swarm = database.getSwarm(userHexEncodedPublicKey) ?: setOf()
+        val swarm = database.getSwarm(userPublicKey) ?: setOf()
         val unusedSnodes = swarm.subtract(usedSnodes)
         if (unusedSnodes.isNotEmpty()) {
             val index = SecureRandom().nextInt(unusedSnodes.size)
@@ -67,7 +67,7 @@ class LokiPoller(public var userHexEncodedPublicKey: String, private val databas
                     Log.d("Loki", "Polling $nextSnode canceled.")
                 } else {
                     Log.d("Loki", "Polling $nextSnode failed; dropping it and switching to next snode.")
-                    LokiSwarmAPI.shared.dropSnodeFromSwarmIfNeeded(nextSnode, userHexEncodedPublicKey)
+                    SwarmAPI.shared.dropSnodeFromSwarmIfNeeded(nextSnode, userPublicKey)
                     pollNextSnode(deferred)
                 }
             }
@@ -76,16 +76,16 @@ class LokiPoller(public var userHexEncodedPublicKey: String, private val databas
         }
     }
 
-    private fun poll(target: LokiAPITarget, deferred: Deferred<Unit, Exception>): Promise<Unit, Exception> {
-        return LokiAPI.shared.getRawMessages(target, false).bind(LokiAPI.messagePollingContext) { rawResponse ->
+    private fun poll(snode: Snode, deferred: Deferred<Unit, Exception>): Promise<Unit, Exception> {
+        return SnodeAPI.shared.getRawMessages(snode).bind(SnodeAPI.messagePollingContext) { rawResponse ->
             if (deferred.promise.isDone()) {
                 // The long polling connection has been canceled; don't recurse
                 isCaughtUp = true
                 task { Unit }
             } else {
-                val messages = LokiAPI.shared.parseRawMessagesResponse(rawResponse, target)
+                val messages = SnodeAPI.shared.parseRawMessagesResponse(rawResponse, snode)
                 onMessagesReceived(messages)
-                poll(target, deferred)
+                poll(snode, deferred)
             }
         }
     }

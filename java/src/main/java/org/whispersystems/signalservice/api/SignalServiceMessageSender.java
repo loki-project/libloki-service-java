@@ -77,7 +77,7 @@ import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.internal.util.StaticCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Util;
 import org.whispersystems.signalservice.internal.util.concurrent.SettableFuture;
-import org.whispersystems.signalservice.loki.api.LokiAPI;
+import org.whispersystems.signalservice.loki.api.SnodeAPI;
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI;
 import org.whispersystems.signalservice.loki.api.SignalMessageInfo;
 import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI;
@@ -113,7 +113,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import kotlin.Unit;
-import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import nl.komponents.kovenant.Promise;
 
@@ -1240,14 +1239,7 @@ public class SignalServiceMessageSender {
       if (isFriendRequestMessage && shouldUpdateFriendRequestStatus && eventListener.isPresent()) {
         eventListener.get().onFriendRequestSending(messageID, threadID);
       }
-      LokiAPI.shared.sendSignalMessage(messageInfo, new Function0<Unit>() {
-
-        @Override
-        public Unit invoke() {
-          // TODO: onP2PSuccess
-          return Unit.INSTANCE;
-        }
-      }).success(new Function1<Set<Promise<Map<?, ?>, Exception>>, Unit>() {
+      SnodeAPI.shared.sendSignalMessage(messageInfo).success(new Function1<Set<Promise<Map<?, ?>, Exception>>, Unit>() {
 
         @Override
         public Unit invoke(Set<Promise<Map<?, ?>, Exception>> promises) {
@@ -1315,8 +1307,8 @@ public class SignalServiceMessageSender {
       return SendMessageResult.success(recipient, false, true);
     } catch (Exception exception) {
       Throwable underlyingError = exception.getCause();
-      if (underlyingError instanceof LokiAPI.Error) {
-        return SendMessageResult.lokiAPIError(recipient, (LokiAPI.Error)underlyingError);
+      if (underlyingError instanceof SnodeAPI.Error) {
+        return SendMessageResult.lokiAPIError(recipient, (SnodeAPI.Error)underlyingError);
       } else {
         return SendMessageResult.networkFailure(recipient);
       }

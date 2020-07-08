@@ -22,8 +22,9 @@ import org.whispersystems.signalservice.internal.push.http.ProfileCipherOutputSt
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
+import org.whispersystems.signalservice.loki.api.deprecated.LokiHTTPClient
 import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI
-import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerProxy
+import org.whispersystems.signalservice.loki.api.deprecated.LokiFileServerProxy
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.recover
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
@@ -33,7 +34,7 @@ import java.util.*
 /**
  * Base class that provides utilities for .NET based APIs.
  */
-open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol) {
+open class LokiDotNetAPI(private val userPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol) {
 
     internal enum class HTTPVerb { GET, PUT, POST, DELETE, PATCH }
 
@@ -62,8 +63,8 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
 
     private fun requestNewAuthToken(server: String): Promise<String, Exception> {
         Log.d("Loki", "Requesting auth token for server: $server.")
-        val parameters: Map<String, Any> = mapOf( "pubKey" to userHexEncodedPublicKey )
-        return execute(HTTPVerb.GET, server, "loki/v1/get_challenge", false, parameters).map(LokiAPI.sharedContext) { response ->
+        val parameters: Map<String, Any> = mapOf( "pubKey" to userPublicKey )
+        return execute(HTTPVerb.GET, server, "loki/v1/get_challenge", false, parameters).map(SnodeAPI.sharedContext) { response ->
             try {
                 val bodyAsString = response.body!!
                 @Suppress("NAME_SHADOWING") val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
@@ -89,7 +90,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
 
     private fun submitAuthToken(token: String, server: String): Promise<String, Exception> {
         Log.d("Loki", "Submitting auth token for server: $server.")
-        val parameters = mapOf( "pubKey" to userHexEncodedPublicKey, "token" to token )
+        val parameters = mapOf( "pubKey" to userPublicKey, "token" to token )
         return execute(HTTPVerb.POST, server, "loki/v1/submit_challenge", false, parameters).map { token }
     }
 
@@ -124,9 +125,9 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
                 if (!response.isSuccess) {
                     if (response.statusCode == 401 || response.statusCode == 403) {
                         apiDatabase.setAuthToken(server, null)
-                        throw LokiAPI.Error.TokenExpired
+                        throw SnodeAPI.Error.TokenExpired
                     }
-                    throw LokiAPI.Error.HTTPRequestFailed(response.statusCode)
+                    throw SnodeAPI.Error.HTTPRequestFailed(response.statusCode)
                 }
                 return@map response
             }
@@ -146,7 +147,7 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             val data = body.get("data")
             if (data == null) {
                 Log.d("Loki", "Couldn't parse user profiles for: $hexEncodedPublicKeys from: $rawResponse.")
-                throw LokiAPI.Error.ParsingFailed
+                throw SnodeAPI.Error.ParsingFailed
             }
             data
         }
@@ -177,13 +178,13 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
                 val data = json.get("data")
                 if (data == null) {
                     Log.d("Loki", "Couldn't parse attachment from: $jsonAsString.")
-                    throw LokiAPI.Error.ParsingFailed
+                    throw SnodeAPI.Error.ParsingFailed
                 }
                 val id = data.get("id").asLong()
                 val url = data.get("url").asText()
                 if (url.isEmpty()) {
                     Log.d("Loki", "Couldn't parse upload from: $jsonAsString.")
-                    throw LokiAPI.Error.ParsingFailed
+                    throw SnodeAPI.Error.ParsingFailed
                 }
                 UploadResult(id, url, file.transmittedDigest)
             }
@@ -208,13 +209,13 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
                 val data = json.get("data")
                 if (data == null) {
                     Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
-                    throw LokiAPI.Error.ParsingFailed
+                    throw SnodeAPI.Error.ParsingFailed
                 }
                 val id = data.get("id").asLong()
                 val url = data.get("url").asText()
                 if (url.isEmpty()) {
                     Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
-                    throw LokiAPI.Error.ParsingFailed
+                    throw SnodeAPI.Error.ParsingFailed
                 }
                 setLastProfilePictureUpload()
                 UploadResult(id, url, file.transmittedDigest)
@@ -239,15 +240,15 @@ open class LokiDotNetAPI(private val userHexEncodedPublicKey: String, private va
             if (!response.isSuccess) {
                 if (response.statusCode == 401) {
                     apiDatabase.setAuthToken(server, null)
-                    throw LokiAPI.Error.TokenExpired
+                    throw SnodeAPI.Error.TokenExpired
                 }
-                throw LokiAPI.Error.HTTPRequestFailed(response.statusCode)
+                throw SnodeAPI.Error.HTTPRequestFailed(response.statusCode)
             }
-            val jsonAsString = response.body ?: throw LokiAPI.Error.ParsingFailed
+            val jsonAsString = response.body ?: throw SnodeAPI.Error.ParsingFailed
             parse(jsonAsString)
         }.recover { exception ->
             val nestedException = exception.cause ?: exception
-            if (nestedException is LokiAPI.Error.HTTPRequestFailed) {
+            if (nestedException is SnodeAPI.Error.HTTPRequestFailed) {
                 throw NonSuccessfulResponseCodeException("Request returned with status code ${nestedException.code}.")
             }
             throw PushNetworkException(exception)

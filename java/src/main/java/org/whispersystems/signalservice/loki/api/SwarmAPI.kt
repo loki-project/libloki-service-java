@@ -12,11 +12,10 @@ import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 import java.security.SecureRandom
 
-class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol) {
-    internal var snodeFailureCount: MutableMap<LokiAPITarget, Int> = mutableMapOf()
-    internal var snodeVersions: MutableMap<LokiAPITarget, String> = mutableMapOf()
+class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol) {
+    internal var snodeFailureCount: MutableMap<Snode, Int> = mutableMapOf()
 
-    internal var snodePool: Set<LokiAPITarget>
+    internal var snodePool: Set<Snode>
         get() = database.getSnodePool()
         set(newValue) { database.setSnodePool(newValue) }
 
@@ -26,7 +25,7 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
         // region Settings
         private val minimumSnodePoolCount = 32
         private val minimumSwarmSnodeCount = 2
-        private val targetSwarmSnodeCount = 3
+        private val targetSwarmSnodeCount = 2
 
         /**
          * A snode is kicked out of a swarm and/or the snode pool if it fails this many times.
@@ -35,17 +34,17 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
         // endregion
 
         // region Initialization
-        lateinit var shared: LokiSwarmAPI
+        lateinit var shared: SwarmAPI
 
         fun configureIfNeeded(database: LokiAPIDatabaseProtocol) {
             if (::shared.isInitialized) { return; }
-            shared = LokiSwarmAPI(database)
+            shared = SwarmAPI(database)
         }
         // endregion
     }
 
     // region Swarm API
-    internal fun getRandomSnode(): Promise<LokiAPITarget, Exception> {
+    internal fun getRandomSnode(): Promise<Snode, Exception> {
         if (snodePool.count() < minimumSnodePoolCount) {
             val target = seedNodePool.random()
             val url = "$target/json_rpc"
@@ -57,24 +56,24 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
                     "fields" to mapOf( "public_ip" to true, "storage_port" to true, "pubkey_x25519" to true, "pubkey_ed25519" to true )
                 )
             )
-            val deferred = deferred<LokiAPITarget, Exception>()
-            deferred<LokiAPITarget, Exception>(LokiAPI.sharedContext)
+            val deferred = deferred<Snode, Exception>()
+            deferred<Snode, Exception>(SnodeAPI.sharedContext)
             Thread {
                 try {
                     val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
                     val intermediate = json["result"] as? Map<*, *>
-                    val rawTargets = intermediate?.get("service_node_states") as? List<*>
-                    if (rawTargets != null) {
-                        val snodePool = rawTargets.mapNotNull { rawTarget ->
-                            val rawTargetAsJSON = rawTarget as? Map<*, *>
-                            val address = rawTargetAsJSON?.get("public_ip") as? String
-                            val port = rawTargetAsJSON?.get("storage_port") as? Int
-                            val ed25519Key = rawTargetAsJSON?.get("pubkey_ed25519") as? String
-                            val x25519Key = rawTargetAsJSON?.get("pubkey_x25519") as? String
+                    val rawSnodes = intermediate?.get("service_node_states") as? List<*>
+                    if (rawSnodes != null) {
+                        val snodePool = rawSnodes.mapNotNull { rawSnode ->
+                            val rawSnodeAsJSON = rawSnode as? Map<*, *>
+                            val address = rawSnodeAsJSON?.get("public_ip") as? String
+                            val port = rawSnodeAsJSON?.get("storage_port") as? Int
+                            val ed25519Key = rawSnodeAsJSON?.get("pubkey_ed25519") as? String
+                            val x25519Key = rawSnodeAsJSON?.get("pubkey_x25519") as? String
                             if (address != null && port != null && ed25519Key != null && x25519Key != null && address != "0.0.0.0") {
-                                LokiAPITarget("https://$address", port, LokiAPITarget.KeySet(ed25519Key, x25519Key))
+                                Snode("https://$address", port, Snode.KeySet(ed25519Key, x25519Key))
                             } else {
-                                Log.d("Loki", "Failed to parse: ${rawTarget?.prettifiedDescription()}.")
+                                Log.d("Loki", "Failed to parse: ${rawSnode?.prettifiedDescription()}.")
                                 null
                             }
                         }.toMutableSet()
@@ -84,11 +83,11 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
                             deferred.resolve(snodePool.getRandomElement())
                         } catch (exception: Exception) {
                             Log.d("Loki", "Got an empty snode pool from: $target.")
-                            deferred.reject(LokiAPI.Error.Generic)
+                            deferred.reject(SnodeAPI.Error.Generic)
                         }
                     } else {
-                        Log.d("Loki", "Failed to update snode pool from: ${(rawTargets as List<*>?)?.prettifiedDescription()}.")
-                        deferred.reject(LokiAPI.Error.Generic)
+                        Log.d("Loki", "Failed to update snode pool from: ${(rawSnodes as List<*>?)?.prettifiedDescription()}.")
+                        deferred.reject(SnodeAPI.Error.Generic)
                     }
                 } catch (exception: Exception) {
                     deferred.reject(exception)
@@ -100,45 +99,45 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
         }
     }
 
-    internal fun getSwarm(hexEncodedPublicKey: String): Promise<Set<LokiAPITarget>, Exception> {
-        val cachedSwarm = database.getSwarm(hexEncodedPublicKey)
+    internal fun getSwarm(publicKey: String): Promise<Set<Snode>, Exception> {
+        val cachedSwarm = database.getSwarm(publicKey)
         if (cachedSwarm != null && cachedSwarm.size >= minimumSwarmSnodeCount) {
-            val cachedSwarmCopy = mutableSetOf<LokiAPITarget>() // Workaround for a Kotlin compiler issue
+            val cachedSwarmCopy = mutableSetOf<Snode>() // Workaround for a Kotlin compiler issue
             cachedSwarmCopy.addAll(cachedSwarm)
             return task { cachedSwarmCopy }
         } else {
-            val parameters = mapOf( "pubKey" to hexEncodedPublicKey )
+            val parameters = mapOf( "pubKey" to publicKey )
             return getRandomSnode().bind {
-                LokiAPI.shared.invoke(LokiAPITarget.Method.GetSwarm, it, hexEncodedPublicKey, parameters)
-            }.map(LokiAPI.sharedContext) {
-                parseTargets(it).toSet()
+                SnodeAPI.shared.invoke(Snode.Method.GetSwarm, it, publicKey, parameters)
+            }.map(SnodeAPI.sharedContext) {
+                parseSnodes(it).toSet()
             }.success {
-                database.setSwarm(hexEncodedPublicKey, it)
+                database.setSwarm(publicKey, it)
             }
         }
     }
 
-    internal fun dropSnodeFromSwarmIfNeeded(target: LokiAPITarget, hexEncodedPublicKey: String) {
-        val swarm = database.getSwarm(hexEncodedPublicKey)?.toMutableSet()
-        if (swarm != null && swarm.contains(target)) {
-            swarm.remove(target)
-            database.setSwarm(hexEncodedPublicKey, swarm)
+    internal fun dropSnodeFromSwarmIfNeeded(snode: Snode, publicKey: String) {
+        val swarm = database.getSwarm(publicKey)?.toMutableSet()
+        if (swarm != null && swarm.contains(snode)) {
+            swarm.remove(snode)
+            database.setSwarm(publicKey, swarm)
         }
     }
 
-    internal fun getSingleTargetSnode(hexEncodedPublicKey: String): Promise<LokiAPITarget, Exception> {
+    internal fun getSingleTargetSnode(publicKey: String): Promise<Snode, Exception> {
         // SecureRandom() should be cryptographically secure
-        return getSwarm(hexEncodedPublicKey).map { it.shuffled(SecureRandom()).random() }
+        return getSwarm(publicKey).map { it.shuffled(SecureRandom()).random() }
     }
 
-    internal fun getTargetSnodes(hexEncodedPublicKey: String): Promise<List<LokiAPITarget>, Exception> {
+    internal fun getTargetSnodes(publicKey: String): Promise<List<Snode>, Exception> {
         // SecureRandom() should be cryptographically secure
-        return getSwarm(hexEncodedPublicKey).map { it.shuffled(SecureRandom()).take(targetSwarmSnodeCount) }
+        return getSwarm(publicKey).map { it.shuffled(SecureRandom()).take(targetSwarmSnodeCount) }
     }
     // endregion
 
     // region Parsing
-    private fun parseTargets(rawResponse: Any): List<LokiAPITarget> {
+    private fun parseSnodes(rawResponse: Any): List<Snode> {
         val json = rawResponse as? Map<*, *>
         val rawSnodes = json?.get("snodes") as? List<*>
         if (rawSnodes != null) {
@@ -150,14 +149,14 @@ class LokiSwarmAPI private constructor(private val database: LokiAPIDatabaseProt
                 val ed25519Key = rawSnodeAsJSON?.get("pubkey_ed25519") as? String
                 val x25519Key = rawSnodeAsJSON?.get("pubkey_x25519") as? String
                 if (address != null && port != null && ed25519Key != null && x25519Key != null && address != "0.0.0.0") {
-                    LokiAPITarget("https://$address", port, LokiAPITarget.KeySet(ed25519Key, x25519Key))
+                    Snode("https://$address", port, Snode.KeySet(ed25519Key, x25519Key))
                 } else {
-                    Log.d("Loki", "Failed to parse target from: ${rawSnode?.prettifiedDescription()}.")
+                    Log.d("Loki", "Failed to parse snode from: ${rawSnode?.prettifiedDescription()}.")
                     null
                 }
             }
         } else {
-            Log.d("Loki", "Failed to parse targets from: ${rawResponse.prettifiedDescription()}.")
+            Log.d("Loki", "Failed to parse snodes from: ${rawResponse.prettifiedDescription()}.")
             return listOf()
         }
     }

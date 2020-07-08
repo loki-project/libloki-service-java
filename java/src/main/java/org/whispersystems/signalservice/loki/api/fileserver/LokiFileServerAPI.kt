@@ -5,7 +5,7 @@ import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
-import org.whispersystems.signalservice.loki.api.LokiAPI
+import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
@@ -77,7 +77,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
         if (updatees.isEmpty()) {
             return Promise.of(cachedDeviceLinks)
         } else {
-            return getUserProfiles(updatees, server, true).map(LokiAPI.sharedContext) { data ->
+            return getUserProfiles(updatees, server, true).map(SnodeAPI.sharedContext) { data ->
                 data.map dataMap@ { node ->
                     val hexEncodedPublicKey = node.get("username").asText()
                     val annotations = node.get("annotations")
@@ -123,7 +123,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                         // Do nothing
                     }
                 }
-            }.map(LokiAPI.sharedContext) { updateResults ->
+            }.map(SnodeAPI.sharedContext) { updateResults ->
                 val deviceLinks = mutableListOf<DeviceLink>()
                 for (updateResult in updateResults) {
                     when (updateResult) {
@@ -132,7 +132,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                             deviceLinks.addAll(updateResult.deviceLinks)
                         }
                         is DeviceLinkUpdateResult.Failure -> {
-                            if (updateResult.error is LokiAPI.Error.ParsingFailed) {
+                            if (updateResult.error is SnodeAPI.Error.ParsingFailed) {
                                 lastDeviceLinkUpdate[updateResult.hexEncodedPublicKey] = now // Don't infinitely update in case of a parsing failure
                             }
                             deviceLinks.addAll(database.getDeviceLinks(updateResult.hexEncodedPublicKey)) // Fall back on cached device links in case of a failure

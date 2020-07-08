@@ -1,18 +1,18 @@
 package org.whispersystems.signalservice.loki.database
 
-import org.whispersystems.signalservice.loki.api.LokiAPITarget
+import org.whispersystems.signalservice.loki.api.Snode
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
 
 interface LokiAPIDatabaseProtocol {
 
-    fun getSnodePool(): Set<LokiAPITarget>
-    fun setSnodePool(newValue: Set<LokiAPITarget>)
-    fun getOnionRequestPaths(): List<List<LokiAPITarget>>
-    fun setOnionRequestPaths(newValue: List<List<LokiAPITarget>>)
-    fun getSwarm(hexEncodedPublicKey: String): Set<LokiAPITarget>?
-    fun setSwarm(hexEncodedPublicKey: String, newValue: Set<LokiAPITarget>)
-    fun getLastMessageHashValue(target: LokiAPITarget): String?
-    fun setLastMessageHashValue(target: LokiAPITarget, newValue: String)
+    fun getSnodePool(): Set<Snode>
+    fun setSnodePool(newValue: Set<Snode>)
+    fun getOnionRequestPaths(): List<List<Snode>>
+    fun setOnionRequestPaths(newValue: List<List<Snode>>)
+    fun getSwarm(hexEncodedPublicKey: String): Set<Snode>?
+    fun setSwarm(hexEncodedPublicKey: String, newValue: Set<Snode>)
+    fun getLastMessageHashValue(snode: Snode): String?
+    fun setLastMessageHashValue(snode: Snode, newValue: String)
     fun getReceivedMessageHashValues(): Set<String>?
     fun setReceivedMessageHashValues(newValue: Set<String>)
     fun getAuthToken(server: String): String?

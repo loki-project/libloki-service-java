@@ -41,7 +41,7 @@ internal data class LokiMessage(
 
         internal fun from(message: SignalMessageInfo): LokiMessage? {
             try {
-                val wrappedMessage = LokiMessageWrapper.wrap(message)
+                val wrappedMessage = MessageWrapper.wrap(message)
                 val data = Base64.encodeBytes(wrappedMessage)
                 val destination = message.recipientPublicKey
                 var ttl = TTLUtilities.fallbackMessageTTL
@@ -66,7 +66,7 @@ internal data class LokiMessage(
             if (nonce != null ) {
                 deferred.resolve(copy(nonce = nonce, timestamp = now))
             } else {
-                deferred.reject(LokiAPI.Error.ProofOfWorkCalculationFailed)
+                deferred.reject(SnodeAPI.Error.ProofOfWorkCalculationFailed)
             }
         }.start()
         return deferred.promise

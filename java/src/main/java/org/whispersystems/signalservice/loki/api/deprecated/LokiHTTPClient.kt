@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.api
+package org.whispersystems.signalservice.loki.api.deprecated
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred

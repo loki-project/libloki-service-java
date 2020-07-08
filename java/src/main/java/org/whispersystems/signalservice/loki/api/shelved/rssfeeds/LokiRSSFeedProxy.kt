@@ -1,12 +1,12 @@
-package org.whispersystems.signalservice.loki.api.rssfeeds
+package org.whispersystems.signalservice.loki.api.shelved.rssfeeds
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.functional.map
 import okhttp3.Request
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.loki.api.LokiAPI
-import org.whispersystems.signalservice.loki.api.LokiHTTPClient
-import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerProxy
+import org.whispersystems.signalservice.loki.api.SnodeAPI
+import org.whispersystems.signalservice.loki.api.deprecated.LokiHTTPClient
+import org.whispersystems.signalservice.loki.api.deprecated.LokiFileServerProxy
 
 object LokiRSSFeedProxy {
 
@@ -24,9 +24,9 @@ object LokiRSSFeedProxy {
         }
         return client.execute(builder.build()).map { response ->
             if (!response.isSuccess) {
-                throw LokiAPI.Error.HTTPRequestFailed(response.statusCode)
+                throw SnodeAPI.Error.HTTPRequestFailed(response.statusCode)
             }
-            val body = response.body ?: throw LokiAPI.Error.ResponseBodyMissing
+            val body = response.body ?: throw SnodeAPI.Error.ResponseBodyMissing
             val json = JsonUtil.fromJson(body)
             json.get("data").asText()
         }

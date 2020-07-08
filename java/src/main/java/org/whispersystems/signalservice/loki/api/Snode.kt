@@ -1,8 +1,6 @@
 package org.whispersystems.signalservice.loki.api
 
-public typealias Snode = LokiAPITarget
-
-public class LokiAPITarget(val address: String, val port: Int, val publicKeySet: KeySet?) {
+public class Snode(val address: String, val port: Int, val publicKeySet: KeySet?) {
 
     val ip: String get() = address.removePrefix("https://")
 
@@ -21,7 +19,7 @@ public class LokiAPITarget(val address: String, val port: Int, val publicKeySet:
     data class KeySet(val ed25519Key: String, val x25519Key: String)
 
     override fun equals(other: Any?): Boolean {
-        return if (other is LokiAPITarget) {
+        return if (other is Snode) {
             address == other.address && port == other.port
         } else {
             false

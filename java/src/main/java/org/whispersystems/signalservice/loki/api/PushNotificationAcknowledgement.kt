@@ -5,21 +5,21 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import java.io.IOException
 
-public class LokiPushNotificationAcknowledgement private constructor(public val server: String) {
+public class PushNotificationAcknowledgement private constructor(public val server: String) {
     private val connection = OkHttpClient()
 
     companion object {
-        lateinit var shared: LokiPushNotificationAcknowledgement
+        lateinit var shared: PushNotificationAcknowledgement
 
         fun configureIfNeeded(isDebugMode: Boolean) {
             if (::shared.isInitialized) { return; }
             val server = if (isDebugMode) "https://dev.apns.getsession.org" else "https://live.apns.getsession.org"
-            shared = LokiPushNotificationAcknowledgement(server)
+            shared = PushNotificationAcknowledgement(server)
         }
     }
 
-    fun acknowledgeDeliveryForMessageWith(hash: String, expiration: Int, hexEncodedPublicKey: String) {
-        val parameters = mapOf( "hash" to hash, "pubKey" to hexEncodedPublicKey, "expiration" to expiration )
+    fun acknowledgeDeliveryForMessageWith(hash: String, expiration: Int, publicKey: String) {
+        val parameters = mapOf( "hash" to hash, "pubKey" to publicKey, "expiration" to expiration )
         val url = "${server}/acknowledge_message_delivery"
         val body = RequestBody.create(MediaType.get("application/json"), JsonUtil.toJson(parameters))
         val request = Request.Builder().url(url).post(body).build()

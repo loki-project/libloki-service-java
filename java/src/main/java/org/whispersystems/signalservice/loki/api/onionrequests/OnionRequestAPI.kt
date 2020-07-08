@@ -8,10 +8,7 @@ import nl.komponents.kovenant.functional.map
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.loki.api.LokiAPI
-import org.whispersystems.signalservice.loki.api.LokiAPITarget
-import org.whispersystems.signalservice.loki.api.LokiSwarmAPI
-import org.whispersystems.signalservice.loki.api.Snode
+import org.whispersystems.signalservice.loki.api.*
 import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.utilities.getRandomElement
 import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
@@ -21,7 +18,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-private typealias Path = List<LokiAPITarget>
+private typealias Path = List<Snode>
 
 /**
  * See the "Onion Requests" section of [The Session Whitepaper](https://arxiv.org/pdf/2002.04609.pdf) for more information.
@@ -29,13 +26,13 @@ private typealias Path = List<LokiAPITarget>
 public object OnionRequestAPI {
     public var guardSnodes = setOf<Snode>()
     public var paths: List<Path> // Not a set to ensure we consistently show the same path to the user
-        get() = LokiAPI.shared.database.getOnionRequestPaths()
-        set(newValue) { LokiAPI.shared.database.setOnionRequestPaths(newValue) }
+        get() = SnodeAPI.shared.database.getOnionRequestPaths()
+        set(newValue) { SnodeAPI.shared.database.setOnionRequestPaths(newValue) }
 
     private val reliableSnodePool: Set<Snode>
         get() {
-            val unreliableSnodes = LokiSwarmAPI.shared.snodeFailureCount.keys
-            return LokiSwarmAPI.shared.snodePool.minus(unreliableSnodes)
+            val unreliableSnodes = SwarmAPI.shared.snodeFailureCount.keys
+            return SwarmAPI.shared.snodePool.minus(unreliableSnodes)
         }
 
     // region Settings
@@ -94,7 +91,7 @@ public object OnionRequestAPI {
             return Promise.of(guardSnodes)
         } else {
             Log.d("Loki", "Populating guard snode cache.")
-            return LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
+            return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
                 var unusedSnodes = reliableSnodePool
                 if (unusedSnodes.count() < guardSnodeCount) { throw InsufficientSnodesException() }
                 fun getGuardSnode(): Promise<Snode, Exception> {
@@ -118,7 +115,7 @@ public object OnionRequestAPI {
                     return deferred.promise
                 }
                 val promises = (0 until guardSnodeCount).map { getGuardSnode() }
-                all(promises).map(LokiAPI.sharedContext) { guardSnodes ->
+                all(promises).map(SnodeAPI.sharedContext) { guardSnodes ->
                     val guardSnodesAsSet = guardSnodes.toSet()
                     OnionRequestAPI.guardSnodes = guardSnodesAsSet
                     guardSnodesAsSet
@@ -133,9 +130,9 @@ public object OnionRequestAPI {
      */
     private fun buildPaths(): Promise<List<Path>, Exception> {
         Log.d("Loki", "Building onion request paths.")
-        LokiAPI.shared.broadcaster.broadcast("buildingPaths")
-        return LokiSwarmAPI.shared.getRandomSnode().bind(LokiAPI.sharedContext) { // Just used to populate the snode pool
-            getGuardSnodes().map(LokiAPI.sharedContext) { guardSnodes ->
+        SnodeAPI.shared.broadcaster.broadcast("buildingPaths")
+        return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
+            getGuardSnodes().map(SnodeAPI.sharedContext) { guardSnodes ->
                 var unusedSnodes = reliableSnodePool.minus(guardSnodes)
                 val pathSnodeCount = guardSnodeCount * pathSize - guardSnodeCount
                 if (unusedSnodes.count() < pathSnodeCount) { throw InsufficientSnodesException() }
@@ -151,7 +148,7 @@ public object OnionRequestAPI {
                 }
             }.map { paths ->
                 OnionRequestAPI.paths = paths
-                LokiAPI.shared.broadcaster.broadcast("pathsBuilt")
+                SnodeAPI.shared.broadcaster.broadcast("pathsBuilt")
                 paths
             }
         }
@@ -172,7 +169,7 @@ public object OnionRequestAPI {
         if (paths.count() >= pathCount) {
             return Promise.of(getPath())
         } else {
-            return buildPaths().map(LokiAPI.sharedContext) { paths ->
+            return buildPaths().map(SnodeAPI.sharedContext) { paths ->
                 getPath()
             }
         }
@@ -193,10 +190,10 @@ public object OnionRequestAPI {
         lateinit var guardSnode: Snode
         lateinit var targetSnodeSymmetricKey: ByteArray // Needed by LokiAPI to decrypt the response sent back by the target snode
         lateinit var encryptionResult: OnionRequestEncryption.EncryptionResult
-        return getPath(snode).bind(LokiAPI.sharedContext) { path ->
+        return getPath(snode).bind(SnodeAPI.sharedContext) { path ->
             guardSnode = path.first()
             // Encrypt in reverse order, i.e. the target snode first
-            OnionRequestEncryption.encryptPayloadForTargetSnode(payload, snode).bind(LokiAPI.sharedContext) { r ->
+            OnionRequestEncryption.encryptPayloadForTargetSnode(payload, snode).bind(SnodeAPI.sharedContext) { r ->
                 targetSnodeSymmetricKey = r.symmetricKey
                 // Recursively encrypt the layers of the onion (again in reverse order)
                 encryptionResult = r
@@ -208,7 +205,7 @@ public object OnionRequestAPI {
                     } else {
                         val lhs = path.last()
                         path = path.dropLast(1)
-                        return OnionRequestEncryption.encryptHop(lhs, rhs, encryptionResult).bind(LokiAPI.sharedContext) { r ->
+                        return OnionRequestEncryption.encryptHop(lhs, rhs, encryptionResult).bind(SnodeAPI.sharedContext) { r ->
                             encryptionResult = r
                             rhs = lhs
                             addLayer()
@@ -217,7 +214,7 @@ public object OnionRequestAPI {
                 }
                 addLayer()
             }
-        }.map(LokiAPI.sharedContext) { OnionBuildingResult(guardSnode, encryptionResult, targetSnodeSymmetricKey) }
+        }.map(SnodeAPI.sharedContext) { OnionBuildingResult(guardSnode, encryptionResult, targetSnodeSymmetricKey) }
     }
     // endregion
 
@@ -227,7 +224,7 @@ public object OnionRequestAPI {
      *
      * `hexEncodedPublicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
-    internal fun sendOnionRequest(method: LokiAPITarget.Method, snode: Snode, hexEncodedPublicKey: String, parameters: Map<*, *>): Promise<Map<*, *>, Exception> {
+    internal fun sendOnionRequest(method: Snode.Method, snode: Snode, publicKey: String, parameters: Map<*, *>): Promise<Map<*, *>, Exception> {
         val deferred = deferred<Map<*, *>, Exception>()
         lateinit var guardSnode: Snode
         val payload = mapOf( "method" to method.rawValue, "params" to parameters )
@@ -290,7 +287,7 @@ public object OnionRequestAPI {
         }
         promise.recover { exception ->
             @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtTargetSnodeException ?: throw exception
-            throw LokiAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, hexEncodedPublicKey)
+            throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, publicKey)
         }
         return promise
     }
