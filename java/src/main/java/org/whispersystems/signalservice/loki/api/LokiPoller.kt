@@ -13,22 +13,13 @@ private class PromiseCanceledException : Exception("Promise canceled.")
 class LokiPoller(private val userHexEncodedPublicKey: String, private val database: LokiAPIDatabaseProtocol, private val onMessagesReceived: (List<SignalServiceProtos.Envelope>) -> Unit) {
     private var hasStarted: Boolean = false
     private val usedSnodes: MutableSet<LokiAPITarget> = mutableSetOf()
-
-    private var isCatchUp: Boolean = false
+    public var isCaughtUp = false
 
     // region Settings
     companion object {
         private val retryInterval: Long = 1 * 1000
     }
     // endregion
-
-    fun isCatchUp(): Boolean {
-        return isCatchUp
-    }
-
-    fun shouldCatchUp() {
-        isCatchUp = false
-    }
 
     // region Public API
     fun startIfNeeded() {
@@ -89,7 +80,7 @@ class LokiPoller(private val userHexEncodedPublicKey: String, private val databa
         return LokiAPI.shared.getRawMessages(target, false).bind(LokiAPI.messagePollingContext) { rawResponse ->
             if (deferred.promise.isDone()) {
                 // The long polling connection has been canceled; don't recurse
-                isCatchUp = true
+                isCaughtUp = true
                 task { Unit }
             } else {
                 val messages = LokiAPI.shared.parseRawMessagesResponse(rawResponse, target)
