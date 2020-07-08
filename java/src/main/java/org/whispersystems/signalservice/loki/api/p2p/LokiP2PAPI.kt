@@ -21,7 +21,7 @@ class LokiP2PAPI private constructor(private val userHexEncodedPublicKey: String
 
     // region Initialization
     companion object {
-//        private var isConfigured = false
+        private var isConfigured = false
 
         lateinit var shared: LokiP2PAPI
 
@@ -29,9 +29,9 @@ class LokiP2PAPI private constructor(private val userHexEncodedPublicKey: String
          * Must be called before `LokiAPI` is used.
          */
         fun configure(userHexEncodedPublicKey: String, onPeerConnectionStatusChanged: (Boolean, String) -> Void, delegate: LokiP2PAPIDelegate) {
-            if (::shared.isInitialized) { return }
+            if (isConfigured) { return }
             shared = LokiP2PAPI(userHexEncodedPublicKey, onPeerConnectionStatusChanged, delegate)
-//            isConfigured = true
+            isConfigured = true
         }
     }
     // endregion
