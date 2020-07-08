@@ -10,7 +10,7 @@ import java.util.*
 
 private class PromiseCanceledException : Exception("Promise canceled.")
 
-class LokiPoller(private val userHexEncodedPublicKey: String, private val database: LokiAPIDatabaseProtocol, private val onMessagesReceived: (List<SignalServiceProtos.Envelope>) -> Unit) {
+class LokiPoller(public var userHexEncodedPublicKey: String, private val database: LokiAPIDatabaseProtocol, private val onMessagesReceived: (List<SignalServiceProtos.Envelope>) -> Unit) {
     private var hasStarted: Boolean = false
     private val usedSnodes: MutableSet<LokiAPITarget> = mutableSetOf()
 
