@@ -55,6 +55,10 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
         return !lastDeviceLinkUpdate.containsKey(hexEncodedPublicKey) || (referenceTime - lastDeviceLinkUpdate[hexEncodedPublicKey]!! > deviceLinkUpdateInterval)
     }
 
+    fun getDeviceLinksForCurrentUser(): Promise<Set<DeviceLink>, Exception> {
+        return getDeviceLinks(setOf(userHexEncodedPublicKey), true, true)
+    }
+
     fun getDeviceLinks(hexEncodedPublicKey: String, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
         if (deviceLinkRequestCache.containsKey(hexEncodedPublicKey) && !isForcedUpdate) {
             val result = deviceLinkRequestCache[hexEncodedPublicKey]
@@ -68,11 +72,12 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
         return promise
     }
 
-    fun getDeviceLinks(hexEncodedPublicKeys: Set<String>, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
+    fun getDeviceLinks(hexEncodedPublicKeys: Set<String>, isForcedUpdate: Boolean = false, includeCurrentUser: Boolean = false): Promise<Set<DeviceLink>, Exception> {
         val validHexEncodedPublicKeys = hexEncodedPublicKeys.filter { PublicKeyValidation.isValid(it) }
         val now = System.currentTimeMillis()
         // IMPORTANT: Don't fetch device links for the current user (i.e. don't remove the it != userHexEncodedPublicKey) check below
-        val updatees = validHexEncodedPublicKeys.filter { it != userHexEncodedPublicKey && (hasDeviceLinkCacheExpired(now, it) || isForcedUpdate) }.toSet()
+        var updatees = validHexEncodedPublicKeys.filter { it != userHexEncodedPublicKey && (hasDeviceLinkCacheExpired(now, it) || isForcedUpdate) }.toSet()
+        if (includeCurrentUser && validHexEncodedPublicKeys.contains(userHexEncodedPublicKey)) { updatees = updatees.plusElement(userHexEncodedPublicKey) }
         val cachedDeviceLinks = validHexEncodedPublicKeys.minus(updatees).flatMap { database.getDeviceLinks(it) }.toSet()
         if (updatees.isEmpty()) {
             return Promise.of(cachedDeviceLinks)
