@@ -81,6 +81,7 @@ class LokiPoller(public var userHexEncodedPublicKey: String, private val databas
         return LokiAPI.shared.getRawMessages(target, false).bind(LokiAPI.messagePollingContext) { rawResponse ->
             if (deferred.promise.isDone()) {
                 // The long polling connection has been canceled; don't recurse
+                isCaughtUp = true
                 task { Unit }
             } else {
                 isCaughtUp = true
