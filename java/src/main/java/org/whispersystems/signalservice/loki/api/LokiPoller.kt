@@ -72,6 +72,7 @@ class LokiPoller(public var userHexEncodedPublicKey: String, private val databas
                 }
             }
         } else {
+            isCaughtUp = true
             deferred.resolve()
         }
     }
@@ -80,9 +81,9 @@ class LokiPoller(public var userHexEncodedPublicKey: String, private val databas
         return LokiAPI.shared.getRawMessages(target, false).bind(LokiAPI.messagePollingContext) { rawResponse ->
             if (deferred.promise.isDone()) {
                 // The long polling connection has been canceled; don't recurse
-                isCaughtUp = true
                 task { Unit }
             } else {
+                isCaughtUp = true
                 val messages = LokiAPI.shared.parseRawMessagesResponse(rawResponse, target)
                 onMessagesReceived(messages)
                 poll(target, deferred)
