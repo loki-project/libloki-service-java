@@ -9,8 +9,8 @@ package org.whispersystems.signalservice.api.messages;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
-import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceMessage;
+import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 
 public class SignalServiceContent {
   private final String  sender;
@@ -19,7 +19,7 @@ public class SignalServiceContent {
   private final boolean needsReceipt;
 
   // Loki
-  private final boolean isFriendRequest;
+  private boolean isFriendRequest = false;
   private final boolean isSessionRequest;
   private final boolean isSessionRestorationRequest;
   private final boolean isUnlinkingRequest;
@@ -41,7 +41,6 @@ public class SignalServiceContent {
     this.senderDevice                = senderDevice;
     this.timestamp                   = timestamp;
     this.needsReceipt                = false;
-    this.isFriendRequest             = false;
     this.isSessionRequest            = false;
     this.isSessionRestorationRequest = false;
     this.message                     = Optional.absent();
@@ -54,12 +53,11 @@ public class SignalServiceContent {
     this.isUnlinkingRequest          = false;
   }
 
-  public SignalServiceContent(SignalServiceDataMessage message, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFriendRequest, boolean isSessionRequest, boolean isSessionRestorationRequest, boolean isUnlinkingRequest) {
+  public SignalServiceContent(SignalServiceDataMessage message, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isSessionRequest, boolean isSessionRestorationRequest, boolean isUnlinkingRequest) {
     this.sender                      = sender;
     this.senderDevice                = senderDevice;
     this.timestamp                   = timestamp;
     this.needsReceipt                = needsReceipt;
-    this.isFriendRequest             = isFriendRequest;
     this.isSessionRequest            = isSessionRequest;
     this.isSessionRestorationRequest = isSessionRestorationRequest;
     this.message                     = Optional.fromNullable(message);
@@ -76,7 +74,6 @@ public class SignalServiceContent {
     this.senderDevice                = senderDevice;
     this.timestamp                   = timestamp;
     this.needsReceipt                = false;
-    this.isFriendRequest             = false;
     this.isSessionRequest            = false;
     this.isSessionRestorationRequest = false;
     this.message                     = Optional.absent();
@@ -93,7 +90,6 @@ public class SignalServiceContent {
     this.senderDevice                = senderDevice;
     this.timestamp                   = timestamp;
     this.needsReceipt                = false;
-    this.isFriendRequest             = false;
     this.isSessionRequest            = false;
     this.isSessionRestorationRequest = false;
     this.message                     = Optional.absent();
@@ -110,7 +106,6 @@ public class SignalServiceContent {
     this.senderDevice                = senderDevice;
     this.timestamp                   = timestamp;
     this.needsReceipt                = false;
-    this.isFriendRequest             = false;
     this.isSessionRequest            = false;
     this.isSessionRestorationRequest = false;
     this.message                     = Optional.absent();
@@ -127,7 +122,6 @@ public class SignalServiceContent {
     this.senderDevice                = senderDevice;
     this.timestamp                   = timestamp;
     this.needsReceipt                = false;
-    this.isFriendRequest             = false;
     this.isSessionRequest            = false;
     this.isSessionRestorationRequest = false;
     this.message                     = Optional.absent();
@@ -144,7 +138,6 @@ public class SignalServiceContent {
     this.senderDevice                = senderDevice;
     this.timestamp                   = timestamp;
     this.needsReceipt                = false;
-    this.isFriendRequest             = false;
     this.isSessionRequest            = false;
     this.isSessionRestorationRequest = false;
     this.message                     = Optional.absent();
@@ -208,4 +201,6 @@ public class SignalServiceContent {
   public void setSenderDisplayName(String displayName) { senderDisplayName = Optional.fromNullable(displayName); }
 
   public void setSenderProfilePictureURL(String url) { senderProfilePictureURL = Optional.fromNullable(url); }
+
+  public void setIsFriendRequest(boolean isFriendRequest) { this.isFriendRequest = isFriendRequest; }
 }

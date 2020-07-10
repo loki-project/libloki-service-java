@@ -80,11 +80,11 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMe
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.TypingMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
 import org.whispersystems.signalservice.internal.util.Base64;
-import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChat;
 import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceAddressMessage;
 import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceMessage;
 import org.whispersystems.signalservice.loki.protocol.meta.LokiServicePreKeyBundleMessage;
+import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -174,6 +174,8 @@ public class SignalServiceCipher {
         Plaintext plaintext = decrypt(envelope, envelope.getContent());
         Content   message   = Content.parseFrom(plaintext.getData());
 
+        boolean isFriendRequest = plaintext.getMetadata().isFriendRequest();
+
         // Loki - Parse pre key bundle message if needed
         LokiServicePreKeyBundleMessage lokiPreKeyBundleMessage = null;
         if (message.hasPreKeyBundleMessage()) {
@@ -222,8 +224,9 @@ public class SignalServiceCipher {
           // Loki - Attach profile & data message if needed
           if (message.hasDataMessage()) {
             setProfile(message.getDataMessage(), content);
-            SignalServiceDataMessage dataMessage = createSignalServiceMessage(metadata, message.getDataMessage(), envelope.isFriendRequest());
+            SignalServiceDataMessage dataMessage = createSignalServiceMessage(metadata, message.getDataMessage(), isFriendRequest);
             content.setDataMessage(dataMessage);
+            content.setIsFriendRequest(isFriendRequest);
           }
 
           // Return
@@ -231,14 +234,13 @@ public class SignalServiceCipher {
         } else if (message.hasDataMessage()) {
           DataMessage dataMessage = message.getDataMessage();
 
-          SignalServiceDataMessage signalServiceDataMessage = createSignalServiceMessage(plaintext.getMetadata(), dataMessage, envelope.isFriendRequest());
+          SignalServiceDataMessage signalServiceDataMessage = createSignalServiceMessage(plaintext.getMetadata(), dataMessage, isFriendRequest);
           SignalServiceContent content = new SignalServiceContent(
               signalServiceDataMessage,
               plaintext.getMetadata().getSender(),
               plaintext.getMetadata().getSenderDevice(),
               plaintext.getMetadata().getTimestamp(),
               plaintext.getMetadata().isNeedsReceipt(),
-              plaintext.getMetadata().isFriendRequest(),
               signalServiceDataMessage.isSessionRequest(),
               signalServiceDataMessage.isSessionRestorationRequest(),
               signalServiceDataMessage.isUnlinkingRequest());
@@ -247,6 +249,8 @@ public class SignalServiceCipher {
           content.setLokiServiceMessage(lokiServiceMessage);
           // Loki - Attach profile if needed
           setProfile(dataMessage, content);
+
+          content.setIsFriendRequest(isFriendRequest);
 
           return content;
         } else if (message.hasSyncMessage()) {
@@ -285,7 +289,9 @@ public class SignalServiceCipher {
       // This will be triggered on e.g. desktop friend request background messages.
       if (lokiServiceMessage.isValid()) {
         SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
-        return new SignalServiceContent(lokiServiceMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
+        SignalServiceContent content = new SignalServiceContent(lokiServiceMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
+        content.setIsFriendRequest(isFriendRequest);
+        return content;
       }
 
       // Loki - No content is set at all; return null
