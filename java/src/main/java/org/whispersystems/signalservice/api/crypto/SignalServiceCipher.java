@@ -171,9 +171,9 @@ public class SignalServiceCipher {
 
   {
     try {
-        Plaintext plaintext     = decrypt(envelope, envelope.getContent());
-        Content   message       = Content.parseFrom(plaintext.getData());
-        boolean isFriendRequest = plaintext.getMetadata().isFriendRequest();
+        Plaintext plaintext       = decrypt(envelope, envelope.getContent());
+        Content   message         = Content.parseFrom(plaintext.getData());
+        boolean   isFriendRequest = plaintext.getMetadata().isFriendRequest();
 
         // Loki - Parse pre key bundle message if needed
         LokiServicePreKeyBundleMessage lokiPreKeyBundleMessage = null;
