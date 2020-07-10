@@ -136,7 +136,7 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
                 SwarmAPI.shared.getTargetSnodes(destination).map { swarm ->
                     swarm.map { snode ->
                         broadcast("sendingMessage")
-                        val parameters = lokiMessage.toJSON()
+                        val parameters = lokiMessageWithPoW.toJSON()
                         retryIfNeeded(maxRetryCount) {
                             invoke(Snode.Method.SendMessage, snode, destination, parameters).map { rawResponse ->
                                 val json = rawResponse as? Map<*, *>
