@@ -289,7 +289,7 @@ public class SignalServiceDataMessage {
     else if (isFriendRequest) { messageType = TTLUtilities.MessageType.FriendRequest; }
     else if (isUnlinkingRequest) { messageType = TTLUtilities.MessageType.UnlinkDevice; }
     else if (isSessionRequest) { messageType = TTLUtilities.MessageType.SessionRequest; }
-    return TTLUtilities.getTTL$signal_service_java(messageType);
+    return TTLUtilities.getTTL(messageType);
   }
 
   public static class Builder {

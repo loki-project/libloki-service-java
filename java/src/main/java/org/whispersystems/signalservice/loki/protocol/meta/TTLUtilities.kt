@@ -1,13 +1,13 @@
 package org.whispersystems.signalservice.loki.protocol.meta
 
-internal object TTLUtilities {
+public object TTLUtilities {
 
     /**
      * If a message type specifies an invalid TTL, this will be used.
      */
-    internal val fallbackMessageTTL = 2 * 24 * 60 * 60 * 1000
+    public val fallbackMessageTTL = 2 * 24 * 60 * 60 * 1000
 
-    internal enum class MessageType {
+    public enum class MessageType {
         // Unimportant control messages
         Address, SignalServiceCallMessage, TypingIndicator, VerifiedMessage,
         // Somewhat important control messages
@@ -19,7 +19,7 @@ internal object TTLUtilities {
     }
 
     @JvmStatic
-    internal fun getTTL(messageType: MessageType): Int {
+    public fun getTTL(messageType: MessageType): Int {
         val minuteInMs = 60 * 1000
         val hourInMs = 60 * minuteInMs
         val dayInMs = 24 * hourInMs

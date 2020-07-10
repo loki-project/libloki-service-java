@@ -1072,7 +1072,7 @@ public class SignalServiceMessageSender {
     return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, false, false, isSyncMessage);
   }
 
-  private SendMessageResult sendMessage(final long                   messageID,
+  public SendMessageResult sendMessage(final long                   messageID,
                                         final SignalServiceAddress   recipient,
                                         Optional<UnidentifiedAccess> unidentifiedAccess,
                                         long                         timestamp,
@@ -1229,9 +1229,9 @@ public class SignalServiceMessageSender {
       final String senderID = type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER ? "" : userHexEncodedPublicKey;
       final int senderDeviceID = type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER ? 0 : SignalServiceAddress.DEFAULT_DEVICE_ID;
       // Make sure we have a valid ttl; otherwise default to a day
-      if (ttl <= 0) { ttl = TTLUtilities.INSTANCE.getFallbackMessageTTL$signal_service_java(); }
-      final int regularMessageTTL = TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.Regular);
-      final int frMessageTTL = TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.FriendRequest);
+      if (ttl <= 0) { ttl = TTLUtilities.INSTANCE.getFallbackMessageTTL(); }
+      final int regularMessageTTL = TTLUtilities.getTTL(TTLUtilities.MessageType.Regular);
+      final int frMessageTTL = TTLUtilities.getTTL(TTLUtilities.MessageType.FriendRequest);
       final int __ttl = ttl;
       SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
       // TODO: PoW indicator

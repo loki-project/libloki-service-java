@@ -245,5 +245,5 @@ public class SignalServiceSyncMessage {
 
   public Optional<List<LokiPublicChat>> getOpenGroups() { return openGroups; }
 
-  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.SignalServiceSyncMessage); }
+  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.SignalServiceSyncMessage); }
 }

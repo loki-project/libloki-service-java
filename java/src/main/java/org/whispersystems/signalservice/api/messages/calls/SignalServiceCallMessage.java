@@ -107,5 +107,5 @@ public class SignalServiceCallMessage {
     return busyMessage;
   }
 
-  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.SignalServiceCallMessage); }
+  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.SignalServiceCallMessage); }
 }
