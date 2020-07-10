@@ -171,9 +171,8 @@ public class SignalServiceCipher {
 
   {
     try {
-        Plaintext plaintext = decrypt(envelope, envelope.getContent());
-        Content   message   = Content.parseFrom(plaintext.getData());
-
+        Plaintext plaintext     = decrypt(envelope, envelope.getContent());
+        Content   message       = Content.parseFrom(plaintext.getData());
         boolean isFriendRequest = plaintext.getMetadata().isFriendRequest();
 
         // Loki - Parse pre key bundle message if needed
@@ -249,7 +248,7 @@ public class SignalServiceCipher {
           content.setLokiServiceMessage(lokiServiceMessage);
           // Loki - Attach profile if needed
           setProfile(dataMessage, content);
-
+          // Loki - Mark the message as a friend request if needed
           content.setIsFriendRequest(isFriendRequest);
 
           return content;
