@@ -72,16 +72,16 @@ class Poller(public var userPublicKey: String, private val database: LokiAPIData
                 }
             }
         } else {
+            isCaughtUp = true
             deferred.resolve()
         }
     }
 
     private fun poll(snode: Snode, deferred: Deferred<Unit, Exception>): Promise<Unit, Exception> {
         return SnodeAPI.shared.getRawMessages(snode).bind(SnodeAPI.messagePollingContext) { rawResponse ->
+            isCaughtUp = true
             if (deferred.promise.isDone()) {
-                // The long polling connection has been canceled; don't recurse
-                isCaughtUp = true
-                task { Unit }
+                task { Unit } // The long polling connection has been canceled; don't recurse
             } else {
                 val messages = SnodeAPI.shared.parseRawMessagesResponse(rawResponse, snode)
                 onMessagesReceived(messages)
