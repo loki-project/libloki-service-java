@@ -284,10 +284,12 @@ public class SignalServiceCipher {
                                           plaintext.getMetadata().getSenderDevice(),
                                           plaintext.getMetadata().getTimestamp());
         } else if (message.hasNullMessage()) {
-            return new SignalServiceContent(new SignalServiceNullMessage(),
-                                          plaintext.getMetadata().getSender(),
-                                          plaintext.getMetadata().getSenderDevice(),
-                                          plaintext.getMetadata().getTimestamp());
+            SignalServiceContent content = new SignalServiceContent(new SignalServiceNullMessage(),
+                                                            plaintext.getMetadata().getSender(),
+                                                            plaintext.getMetadata().getSenderDevice(),
+                                                            plaintext.getMetadata().getTimestamp());
+            content.setIsFriendRequest(isFriendRequest);
+            return content;
         }
 
       // Check if we have any of the Loki specific data set. If so then return that content.

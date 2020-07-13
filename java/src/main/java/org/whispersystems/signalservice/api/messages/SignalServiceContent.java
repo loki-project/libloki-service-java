@@ -212,7 +212,7 @@ public class SignalServiceContent {
     return needsReceipt;
   }
 
-  public boolean isNullMessage() { return nullMessage.isPresent(); }
+  public Optional<SignalServiceNullMessage> getNullMessage() { return nullMessage; }
 
   // Loki
   public boolean isFriendRequest() { return isFriendRequest; }
