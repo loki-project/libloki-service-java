@@ -288,6 +288,7 @@ public class SignalServiceCipher {
                                                             plaintext.getMetadata().getSender(),
                                                             plaintext.getMetadata().getSenderDevice(),
                                                             plaintext.getMetadata().getTimestamp());
+            content.setLokiServiceMessage(lokiServiceMessage);
             content.setIsFriendRequest(isFriendRequest);
             return content;
         }
