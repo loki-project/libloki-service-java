@@ -27,6 +27,7 @@ public class SignalServiceContent {
   private Optional<SignalServiceDataMessage>          message;
   private Optional<SignalServiceSyncMessage>          synchronizeMessage;
   private final Optional<SignalServiceCallMessage>    callMessage;
+  private final Optional<SignalServiceNullMessage>    nullMessage;
   private final Optional<SignalServiceReceiptMessage> readMessage;
   private final Optional<SignalServiceTypingMessage>  typingMessage;
 
@@ -46,6 +47,7 @@ public class SignalServiceContent {
     this.message                     = Optional.absent();
     this.synchronizeMessage          = Optional.absent();
     this.callMessage                 = Optional.absent();
+    this.nullMessage                 = Optional.absent();
     this.readMessage                 = Optional.absent();
     this.typingMessage               = Optional.absent();
     this.deviceLink                  = Optional.absent();
@@ -63,6 +65,7 @@ public class SignalServiceContent {
     this.message                     = Optional.fromNullable(message);
     this.synchronizeMessage          = Optional.absent();
     this.callMessage                 = Optional.absent();
+    this.nullMessage                 = Optional.absent();
     this.readMessage                 = Optional.absent();
     this.typingMessage               = Optional.absent();
     this.deviceLink                  = Optional.absent();
@@ -79,6 +82,7 @@ public class SignalServiceContent {
     this.message                     = Optional.absent();
     this.synchronizeMessage          = Optional.fromNullable(synchronizeMessage);
     this.callMessage                 = Optional.absent();
+    this.nullMessage                 = Optional.absent();
     this.readMessage                 = Optional.absent();
     this.typingMessage               = Optional.absent();
     this.deviceLink                  = Optional.absent();
@@ -95,6 +99,7 @@ public class SignalServiceContent {
     this.message                     = Optional.absent();
     this.synchronizeMessage          = Optional.absent();
     this.callMessage                 = Optional.of(callMessage);
+    this.nullMessage                 = Optional.absent();
     this.readMessage                 = Optional.absent();
     this.typingMessage               = Optional.absent();
     this.deviceLink                  = Optional.absent();
@@ -111,6 +116,7 @@ public class SignalServiceContent {
     this.message                     = Optional.absent();
     this.synchronizeMessage          = Optional.absent();
     this.callMessage                 = Optional.absent();
+    this.nullMessage                 = Optional.absent();
     this.readMessage                 = Optional.of(receiptMessage);
     this.typingMessage               = Optional.absent();
     this.deviceLink                  = Optional.absent();
@@ -127,6 +133,7 @@ public class SignalServiceContent {
     this.message                     = Optional.absent();
     this.synchronizeMessage          = Optional.absent();
     this.callMessage                 = Optional.absent();
+    this.nullMessage                 = Optional.absent();
     this.readMessage                 = Optional.absent();
     this.typingMessage               = Optional.of(typingMessage);
     this.deviceLink                  = Optional.absent();
@@ -143,18 +150,38 @@ public class SignalServiceContent {
     this.message                     = Optional.absent();
     this.synchronizeMessage          = Optional.absent();
     this.callMessage                 = Optional.absent();
+    this.nullMessage                 = Optional.absent();
     this.readMessage                 = Optional.absent();
     this.typingMessage               = Optional.absent();
     this.deviceLink                  = Optional.fromNullable(deviceLink);
     this.isUnlinkingRequest          = false;
   }
 
+  public SignalServiceContent(SignalServiceNullMessage nullMessage, String sender, int senderDevice, long timestamp) {
+    this.sender                      = sender;
+    this.senderDevice                = senderDevice;
+    this.timestamp                   = timestamp;
+    this.needsReceipt                = false;
+    this.isSessionRequest            = false;
+    this.isSessionRestorationRequest = false;
+    this.message                     = Optional.absent();
+    this.synchronizeMessage          = Optional.absent();
+    this.callMessage                 = Optional.absent();
+    this.nullMessage                 = Optional.of(nullMessage);
+    this.readMessage                 = Optional.absent();
+    this.typingMessage               = Optional.absent();
+    this.deviceLink                  = Optional.absent();
+    this.isUnlinkingRequest          = false;
+  }
+
   public Optional<SignalServiceDataMessage> getDataMessage() {
     return message;
   }
+
   public void setDataMessage(SignalServiceDataMessage message) { this.message = Optional.fromNullable(message); }
 
   public Optional<SignalServiceSyncMessage> getSyncMessage() { return synchronizeMessage; }
+
   public void setSyncMessage(SignalServiceSyncMessage message) { this.synchronizeMessage = Optional.fromNullable(message); }
 
   public Optional<SignalServiceCallMessage> getCallMessage() {
@@ -184,6 +211,8 @@ public class SignalServiceContent {
   public boolean isNeedsReceipt() {
     return needsReceipt;
   }
+
+  public boolean isNullMessage() { return nullMessage.isPresent(); }
 
   // Loki
   public boolean isFriendRequest() { return isFriendRequest; }

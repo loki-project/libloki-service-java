@@ -50,6 +50,7 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage.Pr
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage.Sticker;
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope;
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup;
+import org.whispersystems.signalservice.api.messages.SignalServiceNullMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceReceiptMessage;
 import org.whispersystems.signalservice.api.messages.SignalServiceTypingMessage;
 import org.whispersystems.signalservice.api.messages.calls.AnswerMessage;
@@ -203,11 +204,11 @@ public class SignalServiceCipher {
         if (message.hasPairingAuthorisation()) {
           // Loki - Parse device link message
           SignalServiceProtos.PairingAuthorisationMessage deviceLinkMessage = message.getPairingAuthorisation();
-          String masterHexEncodedPublicKey = deviceLinkMessage.getPrimaryDevicePublicKey();
-          String slaveHexEncodedPublicKey = deviceLinkMessage.getSecondaryDevicePublicKey();
+          String masterPublicKey = deviceLinkMessage.getPrimaryDevicePublicKey();
+          String slavePublicKey = deviceLinkMessage.getSecondaryDevicePublicKey();
           byte[] requestSignature = deviceLinkMessage.hasRequestSignature() ? deviceLinkMessage.getRequestSignature().toByteArray() : null;
           byte[] authorizationSignature = deviceLinkMessage.hasGrantSignature() ? deviceLinkMessage.getGrantSignature().toByteArray() : null;
-          DeviceLink deviceLink = new DeviceLink(masterHexEncodedPublicKey, slaveHexEncodedPublicKey, requestSignature, authorizationSignature);
+          DeviceLink deviceLink = new DeviceLink(masterPublicKey, slavePublicKey, requestSignature, authorizationSignature);
           SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
           SignalServiceContent content = new SignalServiceContent(deviceLink, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
 
@@ -279,6 +280,11 @@ public class SignalServiceCipher {
                                           plaintext.getMetadata().getTimestamp());
         } else if (message.hasTypingMessage()) {
           return new SignalServiceContent(createTypingMessage(plaintext.getMetadata(), message.getTypingMessage()),
+                                          plaintext.getMetadata().getSender(),
+                                          plaintext.getMetadata().getSenderDevice(),
+                                          plaintext.getMetadata().getTimestamp());
+        } else if (message.hasNullMessage()) {
+            return new SignalServiceContent(new SignalServiceNullMessage(),
                                           plaintext.getMetadata().getSender(),
                                           plaintext.getMetadata().getSenderDevice(),
                                           plaintext.getMetadata().getTimestamp());
