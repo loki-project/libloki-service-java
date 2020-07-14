@@ -131,26 +131,6 @@ public final class SignalServiceProtos {
      * <code>optional uint64 serverTimestamp = 10;</code>
      */
     long getServerTimestamp();
-
-    // optional bool isPtpMessage = 999;
-    /**
-     * <code>optional bool isPtpMessage = 999;</code>
-     *
-     * <pre>
-     * Loki - This field is only here as a helper
-     * It shouldn't be set when sending a message
-     * </pre>
-     */
-    boolean hasIsPtpMessage();
-    /**
-     * <code>optional bool isPtpMessage = 999;</code>
-     *
-     * <pre>
-     * Loki - This field is only here as a helper
-     * It shouldn't be set when sending a message
-     * </pre>
-     */
-    boolean getIsPtpMessage();
   }
   /**
    * Protobuf type {@code signalservice.Envelope}
@@ -254,11 +234,6 @@ public final class SignalServiceProtos {
               serverTimestamp_ = input.readUInt64();
               break;
             }
-            case 7992: {
-              bitField0_ |= 0x00000200;
-              isPtpMessage_ = input.readBool();
-              break;
-            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -328,13 +303,13 @@ public final class SignalServiceProtos {
        */
       UNIDENTIFIED_SENDER(5, 6),
       /**
-       * <code>FRIEND_REQUEST = 101;</code>
+       * <code>FALLBACK_MESSAGE = 101;</code>
        *
        * <pre>
-       * Loki - Contains prekeys and a message; uses simple encryption
+       * Loki - Encrypted using the fallback session cipher. Contains a pre key bundle if it's a session request.
        * </pre>
        */
-      FRIEND_REQUEST(6, 101),
+      FALLBACK_MESSAGE(6, 101),
       ;
 
       /**
@@ -362,13 +337,13 @@ public final class SignalServiceProtos {
        */
       public static final int UNIDENTIFIED_SENDER_VALUE = 6;
       /**
-       * <code>FRIEND_REQUEST = 101;</code>
+       * <code>FALLBACK_MESSAGE = 101;</code>
        *
        * <pre>
-       * Loki - Contains prekeys and a message; uses simple encryption
+       * Loki - Encrypted using the fallback session cipher. Contains a pre key bundle if it's a session request.
        * </pre>
        */
-      public static final int FRIEND_REQUEST_VALUE = 101;
+      public static final int FALLBACK_MESSAGE_VALUE = 101;
 
 
       public final int getNumber() { return value; }
@@ -381,7 +356,7 @@ public final class SignalServiceProtos {
           case 3: return PREKEY_BUNDLE;
           case 5: return RECEIPT;
           case 6: return UNIDENTIFIED_SENDER;
-          case 101: return FRIEND_REQUEST;
+          case 101: return FALLBACK_MESSAGE;
           default: return null;
         }
       }
@@ -675,32 +650,6 @@ public final class SignalServiceProtos {
       return serverTimestamp_;
     }
 
-    // optional bool isPtpMessage = 999;
-    public static final int ISPTPMESSAGE_FIELD_NUMBER = 999;
-    private boolean isPtpMessage_;
-    /**
-     * <code>optional bool isPtpMessage = 999;</code>
-     *
-     * <pre>
-     * Loki - This field is only here as a helper
-     * It shouldn't be set when sending a message
-     * </pre>
-     */
-    public boolean hasIsPtpMessage() {
-      return ((bitField0_ & 0x00000200) == 0x00000200);
-    }
-    /**
-     * <code>optional bool isPtpMessage = 999;</code>
-     *
-     * <pre>
-     * Loki - This field is only here as a helper
-     * It shouldn't be set when sending a message
-     * </pre>
-     */
-    public boolean getIsPtpMessage() {
-      return isPtpMessage_;
-    }
-
     private void initFields() {
       type_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope.Type.UNKNOWN;
       source_ = "";
@@ -711,7 +660,6 @@ public final class SignalServiceProtos {
       content_ = com.google.protobuf.ByteString.EMPTY;
       serverGuid_ = "";
       serverTimestamp_ = 0L;
-      isPtpMessage_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -751,9 +699,6 @@ public final class SignalServiceProtos {
       }
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         output.writeUInt64(10, serverTimestamp_);
-      }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
-        output.writeBool(999, isPtpMessage_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -799,10 +744,6 @@ public final class SignalServiceProtos {
       if (((bitField0_ & 0x00000100) == 0x00000100)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(10, serverTimestamp_);
-      }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(999, isPtpMessage_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -938,8 +879,6 @@ public final class SignalServiceProtos {
         bitField0_ = (bitField0_ & ~0x00000080);
         serverTimestamp_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000100);
-        isPtpMessage_ = false;
-        bitField0_ = (bitField0_ & ~0x00000200);
         return this;
       }
 
@@ -1004,10 +943,6 @@ public final class SignalServiceProtos {
           to_bitField0_ |= 0x00000100;
         }
         result.serverTimestamp_ = serverTimestamp_;
-        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
-          to_bitField0_ |= 0x00000200;
-        }
-        result.isPtpMessage_ = isPtpMessage_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1056,9 +991,6 @@ public final class SignalServiceProtos {
         }
         if (other.hasServerTimestamp()) {
           setServerTimestamp(other.getServerTimestamp());
-        }
-        if (other.hasIsPtpMessage()) {
-          setIsPtpMessage(other.getIsPtpMessage());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1548,59 +1480,6 @@ public final class SignalServiceProtos {
         return this;
       }
 
-      // optional bool isPtpMessage = 999;
-      private boolean isPtpMessage_ ;
-      /**
-       * <code>optional bool isPtpMessage = 999;</code>
-       *
-       * <pre>
-       * Loki - This field is only here as a helper
-       * It shouldn't be set when sending a message
-       * </pre>
-       */
-      public boolean hasIsPtpMessage() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
-      }
-      /**
-       * <code>optional bool isPtpMessage = 999;</code>
-       *
-       * <pre>
-       * Loki - This field is only here as a helper
-       * It shouldn't be set when sending a message
-       * </pre>
-       */
-      public boolean getIsPtpMessage() {
-        return isPtpMessage_;
-      }
-      /**
-       * <code>optional bool isPtpMessage = 999;</code>
-       *
-       * <pre>
-       * Loki - This field is only here as a helper
-       * It shouldn't be set when sending a message
-       * </pre>
-       */
-      public Builder setIsPtpMessage(boolean value) {
-        bitField0_ |= 0x00000200;
-        isPtpMessage_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional bool isPtpMessage = 999;</code>
-       *
-       * <pre>
-       * Loki - This field is only here as a helper
-       * It shouldn't be set when sending a message
-       * </pre>
-       */
-      public Builder clearIsPtpMessage() {
-        bitField0_ = (bitField0_ & ~0x00000200);
-        isPtpMessage_ = false;
-        onChanged();
-        return this;
-      }
-
       // @@protoc_insertion_point(builder_scope:signalservice.Envelope)
     }
 
@@ -1699,47 +1578,33 @@ public final class SignalServiceProtos {
      */
     org.whispersystems.signalservice.internal.push.SignalServiceProtos.TypingMessageOrBuilder getTypingMessageOrBuilder();
 
-    // optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;
+    // optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;
     /**
-     * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+     * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
      */
     boolean hasPreKeyBundleMessage();
     /**
-     * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+     * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
      */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage getPreKeyBundleMessage();
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage getPreKeyBundleMessage();
     /**
-     * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+     * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
      */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessageOrBuilder getPreKeyBundleMessageOrBuilder();
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessageOrBuilder getPreKeyBundleMessageOrBuilder();
 
-    // optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;
+    // optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;
     /**
-     * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+     * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
      */
-    boolean hasLokiAddressMessage();
+    boolean hasDeviceLinkMessage();
     /**
-     * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+     * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
      */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage getLokiAddressMessage();
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage getDeviceLinkMessage();
     /**
-     * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+     * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
      */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessageOrBuilder getLokiAddressMessageOrBuilder();
-
-    // optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;
-    /**
-     * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-     */
-    boolean hasPairingAuthorisation();
-    /**
-     * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-     */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage getPairingAuthorisation();
-    /**
-     * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-     */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessageOrBuilder getPairingAuthorisationOrBuilder();
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessageOrBuilder getDeviceLinkMessageOrBuilder();
   }
   /**
    * Protobuf type {@code signalservice.Content}
@@ -1871,11 +1736,11 @@ public final class SignalServiceProtos {
               break;
             }
             case 810: {
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder subBuilder = null;
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder subBuilder = null;
               if (((bitField0_ & 0x00000040) == 0x00000040)) {
                 subBuilder = preKeyBundleMessage_.toBuilder();
               }
-              preKeyBundleMessage_ = input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.PARSER, extensionRegistry);
+              preKeyBundleMessage_ = input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.PARSER, extensionRegistry);
               if (subBuilder != null) {
                 subBuilder.mergeFrom(preKeyBundleMessage_);
                 preKeyBundleMessage_ = subBuilder.buildPartial();
@@ -1883,30 +1748,17 @@ public final class SignalServiceProtos {
               bitField0_ |= 0x00000040;
               break;
             }
-            case 818: {
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder subBuilder = null;
+            case 826: {
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder subBuilder = null;
               if (((bitField0_ & 0x00000080) == 0x00000080)) {
-                subBuilder = lokiAddressMessage_.toBuilder();
+                subBuilder = deviceLinkMessage_.toBuilder();
               }
-              lokiAddressMessage_ = input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.PARSER, extensionRegistry);
+              deviceLinkMessage_ = input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.PARSER, extensionRegistry);
               if (subBuilder != null) {
-                subBuilder.mergeFrom(lokiAddressMessage_);
-                lokiAddressMessage_ = subBuilder.buildPartial();
+                subBuilder.mergeFrom(deviceLinkMessage_);
+                deviceLinkMessage_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000080;
-              break;
-            }
-            case 826: {
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder subBuilder = null;
-              if (((bitField0_ & 0x00000100) == 0x00000100)) {
-                subBuilder = pairingAuthorisation_.toBuilder();
-              }
-              pairingAuthorisation_ = input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.PARSER, extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(pairingAuthorisation_);
-                pairingAuthorisation_ = subBuilder.buildPartial();
-              }
-              bitField0_ |= 0x00000100;
               break;
             }
           }
@@ -2081,70 +1933,48 @@ public final class SignalServiceProtos {
       return typingMessage_;
     }
 
-    // optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;
+    // optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;
     public static final int PREKEYBUNDLEMESSAGE_FIELD_NUMBER = 101;
-    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage preKeyBundleMessage_;
+    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage preKeyBundleMessage_;
     /**
-     * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+     * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
      */
     public boolean hasPreKeyBundleMessage() {
       return ((bitField0_ & 0x00000040) == 0x00000040);
     }
     /**
-     * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+     * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
      */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage getPreKeyBundleMessage() {
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage getPreKeyBundleMessage() {
       return preKeyBundleMessage_;
     }
     /**
-     * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+     * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
      */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessageOrBuilder getPreKeyBundleMessageOrBuilder() {
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessageOrBuilder getPreKeyBundleMessageOrBuilder() {
       return preKeyBundleMessage_;
     }
 
-    // optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;
-    public static final int LOKIADDRESSMESSAGE_FIELD_NUMBER = 102;
-    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage lokiAddressMessage_;
+    // optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;
+    public static final int DEVICELINKMESSAGE_FIELD_NUMBER = 103;
+    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage deviceLinkMessage_;
     /**
-     * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+     * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
      */
-    public boolean hasLokiAddressMessage() {
+    public boolean hasDeviceLinkMessage() {
       return ((bitField0_ & 0x00000080) == 0x00000080);
     }
     /**
-     * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+     * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
      */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage getLokiAddressMessage() {
-      return lokiAddressMessage_;
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage getDeviceLinkMessage() {
+      return deviceLinkMessage_;
     }
     /**
-     * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+     * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
      */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessageOrBuilder getLokiAddressMessageOrBuilder() {
-      return lokiAddressMessage_;
-    }
-
-    // optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;
-    public static final int PAIRINGAUTHORISATION_FIELD_NUMBER = 103;
-    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage pairingAuthorisation_;
-    /**
-     * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-     */
-    public boolean hasPairingAuthorisation() {
-      return ((bitField0_ & 0x00000100) == 0x00000100);
-    }
-    /**
-     * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-     */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage getPairingAuthorisation() {
-      return pairingAuthorisation_;
-    }
-    /**
-     * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-     */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessageOrBuilder getPairingAuthorisationOrBuilder() {
-      return pairingAuthorisation_;
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessageOrBuilder getDeviceLinkMessageOrBuilder() {
+      return deviceLinkMessage_;
     }
 
     private void initFields() {
@@ -2154,9 +1984,8 @@ public final class SignalServiceProtos {
       nullMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.NullMessage.getDefaultInstance();
       receiptMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.ReceiptMessage.getDefaultInstance();
       typingMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.TypingMessage.getDefaultInstance();
-      preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.getDefaultInstance();
-      lokiAddressMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDefaultInstance();
-      pairingAuthorisation_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.getDefaultInstance();
+      preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.getDefaultInstance();
+      deviceLinkMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2192,10 +2021,7 @@ public final class SignalServiceProtos {
         output.writeMessage(101, preKeyBundleMessage_);
       }
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
-        output.writeMessage(102, lokiAddressMessage_);
-      }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        output.writeMessage(103, pairingAuthorisation_);
+        output.writeMessage(103, deviceLinkMessage_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -2236,11 +2062,7 @@ public final class SignalServiceProtos {
       }
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(102, lokiAddressMessage_);
-      }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(103, pairingAuthorisation_);
+          .computeMessageSize(103, deviceLinkMessage_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -2357,8 +2179,7 @@ public final class SignalServiceProtos {
           getReceiptMessageFieldBuilder();
           getTypingMessageFieldBuilder();
           getPreKeyBundleMessageFieldBuilder();
-          getLokiAddressMessageFieldBuilder();
-          getPairingAuthorisationFieldBuilder();
+          getDeviceLinkMessageFieldBuilder();
         }
       }
       private static Builder create() {
@@ -2404,23 +2225,17 @@ public final class SignalServiceProtos {
         }
         bitField0_ = (bitField0_ & ~0x00000020);
         if (preKeyBundleMessageBuilder_ == null) {
-          preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.getDefaultInstance();
+          preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.getDefaultInstance();
         } else {
           preKeyBundleMessageBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000040);
-        if (lokiAddressMessageBuilder_ == null) {
-          lokiAddressMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDefaultInstance();
+        if (deviceLinkMessageBuilder_ == null) {
+          deviceLinkMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.getDefaultInstance();
         } else {
-          lokiAddressMessageBuilder_.clear();
+          deviceLinkMessageBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000080);
-        if (pairingAuthorisationBuilder_ == null) {
-          pairingAuthorisation_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.getDefaultInstance();
-        } else {
-          pairingAuthorisationBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000100);
         return this;
       }
 
@@ -2508,18 +2323,10 @@ public final class SignalServiceProtos {
         if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
           to_bitField0_ |= 0x00000080;
         }
-        if (lokiAddressMessageBuilder_ == null) {
-          result.lokiAddressMessage_ = lokiAddressMessage_;
+        if (deviceLinkMessageBuilder_ == null) {
+          result.deviceLinkMessage_ = deviceLinkMessage_;
         } else {
-          result.lokiAddressMessage_ = lokiAddressMessageBuilder_.build();
-        }
-        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
-          to_bitField0_ |= 0x00000100;
-        }
-        if (pairingAuthorisationBuilder_ == null) {
-          result.pairingAuthorisation_ = pairingAuthorisation_;
-        } else {
-          result.pairingAuthorisation_ = pairingAuthorisationBuilder_.build();
+          result.deviceLinkMessage_ = deviceLinkMessageBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -2558,11 +2365,8 @@ public final class SignalServiceProtos {
         if (other.hasPreKeyBundleMessage()) {
           mergePreKeyBundleMessage(other.getPreKeyBundleMessage());
         }
-        if (other.hasLokiAddressMessage()) {
-          mergeLokiAddressMessage(other.getLokiAddressMessage());
-        }
-        if (other.hasPairingAuthorisation()) {
-          mergePairingAuthorisation(other.getPairingAuthorisation());
+        if (other.hasDeviceLinkMessage()) {
+          mergeDeviceLinkMessage(other.getDeviceLinkMessage());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -3293,20 +3097,20 @@ public final class SignalServiceProtos {
         return typingMessageBuilder_;
       }
 
-      // optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;
-      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.getDefaultInstance();
+      // optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;
+      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessageOrBuilder> preKeyBundleMessageBuilder_;
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessageOrBuilder> preKeyBundleMessageBuilder_;
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
       public boolean hasPreKeyBundleMessage() {
         return ((bitField0_ & 0x00000040) == 0x00000040);
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage getPreKeyBundleMessage() {
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage getPreKeyBundleMessage() {
         if (preKeyBundleMessageBuilder_ == null) {
           return preKeyBundleMessage_;
         } else {
@@ -3314,9 +3118,9 @@ public final class SignalServiceProtos {
         }
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
-      public Builder setPreKeyBundleMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage value) {
+      public Builder setPreKeyBundleMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage value) {
         if (preKeyBundleMessageBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -3330,10 +3134,10 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
       public Builder setPreKeyBundleMessage(
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder builderForValue) {
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder builderForValue) {
         if (preKeyBundleMessageBuilder_ == null) {
           preKeyBundleMessage_ = builderForValue.build();
           onChanged();
@@ -3344,14 +3148,14 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
-      public Builder mergePreKeyBundleMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage value) {
+      public Builder mergePreKeyBundleMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage value) {
         if (preKeyBundleMessageBuilder_ == null) {
           if (((bitField0_ & 0x00000040) == 0x00000040) &&
-              preKeyBundleMessage_ != org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.getDefaultInstance()) {
+              preKeyBundleMessage_ != org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.getDefaultInstance()) {
             preKeyBundleMessage_ =
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.newBuilder(preKeyBundleMessage_).mergeFrom(value).buildPartial();
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.newBuilder(preKeyBundleMessage_).mergeFrom(value).buildPartial();
           } else {
             preKeyBundleMessage_ = value;
           }
@@ -3363,11 +3167,11 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
       public Builder clearPreKeyBundleMessage() {
         if (preKeyBundleMessageBuilder_ == null) {
-          preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.getDefaultInstance();
+          preKeyBundleMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.getDefaultInstance();
           onChanged();
         } else {
           preKeyBundleMessageBuilder_.clear();
@@ -3376,17 +3180,17 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder getPreKeyBundleMessageBuilder() {
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder getPreKeyBundleMessageBuilder() {
         bitField0_ |= 0x00000040;
         onChanged();
         return getPreKeyBundleMessageFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessageOrBuilder getPreKeyBundleMessageOrBuilder() {
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessageOrBuilder getPreKeyBundleMessageOrBuilder() {
         if (preKeyBundleMessageBuilder_ != null) {
           return preKeyBundleMessageBuilder_.getMessageOrBuilder();
         } else {
@@ -3394,14 +3198,14 @@ public final class SignalServiceProtos {
         }
       }
       /**
-       * <code>optional .signalservice.PrekeyBundleMessage preKeyBundleMessage = 101;</code>
+       * <code>optional .signalservice.PreKeyBundleMessage preKeyBundleMessage = 101;</code>
        */
       private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessageOrBuilder> 
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessageOrBuilder> 
           getPreKeyBundleMessageFieldBuilder() {
         if (preKeyBundleMessageBuilder_ == null) {
           preKeyBundleMessageBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessageOrBuilder>(
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessageOrBuilder>(
                   preKeyBundleMessage_,
                   getParentForChildren(),
                   isClean());
@@ -3410,238 +3214,121 @@ public final class SignalServiceProtos {
         return preKeyBundleMessageBuilder_;
       }
 
-      // optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;
-      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage lokiAddressMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDefaultInstance();
+      // optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;
+      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage deviceLinkMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessageOrBuilder> lokiAddressMessageBuilder_;
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessageOrBuilder> deviceLinkMessageBuilder_;
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public boolean hasLokiAddressMessage() {
+      public boolean hasDeviceLinkMessage() {
         return ((bitField0_ & 0x00000080) == 0x00000080);
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage getLokiAddressMessage() {
-        if (lokiAddressMessageBuilder_ == null) {
-          return lokiAddressMessage_;
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage getDeviceLinkMessage() {
+        if (deviceLinkMessageBuilder_ == null) {
+          return deviceLinkMessage_;
         } else {
-          return lokiAddressMessageBuilder_.getMessage();
+          return deviceLinkMessageBuilder_.getMessage();
         }
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public Builder setLokiAddressMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage value) {
-        if (lokiAddressMessageBuilder_ == null) {
+      public Builder setDeviceLinkMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage value) {
+        if (deviceLinkMessageBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          lokiAddressMessage_ = value;
+          deviceLinkMessage_ = value;
           onChanged();
         } else {
-          lokiAddressMessageBuilder_.setMessage(value);
+          deviceLinkMessageBuilder_.setMessage(value);
         }
         bitField0_ |= 0x00000080;
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public Builder setLokiAddressMessage(
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder builderForValue) {
-        if (lokiAddressMessageBuilder_ == null) {
-          lokiAddressMessage_ = builderForValue.build();
+      public Builder setDeviceLinkMessage(
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder builderForValue) {
+        if (deviceLinkMessageBuilder_ == null) {
+          deviceLinkMessage_ = builderForValue.build();
           onChanged();
         } else {
-          lokiAddressMessageBuilder_.setMessage(builderForValue.build());
+          deviceLinkMessageBuilder_.setMessage(builderForValue.build());
         }
         bitField0_ |= 0x00000080;
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public Builder mergeLokiAddressMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage value) {
-        if (lokiAddressMessageBuilder_ == null) {
+      public Builder mergeDeviceLinkMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage value) {
+        if (deviceLinkMessageBuilder_ == null) {
           if (((bitField0_ & 0x00000080) == 0x00000080) &&
-              lokiAddressMessage_ != org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDefaultInstance()) {
-            lokiAddressMessage_ =
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.newBuilder(lokiAddressMessage_).mergeFrom(value).buildPartial();
+              deviceLinkMessage_ != org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.getDefaultInstance()) {
+            deviceLinkMessage_ =
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.newBuilder(deviceLinkMessage_).mergeFrom(value).buildPartial();
           } else {
-            lokiAddressMessage_ = value;
+            deviceLinkMessage_ = value;
           }
           onChanged();
         } else {
-          lokiAddressMessageBuilder_.mergeFrom(value);
+          deviceLinkMessageBuilder_.mergeFrom(value);
         }
         bitField0_ |= 0x00000080;
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public Builder clearLokiAddressMessage() {
-        if (lokiAddressMessageBuilder_ == null) {
-          lokiAddressMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDefaultInstance();
+      public Builder clearDeviceLinkMessage() {
+        if (deviceLinkMessageBuilder_ == null) {
+          deviceLinkMessage_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.getDefaultInstance();
           onChanged();
         } else {
-          lokiAddressMessageBuilder_.clear();
+          deviceLinkMessageBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder getLokiAddressMessageBuilder() {
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder getDeviceLinkMessageBuilder() {
         bitField0_ |= 0x00000080;
         onChanged();
-        return getLokiAddressMessageFieldBuilder().getBuilder();
+        return getDeviceLinkMessageFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessageOrBuilder getLokiAddressMessageOrBuilder() {
-        if (lokiAddressMessageBuilder_ != null) {
-          return lokiAddressMessageBuilder_.getMessageOrBuilder();
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessageOrBuilder getDeviceLinkMessageOrBuilder() {
+        if (deviceLinkMessageBuilder_ != null) {
+          return deviceLinkMessageBuilder_.getMessageOrBuilder();
         } else {
-          return lokiAddressMessage_;
+          return deviceLinkMessage_;
         }
       }
       /**
-       * <code>optional .signalservice.LokiAddressMessage lokiAddressMessage = 102;</code>
+       * <code>optional .signalservice.DeviceLinkMessage deviceLinkMessage = 103;</code>
        */
       private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessageOrBuilder> 
-          getLokiAddressMessageFieldBuilder() {
-        if (lokiAddressMessageBuilder_ == null) {
-          lokiAddressMessageBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessageOrBuilder>(
-                  lokiAddressMessage_,
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessageOrBuilder> 
+          getDeviceLinkMessageFieldBuilder() {
+        if (deviceLinkMessageBuilder_ == null) {
+          deviceLinkMessageBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessageOrBuilder>(
+                  deviceLinkMessage_,
                   getParentForChildren(),
                   isClean());
-          lokiAddressMessage_ = null;
+          deviceLinkMessage_ = null;
         }
-        return lokiAddressMessageBuilder_;
-      }
-
-      // optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;
-      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage pairingAuthorisation_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.getDefaultInstance();
-      private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessageOrBuilder> pairingAuthorisationBuilder_;
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public boolean hasPairingAuthorisation() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage getPairingAuthorisation() {
-        if (pairingAuthorisationBuilder_ == null) {
-          return pairingAuthorisation_;
-        } else {
-          return pairingAuthorisationBuilder_.getMessage();
-        }
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public Builder setPairingAuthorisation(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage value) {
-        if (pairingAuthorisationBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          pairingAuthorisation_ = value;
-          onChanged();
-        } else {
-          pairingAuthorisationBuilder_.setMessage(value);
-        }
-        bitField0_ |= 0x00000100;
-        return this;
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public Builder setPairingAuthorisation(
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder builderForValue) {
-        if (pairingAuthorisationBuilder_ == null) {
-          pairingAuthorisation_ = builderForValue.build();
-          onChanged();
-        } else {
-          pairingAuthorisationBuilder_.setMessage(builderForValue.build());
-        }
-        bitField0_ |= 0x00000100;
-        return this;
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public Builder mergePairingAuthorisation(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage value) {
-        if (pairingAuthorisationBuilder_ == null) {
-          if (((bitField0_ & 0x00000100) == 0x00000100) &&
-              pairingAuthorisation_ != org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.getDefaultInstance()) {
-            pairingAuthorisation_ =
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.newBuilder(pairingAuthorisation_).mergeFrom(value).buildPartial();
-          } else {
-            pairingAuthorisation_ = value;
-          }
-          onChanged();
-        } else {
-          pairingAuthorisationBuilder_.mergeFrom(value);
-        }
-        bitField0_ |= 0x00000100;
-        return this;
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public Builder clearPairingAuthorisation() {
-        if (pairingAuthorisationBuilder_ == null) {
-          pairingAuthorisation_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.getDefaultInstance();
-          onChanged();
-        } else {
-          pairingAuthorisationBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000100);
-        return this;
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder getPairingAuthorisationBuilder() {
-        bitField0_ |= 0x00000100;
-        onChanged();
-        return getPairingAuthorisationFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessageOrBuilder getPairingAuthorisationOrBuilder() {
-        if (pairingAuthorisationBuilder_ != null) {
-          return pairingAuthorisationBuilder_.getMessageOrBuilder();
-        } else {
-          return pairingAuthorisation_;
-        }
-      }
-      /**
-       * <code>optional .signalservice.PairingAuthorisationMessage pairingAuthorisation = 103;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessageOrBuilder> 
-          getPairingAuthorisationFieldBuilder() {
-        if (pairingAuthorisationBuilder_ == null) {
-          pairingAuthorisationBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessageOrBuilder>(
-                  pairingAuthorisation_,
-                  getParentForChildren(),
-                  isClean());
-          pairingAuthorisation_ = null;
-        }
-        return pairingAuthorisationBuilder_;
+        return deviceLinkMessageBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:signalservice.Content)
@@ -3655,762 +3342,38 @@ public final class SignalServiceProtos {
     // @@protoc_insertion_point(class_scope:signalservice.Content)
   }
 
-  public interface LokiAddressMessageOrBuilder
+  public interface DeviceLinkMessageOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
-    // optional string ptpAddress = 1;
+    // optional string primaryPublicKey = 1;
     /**
-     * <code>optional string ptpAddress = 1;</code>
+     * <code>optional string primaryPublicKey = 1;</code>
      */
-    boolean hasPtpAddress();
+    boolean hasPrimaryPublicKey();
     /**
-     * <code>optional string ptpAddress = 1;</code>
+     * <code>optional string primaryPublicKey = 1;</code>
      */
-    java.lang.String getPtpAddress();
+    java.lang.String getPrimaryPublicKey();
     /**
-     * <code>optional string ptpAddress = 1;</code>
-     */
-    com.google.protobuf.ByteString
-        getPtpAddressBytes();
-
-    // optional uint32 ptpPort = 2;
-    /**
-     * <code>optional uint32 ptpPort = 2;</code>
-     */
-    boolean hasPtpPort();
-    /**
-     * <code>optional uint32 ptpPort = 2;</code>
-     */
-    int getPtpPort();
-
-    // optional .signalservice.LokiAddressMessage.Type type = 3;
-    /**
-     * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-     */
-    boolean hasType();
-    /**
-     * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-     */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type getType();
-  }
-  /**
-   * Protobuf type {@code signalservice.LokiAddressMessage}
-   */
-  public static final class LokiAddressMessage extends
-      com.google.protobuf.GeneratedMessage
-      implements LokiAddressMessageOrBuilder {
-    // Use LokiAddressMessage.newBuilder() to construct.
-    private LokiAddressMessage(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
-      super(builder);
-      this.unknownFields = builder.getUnknownFields();
-    }
-    private LokiAddressMessage(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final LokiAddressMessage defaultInstance;
-    public static LokiAddressMessage getDefaultInstance() {
-      return defaultInstance;
-    }
-
-    public LokiAddressMessage getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
-      return this.unknownFields;
-    }
-    private LokiAddressMessage(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 10: {
-              bitField0_ |= 0x00000001;
-              ptpAddress_ = input.readBytes();
-              break;
-            }
-            case 16: {
-              bitField0_ |= 0x00000002;
-              ptpPort_ = input.readUInt32();
-              break;
-            }
-            case 24: {
-              int rawValue = input.readEnum();
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type value = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type.valueOf(rawValue);
-              if (value == null) {
-                unknownFields.mergeVarintField(3, rawValue);
-              } else {
-                bitField0_ |= 0x00000004;
-                type_ = value;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiAddressMessage_descriptor;
-    }
-
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiAddressMessage_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder.class);
-    }
-
-    public static com.google.protobuf.Parser<LokiAddressMessage> PARSER =
-        new com.google.protobuf.AbstractParser<LokiAddressMessage>() {
-      public LokiAddressMessage parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new LokiAddressMessage(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<LokiAddressMessage> getParserForType() {
-      return PARSER;
-    }
-
-    /**
-     * Protobuf enum {@code signalservice.LokiAddressMessage.Type}
-     */
-    public enum Type
-        implements com.google.protobuf.ProtocolMessageEnum {
-      /**
-       * <code>HOST_REACHABLE = 0;</code>
-       */
-      HOST_REACHABLE(0, 0),
-      /**
-       * <code>HOST_UNREACHABLE = 1;</code>
-       */
-      HOST_UNREACHABLE(1, 1),
-      ;
-
-      /**
-       * <code>HOST_REACHABLE = 0;</code>
-       */
-      public static final int HOST_REACHABLE_VALUE = 0;
-      /**
-       * <code>HOST_UNREACHABLE = 1;</code>
-       */
-      public static final int HOST_UNREACHABLE_VALUE = 1;
-
-
-      public final int getNumber() { return value; }
-
-      public static Type valueOf(int value) {
-        switch (value) {
-          case 0: return HOST_REACHABLE;
-          case 1: return HOST_UNREACHABLE;
-          default: return null;
-        }
-      }
-
-      public static com.google.protobuf.Internal.EnumLiteMap<Type>
-          internalGetValueMap() {
-        return internalValueMap;
-      }
-      private static com.google.protobuf.Internal.EnumLiteMap<Type>
-          internalValueMap =
-            new com.google.protobuf.Internal.EnumLiteMap<Type>() {
-              public Type findValueByNumber(int number) {
-                return Type.valueOf(number);
-              }
-            };
-
-      public final com.google.protobuf.Descriptors.EnumValueDescriptor
-          getValueDescriptor() {
-        return getDescriptor().getValues().get(index);
-      }
-      public final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptorForType() {
-        return getDescriptor();
-      }
-      public static final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptor() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDescriptor().getEnumTypes().get(0);
-      }
-
-      private static final Type[] VALUES = values();
-
-      public static Type valueOf(
-          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
-        if (desc.getType() != getDescriptor()) {
-          throw new java.lang.IllegalArgumentException(
-            "EnumValueDescriptor is not for this type.");
-        }
-        return VALUES[desc.getIndex()];
-      }
-
-      private final int index;
-      private final int value;
-
-      private Type(int index, int value) {
-        this.index = index;
-        this.value = value;
-      }
-
-      // @@protoc_insertion_point(enum_scope:signalservice.LokiAddressMessage.Type)
-    }
-
-    private int bitField0_;
-    // optional string ptpAddress = 1;
-    public static final int PTPADDRESS_FIELD_NUMBER = 1;
-    private java.lang.Object ptpAddress_;
-    /**
-     * <code>optional string ptpAddress = 1;</code>
-     */
-    public boolean hasPtpAddress() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    /**
-     * <code>optional string ptpAddress = 1;</code>
-     */
-    public java.lang.String getPtpAddress() {
-      java.lang.Object ref = ptpAddress_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          ptpAddress_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string ptpAddress = 1;</code>
-     */
-    public com.google.protobuf.ByteString
-        getPtpAddressBytes() {
-      java.lang.Object ref = ptpAddress_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        ptpAddress_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional uint32 ptpPort = 2;
-    public static final int PTPPORT_FIELD_NUMBER = 2;
-    private int ptpPort_;
-    /**
-     * <code>optional uint32 ptpPort = 2;</code>
-     */
-    public boolean hasPtpPort() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <code>optional uint32 ptpPort = 2;</code>
-     */
-    public int getPtpPort() {
-      return ptpPort_;
-    }
-
-    // optional .signalservice.LokiAddressMessage.Type type = 3;
-    public static final int TYPE_FIELD_NUMBER = 3;
-    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type type_;
-    /**
-     * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-     */
-    public boolean hasType() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-     */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type getType() {
-      return type_;
-    }
-
-    private void initFields() {
-      ptpAddress_ = "";
-      ptpPort_ = 0;
-      type_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type.HOST_REACHABLE;
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, getPtpAddressBytes());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeUInt32(2, ptpPort_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeEnum(3, type_.getNumber());
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getPtpAddressBytes());
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(2, ptpPort_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(3, type_.getNumber());
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code signalservice.LokiAddressMessage}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessageOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiAddressMessage_descriptor;
-      }
-
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiAddressMessage_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Builder.class);
-      }
-
-      // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-
-      public Builder clear() {
-        super.clear();
-        ptpAddress_ = "";
-        bitField0_ = (bitField0_ & ~0x00000001);
-        ptpPort_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000002);
-        type_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type.HOST_REACHABLE;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiAddressMessage_descriptor;
-      }
-
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage getDefaultInstanceForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDefaultInstance();
-      }
-
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage build() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage buildPartial() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        result.ptpAddress_ = ptpAddress_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.ptpPort_ = ptpPort_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.type_ = type_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
-
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage) {
-          return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage other) {
-        if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.getDefaultInstance()) return this;
-        if (other.hasPtpAddress()) {
-          bitField0_ |= 0x00000001;
-          ptpAddress_ = other.ptpAddress_;
-          onChanged();
-        }
-        if (other.hasPtpPort()) {
-          setPtpPort(other.getPtpPort());
-        }
-        if (other.hasType()) {
-          setType(other.getType());
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage) e.getUnfinishedMessage();
-          throw e;
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      // optional string ptpAddress = 1;
-      private java.lang.Object ptpAddress_ = "";
-      /**
-       * <code>optional string ptpAddress = 1;</code>
-       */
-      public boolean hasPtpAddress() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      /**
-       * <code>optional string ptpAddress = 1;</code>
-       */
-      public java.lang.String getPtpAddress() {
-        java.lang.Object ref = ptpAddress_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          ptpAddress_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>optional string ptpAddress = 1;</code>
-       */
-      public com.google.protobuf.ByteString
-          getPtpAddressBytes() {
-        java.lang.Object ref = ptpAddress_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          ptpAddress_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string ptpAddress = 1;</code>
-       */
-      public Builder setPtpAddress(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        ptpAddress_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string ptpAddress = 1;</code>
-       */
-      public Builder clearPtpAddress() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        ptpAddress_ = getDefaultInstance().getPtpAddress();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string ptpAddress = 1;</code>
-       */
-      public Builder setPtpAddressBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        ptpAddress_ = value;
-        onChanged();
-        return this;
-      }
-
-      // optional uint32 ptpPort = 2;
-      private int ptpPort_ ;
-      /**
-       * <code>optional uint32 ptpPort = 2;</code>
-       */
-      public boolean hasPtpPort() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>optional uint32 ptpPort = 2;</code>
-       */
-      public int getPtpPort() {
-        return ptpPort_;
-      }
-      /**
-       * <code>optional uint32 ptpPort = 2;</code>
-       */
-      public Builder setPtpPort(int value) {
-        bitField0_ |= 0x00000002;
-        ptpPort_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional uint32 ptpPort = 2;</code>
-       */
-      public Builder clearPtpPort() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        ptpPort_ = 0;
-        onChanged();
-        return this;
-      }
-
-      // optional .signalservice.LokiAddressMessage.Type type = 3;
-      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type type_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type.HOST_REACHABLE;
-      /**
-       * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-       */
-      public boolean hasType() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-       */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type getType() {
-        return type_;
-      }
-      /**
-       * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-       */
-      public Builder setType(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        bitField0_ |= 0x00000004;
-        type_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional .signalservice.LokiAddressMessage.Type type = 3;</code>
-       */
-      public Builder clearType() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        type_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiAddressMessage.Type.HOST_REACHABLE;
-        onChanged();
-        return this;
-      }
-
-      // @@protoc_insertion_point(builder_scope:signalservice.LokiAddressMessage)
-    }
-
-    static {
-      defaultInstance = new LokiAddressMessage(true);
-      defaultInstance.initFields();
-    }
-
-    // @@protoc_insertion_point(class_scope:signalservice.LokiAddressMessage)
-  }
-
-  public interface PairingAuthorisationMessageOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-
-    // optional string primaryDevicePublicKey = 1;
-    /**
-     * <code>optional string primaryDevicePublicKey = 1;</code>
-     */
-    boolean hasPrimaryDevicePublicKey();
-    /**
-     * <code>optional string primaryDevicePublicKey = 1;</code>
-     */
-    java.lang.String getPrimaryDevicePublicKey();
-    /**
-     * <code>optional string primaryDevicePublicKey = 1;</code>
+     * <code>optional string primaryPublicKey = 1;</code>
      */
     com.google.protobuf.ByteString
-        getPrimaryDevicePublicKeyBytes();
+        getPrimaryPublicKeyBytes();
 
-    // optional string secondaryDevicePublicKey = 2;
+    // optional string secondaryPublicKey = 2;
     /**
-     * <code>optional string secondaryDevicePublicKey = 2;</code>
+     * <code>optional string secondaryPublicKey = 2;</code>
      */
-    boolean hasSecondaryDevicePublicKey();
+    boolean hasSecondaryPublicKey();
     /**
-     * <code>optional string secondaryDevicePublicKey = 2;</code>
+     * <code>optional string secondaryPublicKey = 2;</code>
      */
-    java.lang.String getSecondaryDevicePublicKey();
+    java.lang.String getSecondaryPublicKey();
     /**
-     * <code>optional string secondaryDevicePublicKey = 2;</code>
+     * <code>optional string secondaryPublicKey = 2;</code>
      */
     com.google.protobuf.ByteString
-        getSecondaryDevicePublicKeyBytes();
+        getSecondaryPublicKeyBytes();
 
     // optional bytes requestSignature = 3;
     /**
@@ -4422,35 +3385,35 @@ public final class SignalServiceProtos {
      */
     com.google.protobuf.ByteString getRequestSignature();
 
-    // optional bytes grantSignature = 4;
+    // optional bytes authorizationSignature = 4;
     /**
-     * <code>optional bytes grantSignature = 4;</code>
+     * <code>optional bytes authorizationSignature = 4;</code>
      */
-    boolean hasGrantSignature();
+    boolean hasAuthorizationSignature();
     /**
-     * <code>optional bytes grantSignature = 4;</code>
+     * <code>optional bytes authorizationSignature = 4;</code>
      */
-    com.google.protobuf.ByteString getGrantSignature();
+    com.google.protobuf.ByteString getAuthorizationSignature();
   }
   /**
-   * Protobuf type {@code signalservice.PairingAuthorisationMessage}
+   * Protobuf type {@code signalservice.DeviceLinkMessage}
    */
-  public static final class PairingAuthorisationMessage extends
+  public static final class DeviceLinkMessage extends
       com.google.protobuf.GeneratedMessage
-      implements PairingAuthorisationMessageOrBuilder {
-    // Use PairingAuthorisationMessage.newBuilder() to construct.
-    private PairingAuthorisationMessage(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      implements DeviceLinkMessageOrBuilder {
+    // Use DeviceLinkMessage.newBuilder() to construct.
+    private DeviceLinkMessage(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
       this.unknownFields = builder.getUnknownFields();
     }
-    private PairingAuthorisationMessage(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+    private DeviceLinkMessage(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
 
-    private static final PairingAuthorisationMessage defaultInstance;
-    public static PairingAuthorisationMessage getDefaultInstance() {
+    private static final DeviceLinkMessage defaultInstance;
+    public static DeviceLinkMessage getDefaultInstance() {
       return defaultInstance;
     }
 
-    public PairingAuthorisationMessage getDefaultInstanceForType() {
+    public DeviceLinkMessage getDefaultInstanceForType() {
       return defaultInstance;
     }
 
@@ -4460,7 +3423,7 @@ public final class SignalServiceProtos {
         getUnknownFields() {
       return this.unknownFields;
     }
-    private PairingAuthorisationMessage(
+    private DeviceLinkMessage(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -4485,12 +3448,12 @@ public final class SignalServiceProtos {
             }
             case 10: {
               bitField0_ |= 0x00000001;
-              primaryDevicePublicKey_ = input.readBytes();
+              primaryPublicKey_ = input.readBytes();
               break;
             }
             case 18: {
               bitField0_ |= 0x00000002;
-              secondaryDevicePublicKey_ = input.readBytes();
+              secondaryPublicKey_ = input.readBytes();
               break;
             }
             case 26: {
@@ -4500,7 +3463,7 @@ public final class SignalServiceProtos {
             }
             case 34: {
               bitField0_ |= 0x00000008;
-              grantSignature_ = input.readBytes();
+              authorizationSignature_ = input.readBytes();
               break;
             }
           }
@@ -4517,46 +3480,46 @@ public final class SignalServiceProtos {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PairingAuthorisationMessage_descriptor;
+      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_DeviceLinkMessage_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PairingAuthorisationMessage_fieldAccessorTable
+      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_DeviceLinkMessage_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder.class);
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<PairingAuthorisationMessage> PARSER =
-        new com.google.protobuf.AbstractParser<PairingAuthorisationMessage>() {
-      public PairingAuthorisationMessage parsePartialFrom(
+    public static com.google.protobuf.Parser<DeviceLinkMessage> PARSER =
+        new com.google.protobuf.AbstractParser<DeviceLinkMessage>() {
+      public DeviceLinkMessage parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new PairingAuthorisationMessage(input, extensionRegistry);
+        return new DeviceLinkMessage(input, extensionRegistry);
       }
     };
 
     @java.lang.Override
-    public com.google.protobuf.Parser<PairingAuthorisationMessage> getParserForType() {
+    public com.google.protobuf.Parser<DeviceLinkMessage> getParserForType() {
       return PARSER;
     }
 
     private int bitField0_;
-    // optional string primaryDevicePublicKey = 1;
-    public static final int PRIMARYDEVICEPUBLICKEY_FIELD_NUMBER = 1;
-    private java.lang.Object primaryDevicePublicKey_;
+    // optional string primaryPublicKey = 1;
+    public static final int PRIMARYPUBLICKEY_FIELD_NUMBER = 1;
+    private java.lang.Object primaryPublicKey_;
     /**
-     * <code>optional string primaryDevicePublicKey = 1;</code>
+     * <code>optional string primaryPublicKey = 1;</code>
      */
-    public boolean hasPrimaryDevicePublicKey() {
+    public boolean hasPrimaryPublicKey() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>optional string primaryDevicePublicKey = 1;</code>
+     * <code>optional string primaryPublicKey = 1;</code>
      */
-    public java.lang.String getPrimaryDevicePublicKey() {
-      java.lang.Object ref = primaryDevicePublicKey_;
+    public java.lang.String getPrimaryPublicKey() {
+      java.lang.Object ref = primaryPublicKey_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -4564,42 +3527,42 @@ public final class SignalServiceProtos {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          primaryDevicePublicKey_ = s;
+          primaryPublicKey_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string primaryDevicePublicKey = 1;</code>
+     * <code>optional string primaryPublicKey = 1;</code>
      */
     public com.google.protobuf.ByteString
-        getPrimaryDevicePublicKeyBytes() {
-      java.lang.Object ref = primaryDevicePublicKey_;
+        getPrimaryPublicKeyBytes() {
+      java.lang.Object ref = primaryPublicKey_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        primaryDevicePublicKey_ = b;
+        primaryPublicKey_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    // optional string secondaryDevicePublicKey = 2;
-    public static final int SECONDARYDEVICEPUBLICKEY_FIELD_NUMBER = 2;
-    private java.lang.Object secondaryDevicePublicKey_;
+    // optional string secondaryPublicKey = 2;
+    public static final int SECONDARYPUBLICKEY_FIELD_NUMBER = 2;
+    private java.lang.Object secondaryPublicKey_;
     /**
-     * <code>optional string secondaryDevicePublicKey = 2;</code>
+     * <code>optional string secondaryPublicKey = 2;</code>
      */
-    public boolean hasSecondaryDevicePublicKey() {
+    public boolean hasSecondaryPublicKey() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>optional string secondaryDevicePublicKey = 2;</code>
+     * <code>optional string secondaryPublicKey = 2;</code>
      */
-    public java.lang.String getSecondaryDevicePublicKey() {
-      java.lang.Object ref = secondaryDevicePublicKey_;
+    public java.lang.String getSecondaryPublicKey() {
+      java.lang.Object ref = secondaryPublicKey_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -4607,22 +3570,22 @@ public final class SignalServiceProtos {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          secondaryDevicePublicKey_ = s;
+          secondaryPublicKey_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string secondaryDevicePublicKey = 2;</code>
+     * <code>optional string secondaryPublicKey = 2;</code>
      */
     public com.google.protobuf.ByteString
-        getSecondaryDevicePublicKeyBytes() {
-      java.lang.Object ref = secondaryDevicePublicKey_;
+        getSecondaryPublicKeyBytes() {
+      java.lang.Object ref = secondaryPublicKey_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        secondaryDevicePublicKey_ = b;
+        secondaryPublicKey_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -4645,27 +3608,27 @@ public final class SignalServiceProtos {
       return requestSignature_;
     }
 
-    // optional bytes grantSignature = 4;
-    public static final int GRANTSIGNATURE_FIELD_NUMBER = 4;
-    private com.google.protobuf.ByteString grantSignature_;
+    // optional bytes authorizationSignature = 4;
+    public static final int AUTHORIZATIONSIGNATURE_FIELD_NUMBER = 4;
+    private com.google.protobuf.ByteString authorizationSignature_;
     /**
-     * <code>optional bytes grantSignature = 4;</code>
+     * <code>optional bytes authorizationSignature = 4;</code>
      */
-    public boolean hasGrantSignature() {
+    public boolean hasAuthorizationSignature() {
       return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>optional bytes grantSignature = 4;</code>
+     * <code>optional bytes authorizationSignature = 4;</code>
      */
-    public com.google.protobuf.ByteString getGrantSignature() {
-      return grantSignature_;
+    public com.google.protobuf.ByteString getAuthorizationSignature() {
+      return authorizationSignature_;
     }
 
     private void initFields() {
-      primaryDevicePublicKey_ = "";
-      secondaryDevicePublicKey_ = "";
+      primaryPublicKey_ = "";
+      secondaryPublicKey_ = "";
       requestSignature_ = com.google.protobuf.ByteString.EMPTY;
-      grantSignature_ = com.google.protobuf.ByteString.EMPTY;
+      authorizationSignature_ = com.google.protobuf.ByteString.EMPTY;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -4680,16 +3643,16 @@ public final class SignalServiceProtos {
                         throws java.io.IOException {
       getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, getPrimaryDevicePublicKeyBytes());
+        output.writeBytes(1, getPrimaryPublicKeyBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getSecondaryDevicePublicKeyBytes());
+        output.writeBytes(2, getSecondaryPublicKeyBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeBytes(3, requestSignature_);
       }
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeBytes(4, grantSignature_);
+        output.writeBytes(4, authorizationSignature_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -4702,11 +3665,11 @@ public final class SignalServiceProtos {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getPrimaryDevicePublicKeyBytes());
+          .computeBytesSize(1, getPrimaryPublicKeyBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getSecondaryDevicePublicKeyBytes());
+          .computeBytesSize(2, getSecondaryPublicKeyBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
@@ -4714,7 +3677,7 @@ public final class SignalServiceProtos {
       }
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(4, grantSignature_);
+          .computeBytesSize(4, authorizationSignature_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -4728,53 +3691,53 @@ public final class SignalServiceProtos {
       return super.writeReplace();
     }
 
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(byte[] data)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(java.io.InputStream input)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseFrom(input, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseDelimitedFrom(java.io.InputStream input)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseDelimitedFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -4783,7 +3746,7 @@ public final class SignalServiceProtos {
 
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage prototype) {
+    public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
@@ -4795,24 +3758,24 @@ public final class SignalServiceProtos {
       return builder;
     }
     /**
-     * Protobuf type {@code signalservice.PairingAuthorisationMessage}
+     * Protobuf type {@code signalservice.DeviceLinkMessage}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessageOrBuilder {
+       implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessageOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PairingAuthorisationMessage_descriptor;
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_DeviceLinkMessage_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PairingAuthorisationMessage_fieldAccessorTable
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_DeviceLinkMessage_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.Builder.class);
+                org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.Builder.class);
       }
 
-      // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.newBuilder()
+      // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -4832,13 +3795,13 @@ public final class SignalServiceProtos {
 
       public Builder clear() {
         super.clear();
-        primaryDevicePublicKey_ = "";
+        primaryPublicKey_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
-        secondaryDevicePublicKey_ = "";
+        secondaryPublicKey_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
         requestSignature_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000004);
-        grantSignature_ = com.google.protobuf.ByteString.EMPTY;
+        authorizationSignature_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
@@ -4849,33 +3812,33 @@ public final class SignalServiceProtos {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PairingAuthorisationMessage_descriptor;
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_DeviceLinkMessage_descriptor;
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage getDefaultInstanceForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.getDefaultInstance();
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage getDefaultInstanceForType() {
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.getDefaultInstance();
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage build() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage result = buildPartial();
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage build() {
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage buildPartial() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage(this);
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage buildPartial() {
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.primaryDevicePublicKey_ = primaryDevicePublicKey_;
+        result.primaryPublicKey_ = primaryPublicKey_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.secondaryDevicePublicKey_ = secondaryDevicePublicKey_;
+        result.secondaryPublicKey_ = secondaryPublicKey_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
@@ -4883,38 +3846,38 @@ public final class SignalServiceProtos {
         if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
           to_bitField0_ |= 0x00000008;
         }
-        result.grantSignature_ = grantSignature_;
+        result.authorizationSignature_ = authorizationSignature_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage) {
-          return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage)other);
+        if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage) {
+          return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage other) {
-        if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage.getDefaultInstance()) return this;
-        if (other.hasPrimaryDevicePublicKey()) {
+      public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage other) {
+        if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage.getDefaultInstance()) return this;
+        if (other.hasPrimaryPublicKey()) {
           bitField0_ |= 0x00000001;
-          primaryDevicePublicKey_ = other.primaryDevicePublicKey_;
+          primaryPublicKey_ = other.primaryPublicKey_;
           onChanged();
         }
-        if (other.hasSecondaryDevicePublicKey()) {
+        if (other.hasSecondaryPublicKey()) {
           bitField0_ |= 0x00000002;
-          secondaryDevicePublicKey_ = other.secondaryDevicePublicKey_;
+          secondaryPublicKey_ = other.secondaryPublicKey_;
           onChanged();
         }
         if (other.hasRequestSignature()) {
           setRequestSignature(other.getRequestSignature());
         }
-        if (other.hasGrantSignature()) {
-          setGrantSignature(other.getGrantSignature());
+        if (other.hasAuthorizationSignature()) {
+          setAuthorizationSignature(other.getAuthorizationSignature());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -4928,11 +3891,11 @@ public final class SignalServiceProtos {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage parsedMessage = null;
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.PairingAuthorisationMessage) e.getUnfinishedMessage();
+          parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.DeviceLinkMessage) e.getUnfinishedMessage();
           throw e;
         } finally {
           if (parsedMessage != null) {
@@ -4943,150 +3906,150 @@ public final class SignalServiceProtos {
       }
       private int bitField0_;
 
-      // optional string primaryDevicePublicKey = 1;
-      private java.lang.Object primaryDevicePublicKey_ = "";
+      // optional string primaryPublicKey = 1;
+      private java.lang.Object primaryPublicKey_ = "";
       /**
-       * <code>optional string primaryDevicePublicKey = 1;</code>
+       * <code>optional string primaryPublicKey = 1;</code>
        */
-      public boolean hasPrimaryDevicePublicKey() {
+      public boolean hasPrimaryPublicKey() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>optional string primaryDevicePublicKey = 1;</code>
+       * <code>optional string primaryPublicKey = 1;</code>
        */
-      public java.lang.String getPrimaryDevicePublicKey() {
-        java.lang.Object ref = primaryDevicePublicKey_;
+      public java.lang.String getPrimaryPublicKey() {
+        java.lang.Object ref = primaryPublicKey_;
         if (!(ref instanceof java.lang.String)) {
           java.lang.String s = ((com.google.protobuf.ByteString) ref)
               .toStringUtf8();
-          primaryDevicePublicKey_ = s;
+          primaryPublicKey_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
         }
       }
       /**
-       * <code>optional string primaryDevicePublicKey = 1;</code>
+       * <code>optional string primaryPublicKey = 1;</code>
        */
       public com.google.protobuf.ByteString
-          getPrimaryDevicePublicKeyBytes() {
-        java.lang.Object ref = primaryDevicePublicKey_;
+          getPrimaryPublicKeyBytes() {
+        java.lang.Object ref = primaryPublicKey_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          primaryDevicePublicKey_ = b;
+          primaryPublicKey_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string primaryDevicePublicKey = 1;</code>
+       * <code>optional string primaryPublicKey = 1;</code>
        */
-      public Builder setPrimaryDevicePublicKey(
+      public Builder setPrimaryPublicKey(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        primaryDevicePublicKey_ = value;
+        primaryPublicKey_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string primaryDevicePublicKey = 1;</code>
+       * <code>optional string primaryPublicKey = 1;</code>
        */
-      public Builder clearPrimaryDevicePublicKey() {
+      public Builder clearPrimaryPublicKey() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        primaryDevicePublicKey_ = getDefaultInstance().getPrimaryDevicePublicKey();
+        primaryPublicKey_ = getDefaultInstance().getPrimaryPublicKey();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string primaryDevicePublicKey = 1;</code>
+       * <code>optional string primaryPublicKey = 1;</code>
        */
-      public Builder setPrimaryDevicePublicKeyBytes(
+      public Builder setPrimaryPublicKeyBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000001;
-        primaryDevicePublicKey_ = value;
+        primaryPublicKey_ = value;
         onChanged();
         return this;
       }
 
-      // optional string secondaryDevicePublicKey = 2;
-      private java.lang.Object secondaryDevicePublicKey_ = "";
+      // optional string secondaryPublicKey = 2;
+      private java.lang.Object secondaryPublicKey_ = "";
       /**
-       * <code>optional string secondaryDevicePublicKey = 2;</code>
+       * <code>optional string secondaryPublicKey = 2;</code>
        */
-      public boolean hasSecondaryDevicePublicKey() {
+      public boolean hasSecondaryPublicKey() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>optional string secondaryDevicePublicKey = 2;</code>
+       * <code>optional string secondaryPublicKey = 2;</code>
        */
-      public java.lang.String getSecondaryDevicePublicKey() {
-        java.lang.Object ref = secondaryDevicePublicKey_;
+      public java.lang.String getSecondaryPublicKey() {
+        java.lang.Object ref = secondaryPublicKey_;
         if (!(ref instanceof java.lang.String)) {
           java.lang.String s = ((com.google.protobuf.ByteString) ref)
               .toStringUtf8();
-          secondaryDevicePublicKey_ = s;
+          secondaryPublicKey_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
         }
       }
       /**
-       * <code>optional string secondaryDevicePublicKey = 2;</code>
+       * <code>optional string secondaryPublicKey = 2;</code>
        */
       public com.google.protobuf.ByteString
-          getSecondaryDevicePublicKeyBytes() {
-        java.lang.Object ref = secondaryDevicePublicKey_;
+          getSecondaryPublicKeyBytes() {
+        java.lang.Object ref = secondaryPublicKey_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          secondaryDevicePublicKey_ = b;
+          secondaryPublicKey_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string secondaryDevicePublicKey = 2;</code>
+       * <code>optional string secondaryPublicKey = 2;</code>
        */
-      public Builder setSecondaryDevicePublicKey(
+      public Builder setSecondaryPublicKey(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000002;
-        secondaryDevicePublicKey_ = value;
+        secondaryPublicKey_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string secondaryDevicePublicKey = 2;</code>
+       * <code>optional string secondaryPublicKey = 2;</code>
        */
-      public Builder clearSecondaryDevicePublicKey() {
+      public Builder clearSecondaryPublicKey() {
         bitField0_ = (bitField0_ & ~0x00000002);
-        secondaryDevicePublicKey_ = getDefaultInstance().getSecondaryDevicePublicKey();
+        secondaryPublicKey_ = getDefaultInstance().getSecondaryPublicKey();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string secondaryDevicePublicKey = 2;</code>
+       * <code>optional string secondaryPublicKey = 2;</code>
        */
-      public Builder setSecondaryDevicePublicKeyBytes(
+      public Builder setSecondaryPublicKeyBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000002;
-        secondaryDevicePublicKey_ = value;
+        secondaryPublicKey_ = value;
         onChanged();
         return this;
       }
@@ -5127,54 +4090,54 @@ public final class SignalServiceProtos {
         return this;
       }
 
-      // optional bytes grantSignature = 4;
-      private com.google.protobuf.ByteString grantSignature_ = com.google.protobuf.ByteString.EMPTY;
+      // optional bytes authorizationSignature = 4;
+      private com.google.protobuf.ByteString authorizationSignature_ = com.google.protobuf.ByteString.EMPTY;
       /**
-       * <code>optional bytes grantSignature = 4;</code>
+       * <code>optional bytes authorizationSignature = 4;</code>
        */
-      public boolean hasGrantSignature() {
+      public boolean hasAuthorizationSignature() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional bytes grantSignature = 4;</code>
+       * <code>optional bytes authorizationSignature = 4;</code>
        */
-      public com.google.protobuf.ByteString getGrantSignature() {
-        return grantSignature_;
+      public com.google.protobuf.ByteString getAuthorizationSignature() {
+        return authorizationSignature_;
       }
       /**
-       * <code>optional bytes grantSignature = 4;</code>
+       * <code>optional bytes authorizationSignature = 4;</code>
        */
-      public Builder setGrantSignature(com.google.protobuf.ByteString value) {
+      public Builder setAuthorizationSignature(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000008;
-        grantSignature_ = value;
+        authorizationSignature_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional bytes grantSignature = 4;</code>
+       * <code>optional bytes authorizationSignature = 4;</code>
        */
-      public Builder clearGrantSignature() {
+      public Builder clearAuthorizationSignature() {
         bitField0_ = (bitField0_ & ~0x00000008);
-        grantSignature_ = getDefaultInstance().getGrantSignature();
+        authorizationSignature_ = getDefaultInstance().getAuthorizationSignature();
         onChanged();
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:signalservice.PairingAuthorisationMessage)
+      // @@protoc_insertion_point(builder_scope:signalservice.DeviceLinkMessage)
     }
 
     static {
-      defaultInstance = new PairingAuthorisationMessage(true);
+      defaultInstance = new DeviceLinkMessage(true);
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:signalservice.PairingAuthorisationMessage)
+    // @@protoc_insertion_point(class_scope:signalservice.DeviceLinkMessage)
   }
 
-  public interface PrekeyBundleMessageOrBuilder
+  public interface PreKeyBundleMessageOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
     // optional bytes identityKey = 1;
@@ -5248,24 +4211,24 @@ public final class SignalServiceProtos {
     com.google.protobuf.ByteString getSignature();
   }
   /**
-   * Protobuf type {@code signalservice.PrekeyBundleMessage}
+   * Protobuf type {@code signalservice.PreKeyBundleMessage}
    */
-  public static final class PrekeyBundleMessage extends
+  public static final class PreKeyBundleMessage extends
       com.google.protobuf.GeneratedMessage
-      implements PrekeyBundleMessageOrBuilder {
-    // Use PrekeyBundleMessage.newBuilder() to construct.
-    private PrekeyBundleMessage(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      implements PreKeyBundleMessageOrBuilder {
+    // Use PreKeyBundleMessage.newBuilder() to construct.
+    private PreKeyBundleMessage(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
       this.unknownFields = builder.getUnknownFields();
     }
-    private PrekeyBundleMessage(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+    private PreKeyBundleMessage(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
 
-    private static final PrekeyBundleMessage defaultInstance;
-    public static PrekeyBundleMessage getDefaultInstance() {
+    private static final PreKeyBundleMessage defaultInstance;
+    public static PreKeyBundleMessage getDefaultInstance() {
       return defaultInstance;
     }
 
-    public PrekeyBundleMessage getDefaultInstanceForType() {
+    public PreKeyBundleMessage getDefaultInstanceForType() {
       return defaultInstance;
     }
 
@@ -5275,7 +4238,7 @@ public final class SignalServiceProtos {
         getUnknownFields() {
       return this.unknownFields;
     }
-    private PrekeyBundleMessage(
+    private PreKeyBundleMessage(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -5347,28 +4310,28 @@ public final class SignalServiceProtos {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PrekeyBundleMessage_descriptor;
+      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PreKeyBundleMessage_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PrekeyBundleMessage_fieldAccessorTable
+      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PreKeyBundleMessage_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder.class);
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<PrekeyBundleMessage> PARSER =
-        new com.google.protobuf.AbstractParser<PrekeyBundleMessage>() {
-      public PrekeyBundleMessage parsePartialFrom(
+    public static com.google.protobuf.Parser<PreKeyBundleMessage> PARSER =
+        new com.google.protobuf.AbstractParser<PreKeyBundleMessage>() {
+      public PreKeyBundleMessage parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new PrekeyBundleMessage(input, extensionRegistry);
+        return new PreKeyBundleMessage(input, extensionRegistry);
       }
     };
 
     @java.lang.Override
-    public com.google.protobuf.Parser<PrekeyBundleMessage> getParserForType() {
+    public com.google.protobuf.Parser<PreKeyBundleMessage> getParserForType() {
       return PARSER;
     }
 
@@ -5576,53 +4539,53 @@ public final class SignalServiceProtos {
       return super.writeReplace();
     }
 
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(byte[] data)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(java.io.InputStream input)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseFrom(input, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseDelimitedFrom(java.io.InputStream input)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseDelimitedFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -5631,7 +4594,7 @@ public final class SignalServiceProtos {
 
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage prototype) {
+    public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
@@ -5643,24 +4606,24 @@ public final class SignalServiceProtos {
       return builder;
     }
     /**
-     * Protobuf type {@code signalservice.PrekeyBundleMessage}
+     * Protobuf type {@code signalservice.PreKeyBundleMessage}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessageOrBuilder {
+       implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessageOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PrekeyBundleMessage_descriptor;
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PreKeyBundleMessage_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PrekeyBundleMessage_fieldAccessorTable
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PreKeyBundleMessage_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.Builder.class);
+                org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.Builder.class);
       }
 
-      // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.newBuilder()
+      // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -5703,23 +4666,23 @@ public final class SignalServiceProtos {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PrekeyBundleMessage_descriptor;
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_PreKeyBundleMessage_descriptor;
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage getDefaultInstanceForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.getDefaultInstance();
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage getDefaultInstanceForType() {
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.getDefaultInstance();
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage build() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage result = buildPartial();
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage build() {
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage buildPartial() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage(this);
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage buildPartial() {
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
@@ -5756,16 +4719,16 @@ public final class SignalServiceProtos {
       }
 
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage) {
-          return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage)other);
+        if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage) {
+          return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage other) {
-        if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage.getDefaultInstance()) return this;
+      public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage other) {
+        if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage.getDefaultInstance()) return this;
         if (other.hasIdentityKey()) {
           setIdentityKey(other.getIdentityKey());
         }
@@ -5799,11 +4762,11 @@ public final class SignalServiceProtos {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage parsedMessage = null;
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage) e.getUnfinishedMessage();
+          parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage) e.getUnfinishedMessage();
           throw e;
         } finally {
           if (parsedMessage != null) {
@@ -6057,15 +5020,15 @@ public final class SignalServiceProtos {
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:signalservice.PrekeyBundleMessage)
+      // @@protoc_insertion_point(builder_scope:signalservice.PreKeyBundleMessage)
     }
 
     static {
-      defaultInstance = new PrekeyBundleMessage(true);
+      defaultInstance = new PreKeyBundleMessage(true);
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:signalservice.PrekeyBundleMessage)
+    // @@protoc_insertion_point(class_scope:signalservice.PreKeyBundleMessage)
   }
 
   public interface CallMessageOrBuilder
@@ -10373,9 +9336,9 @@ public final class SignalServiceProtos {
      */
     org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage.StickerOrBuilder getStickerOrBuilder();
 
-    // optional .signalservice.LokiProfile profile = 101;
+    // optional .signalservice.LokiUserProfile profile = 101;
     /**
-     * <code>optional .signalservice.LokiProfile profile = 101;</code>
+     * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
      *
      * <pre>
      * Loki - The profile of the current user
@@ -10383,21 +9346,21 @@ public final class SignalServiceProtos {
      */
     boolean hasProfile();
     /**
-     * <code>optional .signalservice.LokiProfile profile = 101;</code>
+     * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
      *
      * <pre>
      * Loki - The profile of the current user
      * </pre>
      */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile getProfile();
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile getProfile();
     /**
-     * <code>optional .signalservice.LokiProfile profile = 101;</code>
+     * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
      *
      * <pre>
      * Loki - The profile of the current user
      * </pre>
      */
-    org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfileOrBuilder getProfileOrBuilder();
+    org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfileOrBuilder getProfileOrBuilder();
   }
   /**
    * Protobuf type {@code signalservice.DataMessage}
@@ -10539,11 +9502,11 @@ public final class SignalServiceProtos {
               break;
             }
             case 810: {
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder subBuilder = null;
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder subBuilder = null;
               if (((bitField0_ & 0x00000100) == 0x00000100)) {
                 subBuilder = profile_.toBuilder();
               }
-              profile_ = input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.PARSER, extensionRegistry);
+              profile_ = input.readMessage(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.PARSER, extensionRegistry);
               if (subBuilder != null) {
                 subBuilder.mergeFrom(profile_);
                 profile_ = subBuilder.buildPartial();
@@ -10617,13 +9580,13 @@ public final class SignalServiceProtos {
        */
       PROFILE_KEY_UPDATE(2, 4),
       /**
-       * <code>SESSION_RESTORE = 64;</code>
+       * <code>SESSION_RESTORATION_REQUEST = 64;</code>
        */
-      SESSION_RESTORE(3, 64),
+      SESSION_RESTORATION_REQUEST(3, 64),
       /**
-       * <code>UNPAIRING_REQUEST = 128;</code>
+       * <code>DEVICE_UNLINKING_REQUEST = 128;</code>
        */
-      UNPAIRING_REQUEST(4, 128),
+      DEVICE_UNLINKING_REQUEST(4, 128),
       /**
        * <code>SESSION_REQUEST = 256;</code>
        */
@@ -10643,13 +9606,13 @@ public final class SignalServiceProtos {
        */
       public static final int PROFILE_KEY_UPDATE_VALUE = 4;
       /**
-       * <code>SESSION_RESTORE = 64;</code>
+       * <code>SESSION_RESTORATION_REQUEST = 64;</code>
        */
-      public static final int SESSION_RESTORE_VALUE = 64;
+      public static final int SESSION_RESTORATION_REQUEST_VALUE = 64;
       /**
-       * <code>UNPAIRING_REQUEST = 128;</code>
+       * <code>DEVICE_UNLINKING_REQUEST = 128;</code>
        */
-      public static final int UNPAIRING_REQUEST_VALUE = 128;
+      public static final int DEVICE_UNLINKING_REQUEST_VALUE = 128;
       /**
        * <code>SESSION_REQUEST = 256;</code>
        */
@@ -10663,8 +9626,8 @@ public final class SignalServiceProtos {
           case 1: return END_SESSION;
           case 2: return EXPIRATION_TIMER_UPDATE;
           case 4: return PROFILE_KEY_UPDATE;
-          case 64: return SESSION_RESTORE;
-          case 128: return UNPAIRING_REQUEST;
+          case 64: return SESSION_RESTORATION_REQUEST;
+          case 128: return DEVICE_UNLINKING_REQUEST;
           case 256: return SESSION_REQUEST;
           default: return null;
         }
@@ -21621,11 +20584,11 @@ public final class SignalServiceProtos {
       return sticker_;
     }
 
-    // optional .signalservice.LokiProfile profile = 101;
+    // optional .signalservice.LokiUserProfile profile = 101;
     public static final int PROFILE_FIELD_NUMBER = 101;
-    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile profile_;
+    private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile profile_;
     /**
-     * <code>optional .signalservice.LokiProfile profile = 101;</code>
+     * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
      *
      * <pre>
      * Loki - The profile of the current user
@@ -21635,23 +20598,23 @@ public final class SignalServiceProtos {
       return ((bitField0_ & 0x00000100) == 0x00000100);
     }
     /**
-     * <code>optional .signalservice.LokiProfile profile = 101;</code>
+     * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
      *
      * <pre>
      * Loki - The profile of the current user
      * </pre>
      */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile getProfile() {
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile getProfile() {
       return profile_;
     }
     /**
-     * <code>optional .signalservice.LokiProfile profile = 101;</code>
+     * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
      *
      * <pre>
      * Loki - The profile of the current user
      * </pre>
      */
-    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfileOrBuilder getProfileOrBuilder() {
+    public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfileOrBuilder getProfileOrBuilder() {
       return profile_;
     }
 
@@ -21667,7 +20630,7 @@ public final class SignalServiceProtos {
       contact_ = java.util.Collections.emptyList();
       preview_ = java.util.Collections.emptyList();
       sticker_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage.Sticker.getDefaultInstance();
-      profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.getDefaultInstance();
+      profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -21944,7 +20907,7 @@ public final class SignalServiceProtos {
         }
         bitField0_ = (bitField0_ & ~0x00000400);
         if (profileBuilder_ == null) {
-          profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.getDefaultInstance();
+          profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.getDefaultInstance();
         } else {
           profileBuilder_.clear();
         }
@@ -23486,12 +22449,12 @@ public final class SignalServiceProtos {
         return stickerBuilder_;
       }
 
-      // optional .signalservice.LokiProfile profile = 101;
-      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.getDefaultInstance();
+      // optional .signalservice.LokiUserProfile profile = 101;
+      private org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfileOrBuilder> profileBuilder_;
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfileOrBuilder> profileBuilder_;
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
@@ -23501,13 +22464,13 @@ public final class SignalServiceProtos {
         return ((bitField0_ & 0x00000800) == 0x00000800);
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
        * </pre>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile getProfile() {
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile getProfile() {
         if (profileBuilder_ == null) {
           return profile_;
         } else {
@@ -23515,13 +22478,13 @@ public final class SignalServiceProtos {
         }
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
        * </pre>
        */
-      public Builder setProfile(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile value) {
+      public Builder setProfile(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile value) {
         if (profileBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -23535,14 +22498,14 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
        * </pre>
        */
       public Builder setProfile(
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder builderForValue) {
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder builderForValue) {
         if (profileBuilder_ == null) {
           profile_ = builderForValue.build();
           onChanged();
@@ -23553,18 +22516,18 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
        * </pre>
        */
-      public Builder mergeProfile(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile value) {
+      public Builder mergeProfile(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile value) {
         if (profileBuilder_ == null) {
           if (((bitField0_ & 0x00000800) == 0x00000800) &&
-              profile_ != org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.getDefaultInstance()) {
+              profile_ != org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.getDefaultInstance()) {
             profile_ =
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.newBuilder(profile_).mergeFrom(value).buildPartial();
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.newBuilder(profile_).mergeFrom(value).buildPartial();
           } else {
             profile_ = value;
           }
@@ -23576,7 +22539,7 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
@@ -23584,7 +22547,7 @@ public final class SignalServiceProtos {
        */
       public Builder clearProfile() {
         if (profileBuilder_ == null) {
-          profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.getDefaultInstance();
+          profile_ = org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.getDefaultInstance();
           onChanged();
         } else {
           profileBuilder_.clear();
@@ -23593,25 +22556,25 @@ public final class SignalServiceProtos {
         return this;
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
        * </pre>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder getProfileBuilder() {
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder getProfileBuilder() {
         bitField0_ |= 0x00000800;
         onChanged();
         return getProfileFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
        * </pre>
        */
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfileOrBuilder getProfileOrBuilder() {
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfileOrBuilder getProfileOrBuilder() {
         if (profileBuilder_ != null) {
           return profileBuilder_.getMessageOrBuilder();
         } else {
@@ -23619,18 +22582,18 @@ public final class SignalServiceProtos {
         }
       }
       /**
-       * <code>optional .signalservice.LokiProfile profile = 101;</code>
+       * <code>optional .signalservice.LokiUserProfile profile = 101;</code>
        *
        * <pre>
        * Loki - The profile of the current user
        * </pre>
        */
       private com.google.protobuf.SingleFieldBuilder<
-          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfileOrBuilder> 
+          org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfileOrBuilder> 
           getProfileFieldBuilder() {
         if (profileBuilder_ == null) {
           profileBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfileOrBuilder>(
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfileOrBuilder>(
                   profile_,
                   getParentForChildren(),
                   isClean());
@@ -23650,7 +22613,7 @@ public final class SignalServiceProtos {
     // @@protoc_insertion_point(class_scope:signalservice.DataMessage)
   }
 
-  public interface LokiProfileOrBuilder
+  public interface LokiUserProfileOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
     // optional string displayName = 1;
@@ -23668,40 +22631,40 @@ public final class SignalServiceProtos {
     com.google.protobuf.ByteString
         getDisplayNameBytes();
 
-    // optional string avatar = 2;
+    // optional string profilePictureURL = 2;
     /**
-     * <code>optional string avatar = 2;</code>
+     * <code>optional string profilePictureURL = 2;</code>
      */
-    boolean hasAvatar();
+    boolean hasProfilePictureURL();
     /**
-     * <code>optional string avatar = 2;</code>
+     * <code>optional string profilePictureURL = 2;</code>
      */
-    java.lang.String getAvatar();
+    java.lang.String getProfilePictureURL();
     /**
-     * <code>optional string avatar = 2;</code>
+     * <code>optional string profilePictureURL = 2;</code>
      */
     com.google.protobuf.ByteString
-        getAvatarBytes();
+        getProfilePictureURLBytes();
   }
   /**
-   * Protobuf type {@code signalservice.LokiProfile}
+   * Protobuf type {@code signalservice.LokiUserProfile}
    */
-  public static final class LokiProfile extends
+  public static final class LokiUserProfile extends
       com.google.protobuf.GeneratedMessage
-      implements LokiProfileOrBuilder {
-    // Use LokiProfile.newBuilder() to construct.
-    private LokiProfile(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      implements LokiUserProfileOrBuilder {
+    // Use LokiUserProfile.newBuilder() to construct.
+    private LokiUserProfile(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
       this.unknownFields = builder.getUnknownFields();
     }
-    private LokiProfile(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+    private LokiUserProfile(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
 
-    private static final LokiProfile defaultInstance;
-    public static LokiProfile getDefaultInstance() {
+    private static final LokiUserProfile defaultInstance;
+    public static LokiUserProfile getDefaultInstance() {
       return defaultInstance;
     }
 
-    public LokiProfile getDefaultInstanceForType() {
+    public LokiUserProfile getDefaultInstanceForType() {
       return defaultInstance;
     }
 
@@ -23711,7 +22674,7 @@ public final class SignalServiceProtos {
         getUnknownFields() {
       return this.unknownFields;
     }
-    private LokiProfile(
+    private LokiUserProfile(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -23741,7 +22704,7 @@ public final class SignalServiceProtos {
             }
             case 18: {
               bitField0_ |= 0x00000002;
-              avatar_ = input.readBytes();
+              profilePictureURL_ = input.readBytes();
               break;
             }
           }
@@ -23758,28 +22721,28 @@ public final class SignalServiceProtos {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiProfile_descriptor;
+      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiUserProfile_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiProfile_fieldAccessorTable
+      return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiUserProfile_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder.class);
+              org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<LokiProfile> PARSER =
-        new com.google.protobuf.AbstractParser<LokiProfile>() {
-      public LokiProfile parsePartialFrom(
+    public static com.google.protobuf.Parser<LokiUserProfile> PARSER =
+        new com.google.protobuf.AbstractParser<LokiUserProfile>() {
+      public LokiUserProfile parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new LokiProfile(input, extensionRegistry);
+        return new LokiUserProfile(input, extensionRegistry);
       }
     };
 
     @java.lang.Override
-    public com.google.protobuf.Parser<LokiProfile> getParserForType() {
+    public com.google.protobuf.Parser<LokiUserProfile> getParserForType() {
       return PARSER;
     }
 
@@ -23827,20 +22790,20 @@ public final class SignalServiceProtos {
       }
     }
 
-    // optional string avatar = 2;
-    public static final int AVATAR_FIELD_NUMBER = 2;
-    private java.lang.Object avatar_;
+    // optional string profilePictureURL = 2;
+    public static final int PROFILEPICTUREURL_FIELD_NUMBER = 2;
+    private java.lang.Object profilePictureURL_;
     /**
-     * <code>optional string avatar = 2;</code>
+     * <code>optional string profilePictureURL = 2;</code>
      */
-    public boolean hasAvatar() {
+    public boolean hasProfilePictureURL() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>optional string avatar = 2;</code>
+     * <code>optional string profilePictureURL = 2;</code>
      */
-    public java.lang.String getAvatar() {
-      java.lang.Object ref = avatar_;
+    public java.lang.String getProfilePictureURL() {
+      java.lang.Object ref = profilePictureURL_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -23848,22 +22811,22 @@ public final class SignalServiceProtos {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          avatar_ = s;
+          profilePictureURL_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string avatar = 2;</code>
+     * <code>optional string profilePictureURL = 2;</code>
      */
     public com.google.protobuf.ByteString
-        getAvatarBytes() {
-      java.lang.Object ref = avatar_;
+        getProfilePictureURLBytes() {
+      java.lang.Object ref = profilePictureURL_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        avatar_ = b;
+        profilePictureURL_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -23872,7 +22835,7 @@ public final class SignalServiceProtos {
 
     private void initFields() {
       displayName_ = "";
-      avatar_ = "";
+      profilePictureURL_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -23890,7 +22853,7 @@ public final class SignalServiceProtos {
         output.writeBytes(1, getDisplayNameBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getAvatarBytes());
+        output.writeBytes(2, getProfilePictureURLBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -23907,7 +22870,7 @@ public final class SignalServiceProtos {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getAvatarBytes());
+          .computeBytesSize(2, getProfilePictureURLBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -23921,53 +22884,53 @@ public final class SignalServiceProtos {
       return super.writeReplace();
     }
 
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(byte[] data)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(java.io.InputStream input)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseFrom(input, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseDelimitedFrom(java.io.InputStream input)
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseDelimitedFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parseFrom(
+    public static org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -23976,7 +22939,7 @@ public final class SignalServiceProtos {
 
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile prototype) {
+    public static Builder newBuilder(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
@@ -23988,24 +22951,24 @@ public final class SignalServiceProtos {
       return builder;
     }
     /**
-     * Protobuf type {@code signalservice.LokiProfile}
+     * Protobuf type {@code signalservice.LokiUserProfile}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfileOrBuilder {
+       implements org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfileOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiProfile_descriptor;
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiUserProfile_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiProfile_fieldAccessorTable
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiUserProfile_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.Builder.class);
+                org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.class, org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.Builder.class);
       }
 
-      // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.newBuilder()
+      // Construct using org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -24027,7 +22990,7 @@ public final class SignalServiceProtos {
         super.clear();
         displayName_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
-        avatar_ = "";
+        profilePictureURL_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
@@ -24038,23 +23001,23 @@ public final class SignalServiceProtos {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiProfile_descriptor;
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.internal_static_signalservice_LokiUserProfile_descriptor;
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile getDefaultInstanceForType() {
-        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.getDefaultInstance();
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile getDefaultInstanceForType() {
+        return org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.getDefaultInstance();
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile build() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile result = buildPartial();
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile build() {
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile buildPartial() {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile(this);
+      public org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile buildPartial() {
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile result = new org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
@@ -24064,31 +23027,31 @@ public final class SignalServiceProtos {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.avatar_ = avatar_;
+        result.profilePictureURL_ = profilePictureURL_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile) {
-          return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile)other);
+        if (other instanceof org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile) {
+          return mergeFrom((org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile other) {
-        if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile.getDefaultInstance()) return this;
+      public Builder mergeFrom(org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile other) {
+        if (other == org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile.getDefaultInstance()) return this;
         if (other.hasDisplayName()) {
           bitField0_ |= 0x00000001;
           displayName_ = other.displayName_;
           onChanged();
         }
-        if (other.hasAvatar()) {
+        if (other.hasProfilePictureURL()) {
           bitField0_ |= 0x00000002;
-          avatar_ = other.avatar_;
+          profilePictureURL_ = other.profilePictureURL_;
           onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
@@ -24103,11 +23066,11 @@ public final class SignalServiceProtos {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile parsedMessage = null;
+        org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile) e.getUnfinishedMessage();
+          parsedMessage = (org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile) e.getUnfinishedMessage();
           throw e;
         } finally {
           if (parsedMessage != null) {
@@ -24192,89 +23155,89 @@ public final class SignalServiceProtos {
         return this;
       }
 
-      // optional string avatar = 2;
-      private java.lang.Object avatar_ = "";
+      // optional string profilePictureURL = 2;
+      private java.lang.Object profilePictureURL_ = "";
       /**
-       * <code>optional string avatar = 2;</code>
+       * <code>optional string profilePictureURL = 2;</code>
        */
-      public boolean hasAvatar() {
+      public boolean hasProfilePictureURL() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>optional string avatar = 2;</code>
+       * <code>optional string profilePictureURL = 2;</code>
        */
-      public java.lang.String getAvatar() {
-        java.lang.Object ref = avatar_;
+      public java.lang.String getProfilePictureURL() {
+        java.lang.Object ref = profilePictureURL_;
         if (!(ref instanceof java.lang.String)) {
           java.lang.String s = ((com.google.protobuf.ByteString) ref)
               .toStringUtf8();
-          avatar_ = s;
+          profilePictureURL_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
         }
       }
       /**
-       * <code>optional string avatar = 2;</code>
+       * <code>optional string profilePictureURL = 2;</code>
        */
       public com.google.protobuf.ByteString
-          getAvatarBytes() {
-        java.lang.Object ref = avatar_;
+          getProfilePictureURLBytes() {
+        java.lang.Object ref = profilePictureURL_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          avatar_ = b;
+          profilePictureURL_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string avatar = 2;</code>
+       * <code>optional string profilePictureURL = 2;</code>
        */
-      public Builder setAvatar(
+      public Builder setProfilePictureURL(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000002;
-        avatar_ = value;
+        profilePictureURL_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string avatar = 2;</code>
+       * <code>optional string profilePictureURL = 2;</code>
        */
-      public Builder clearAvatar() {
+      public Builder clearProfilePictureURL() {
         bitField0_ = (bitField0_ & ~0x00000002);
-        avatar_ = getDefaultInstance().getAvatar();
+        profilePictureURL_ = getDefaultInstance().getProfilePictureURL();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string avatar = 2;</code>
+       * <code>optional string profilePictureURL = 2;</code>
        */
-      public Builder setAvatarBytes(
+      public Builder setProfilePictureURLBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000002;
-        avatar_ = value;
+        profilePictureURL_ = value;
         onChanged();
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:signalservice.LokiProfile)
+      // @@protoc_insertion_point(builder_scope:signalservice.LokiUserProfile)
     }
 
     static {
-      defaultInstance = new LokiProfile(true);
+      defaultInstance = new LokiUserProfile(true);
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:signalservice.LokiProfile)
+    // @@protoc_insertion_point(class_scope:signalservice.LokiUserProfile)
   }
 
   public interface NullMessageOrBuilder
@@ -33224,15 +32187,15 @@ public final class SignalServiceProtos {
       com.google.protobuf.ByteString
           getUrlBytes();
 
-      // optional uint32 channelId = 2;
+      // optional uint32 channelID = 2;
       /**
-       * <code>optional uint32 channelId = 2;</code>
+       * <code>optional uint32 channelID = 2;</code>
        */
-      boolean hasChannelId();
+      boolean hasChannelID();
       /**
-       * <code>optional uint32 channelId = 2;</code>
+       * <code>optional uint32 channelID = 2;</code>
        */
-      int getChannelId();
+      int getChannelID();
     }
     /**
      * Protobuf type {@code signalservice.SyncMessage.OpenGroupDetails}
@@ -33292,7 +32255,7 @@ public final class SignalServiceProtos {
               }
               case 16: {
                 bitField0_ |= 0x00000002;
-                channelId_ = input.readUInt32();
+                channelID_ = input.readUInt32();
                 break;
               }
             }
@@ -33378,25 +32341,25 @@ public final class SignalServiceProtos {
         }
       }
 
-      // optional uint32 channelId = 2;
+      // optional uint32 channelID = 2;
       public static final int CHANNELID_FIELD_NUMBER = 2;
-      private int channelId_;
+      private int channelID_;
       /**
-       * <code>optional uint32 channelId = 2;</code>
+       * <code>optional uint32 channelID = 2;</code>
        */
-      public boolean hasChannelId() {
+      public boolean hasChannelID() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>optional uint32 channelId = 2;</code>
+       * <code>optional uint32 channelID = 2;</code>
        */
-      public int getChannelId() {
-        return channelId_;
+      public int getChannelID() {
+        return channelID_;
       }
 
       private void initFields() {
         url_ = "";
-        channelId_ = 0;
+        channelID_ = 0;
       }
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
@@ -33414,7 +32377,7 @@ public final class SignalServiceProtos {
           output.writeBytes(1, getUrlBytes());
         }
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          output.writeUInt32(2, channelId_);
+          output.writeUInt32(2, channelID_);
         }
         getUnknownFields().writeTo(output);
       }
@@ -33431,7 +32394,7 @@ public final class SignalServiceProtos {
         }
         if (((bitField0_ & 0x00000002) == 0x00000002)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeUInt32Size(2, channelId_);
+            .computeUInt32Size(2, channelID_);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
@@ -33551,7 +32514,7 @@ public final class SignalServiceProtos {
           super.clear();
           url_ = "";
           bitField0_ = (bitField0_ & ~0x00000001);
-          channelId_ = 0;
+          channelID_ = 0;
           bitField0_ = (bitField0_ & ~0x00000002);
           return this;
         }
@@ -33588,7 +32551,7 @@ public final class SignalServiceProtos {
           if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
             to_bitField0_ |= 0x00000002;
           }
-          result.channelId_ = channelId_;
+          result.channelID_ = channelID_;
           result.bitField0_ = to_bitField0_;
           onBuilt();
           return result;
@@ -33610,8 +32573,8 @@ public final class SignalServiceProtos {
             url_ = other.url_;
             onChanged();
           }
-          if (other.hasChannelId()) {
-            setChannelId(other.getChannelId());
+          if (other.hasChannelID()) {
+            setChannelID(other.getChannelID());
           }
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
@@ -33714,35 +32677,35 @@ public final class SignalServiceProtos {
           return this;
         }
 
-        // optional uint32 channelId = 2;
-        private int channelId_ ;
+        // optional uint32 channelID = 2;
+        private int channelID_ ;
         /**
-         * <code>optional uint32 channelId = 2;</code>
+         * <code>optional uint32 channelID = 2;</code>
          */
-        public boolean hasChannelId() {
+        public boolean hasChannelID() {
           return ((bitField0_ & 0x00000002) == 0x00000002);
         }
         /**
-         * <code>optional uint32 channelId = 2;</code>
+         * <code>optional uint32 channelID = 2;</code>
          */
-        public int getChannelId() {
-          return channelId_;
+        public int getChannelID() {
+          return channelID_;
         }
         /**
-         * <code>optional uint32 channelId = 2;</code>
+         * <code>optional uint32 channelID = 2;</code>
          */
-        public Builder setChannelId(int value) {
+        public Builder setChannelID(int value) {
           bitField0_ |= 0x00000002;
-          channelId_ = value;
+          channelID_ = value;
           onChanged();
           return this;
         }
         /**
-         * <code>optional uint32 channelId = 2;</code>
+         * <code>optional uint32 channelID = 2;</code>
          */
-        public Builder clearChannelId() {
+        public Builder clearChannelID() {
           bitField0_ = (bitField0_ & ~0x00000002);
-          channelId_ = 0;
+          channelID_ = 0;
           onChanged();
           return this;
         }
@@ -37948,9 +36911,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     java.util.List<java.lang.String>
@@ -37959,9 +36922,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     int getNewMembersCount();
@@ -37969,9 +36932,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     java.lang.String getNewMembers(int index);
@@ -37979,9 +36942,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     com.google.protobuf.ByteString
@@ -38449,9 +37412,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     public java.util.List<java.lang.String>
@@ -38462,9 +37425,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     public int getNewMembersCount() {
@@ -38474,9 +37437,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     public java.lang.String getNewMembers(int index) {
@@ -38486,9 +37449,9 @@ public final class SignalServiceProtos {
      * <code>repeated string newMembers = 998;</code>
      *
      * <pre>
-     * Loki Android - These fields are used only internally for the android code base
-     * This is so that we can differentiate adding/kicking
-     * DO NOT USE THEM WHEN SENDING MESSAGES
+     * Loki - These fields are only used internally for the Android code base.
+     * This is so that we can differentiate adding/kicking.
+     * DO NOT USE WHEN SENDING MESSAGES.
      * </pre>
      */
     public com.google.protobuf.ByteString
@@ -39400,9 +38363,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public java.util.List<java.lang.String>
@@ -39413,9 +38376,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public int getNewMembersCount() {
@@ -39425,9 +38388,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public java.lang.String getNewMembers(int index) {
@@ -39437,9 +38400,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public com.google.protobuf.ByteString
@@ -39450,9 +38413,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public Builder setNewMembers(
@@ -39469,9 +38432,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public Builder addNewMembers(
@@ -39488,9 +38451,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public Builder addAllNewMembers(
@@ -39504,9 +38467,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public Builder clearNewMembers() {
@@ -39519,9 +38482,9 @@ public final class SignalServiceProtos {
        * <code>repeated string newMembers = 998;</code>
        *
        * <pre>
-       * Loki Android - These fields are used only internally for the android code base
-       * This is so that we can differentiate adding/kicking
-       * DO NOT USE THEM WHEN SENDING MESSAGES
+       * Loki - These fields are only used internally for the Android code base.
+       * This is so that we can differentiate adding/kicking.
+       * DO NOT USE WHEN SENDING MESSAGES.
        * </pre>
        */
       public Builder addNewMembersBytes(
@@ -39748,14 +38711,26 @@ public final class SignalServiceProtos {
     // optional string nickname = 101;
     /**
      * <code>optional string nickname = 101;</code>
+     *
+     * <pre>
+     * Loki
+     * </pre>
      */
     boolean hasNickname();
     /**
      * <code>optional string nickname = 101;</code>
+     *
+     * <pre>
+     * Loki
+     * </pre>
      */
     java.lang.String getNickname();
     /**
      * <code>optional string nickname = 101;</code>
+     *
+     * <pre>
+     * Loki
+     * </pre>
      */
     com.google.protobuf.ByteString
         getNicknameBytes();
@@ -40690,12 +39665,20 @@ public final class SignalServiceProtos {
     private java.lang.Object nickname_;
     /**
      * <code>optional string nickname = 101;</code>
+     *
+     * <pre>
+     * Loki
+     * </pre>
      */
     public boolean hasNickname() {
       return ((bitField0_ & 0x00000100) == 0x00000100);
     }
     /**
      * <code>optional string nickname = 101;</code>
+     *
+     * <pre>
+     * Loki
+     * </pre>
      */
     public java.lang.String getNickname() {
       java.lang.Object ref = nickname_;
@@ -40713,6 +39696,10 @@ public final class SignalServiceProtos {
     }
     /**
      * <code>optional string nickname = 101;</code>
+     *
+     * <pre>
+     * Loki
+     * </pre>
      */
     public com.google.protobuf.ByteString
         getNicknameBytes() {
@@ -41679,12 +40666,20 @@ public final class SignalServiceProtos {
       private java.lang.Object nickname_ = "";
       /**
        * <code>optional string nickname = 101;</code>
+       *
+       * <pre>
+       * Loki
+       * </pre>
        */
       public boolean hasNickname() {
         return ((bitField0_ & 0x00000100) == 0x00000100);
       }
       /**
        * <code>optional string nickname = 101;</code>
+       *
+       * <pre>
+       * Loki
+       * </pre>
        */
       public java.lang.String getNickname() {
         java.lang.Object ref = nickname_;
@@ -41699,6 +40694,10 @@ public final class SignalServiceProtos {
       }
       /**
        * <code>optional string nickname = 101;</code>
+       *
+       * <pre>
+       * Loki
+       * </pre>
        */
       public com.google.protobuf.ByteString
           getNicknameBytes() {
@@ -41715,6 +40714,10 @@ public final class SignalServiceProtos {
       }
       /**
        * <code>optional string nickname = 101;</code>
+       *
+       * <pre>
+       * Loki
+       * </pre>
        */
       public Builder setNickname(
           java.lang.String value) {
@@ -41728,6 +40731,10 @@ public final class SignalServiceProtos {
       }
       /**
        * <code>optional string nickname = 101;</code>
+       *
+       * <pre>
+       * Loki
+       * </pre>
        */
       public Builder clearNickname() {
         bitField0_ = (bitField0_ & ~0x00000100);
@@ -41737,6 +40744,10 @@ public final class SignalServiceProtos {
       }
       /**
        * <code>optional string nickname = 101;</code>
+       *
+       * <pre>
+       * Loki
+       * </pre>
        */
       public Builder setNicknameBytes(
           com.google.protobuf.ByteString value) {
@@ -43839,20 +42850,15 @@ public final class SignalServiceProtos {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_signalservice_Content_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_signalservice_LokiAddressMessage_descriptor;
+    internal_static_signalservice_DeviceLinkMessage_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_signalservice_LokiAddressMessage_fieldAccessorTable;
+      internal_static_signalservice_DeviceLinkMessage_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_signalservice_PairingAuthorisationMessage_descriptor;
+    internal_static_signalservice_PreKeyBundleMessage_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_signalservice_PairingAuthorisationMessage_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_signalservice_PrekeyBundleMessage_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_signalservice_PrekeyBundleMessage_fieldAccessorTable;
+      internal_static_signalservice_PreKeyBundleMessage_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_signalservice_CallMessage_descriptor;
   private static
@@ -43939,10 +42945,10 @@ public final class SignalServiceProtos {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_signalservice_DataMessage_Sticker_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_signalservice_LokiProfile_descriptor;
+    internal_static_signalservice_LokiUserProfile_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_signalservice_LokiProfile_fieldAccessorTable;
+      internal_static_signalservice_LokiUserProfile_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_signalservice_NullMessage_descriptor;
   private static
@@ -44057,189 +43063,183 @@ public final class SignalServiceProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\023SignalService.proto\022\rsignalservice\"\357\002\n" +
+      "\n\023SignalService.proto\022\rsignalservice\"\332\002\n" +
       "\010Envelope\022*\n\004type\030\001 \001(\0162\034.signalservice." +
       "Envelope.Type\022\016\n\006source\030\002 \001(\t\022\024\n\014sourceD" +
       "evice\030\007 \001(\r\022\r\n\005relay\030\003 \001(\t\022\021\n\ttimestamp\030" +
       "\005 \001(\004\022\025\n\rlegacyMessage\030\006 \001(\014\022\017\n\007content\030" +
       "\010 \001(\014\022\022\n\nserverGuid\030\t \001(\t\022\027\n\017serverTimes" +
-      "tamp\030\n \001(\004\022\025\n\014isPtpMessage\030\347\007 \001(\010\"\202\001\n\004Ty" +
-      "pe\022\013\n\007UNKNOWN\020\000\022\016\n\nCIPHERTEXT\020\001\022\020\n\014KEY_E" +
-      "XCHANGE\020\002\022\021\n\rPREKEY_BUNDLE\020\003\022\013\n\007RECEIPT\020" +
-      "\005\022\027\n\023UNIDENTIFIED_SENDER\020\006\022\022\n\016FRIEND_REQ",
-      "UEST\020e\"\203\004\n\007Content\022/\n\013dataMessage\030\001 \001(\0132" +
-      "\032.signalservice.DataMessage\022/\n\013syncMessa" +
-      "ge\030\002 \001(\0132\032.signalservice.SyncMessage\022/\n\013" +
-      "callMessage\030\003 \001(\0132\032.signalservice.CallMe" +
-      "ssage\022/\n\013nullMessage\030\004 \001(\0132\032.signalservi" +
-      "ce.NullMessage\0225\n\016receiptMessage\030\005 \001(\0132\035" +
-      ".signalservice.ReceiptMessage\0223\n\rtypingM" +
-      "essage\030\006 \001(\0132\034.signalservice.TypingMessa" +
-      "ge\022?\n\023preKeyBundleMessage\030e \001(\0132\".signal" +
-      "service.PrekeyBundleMessage\022=\n\022lokiAddre",
-      "ssMessage\030f \001(\0132!.signalservice.LokiAddr" +
-      "essMessage\022H\n\024pairingAuthorisation\030g \001(\013" +
-      "2*.signalservice.PairingAuthorisationMes" +
-      "sage\"\241\001\n\022LokiAddressMessage\022\022\n\nptpAddres" +
-      "s\030\001 \001(\t\022\017\n\007ptpPort\030\002 \001(\r\0224\n\004type\030\003 \001(\0162&" +
-      ".signalservice.LokiAddressMessage.Type\"0" +
-      "\n\004Type\022\022\n\016HOST_REACHABLE\020\000\022\024\n\020HOST_UNREA" +
-      "CHABLE\020\001\"\221\001\n\033PairingAuthorisationMessage" +
-      "\022\036\n\026primaryDevicePublicKey\030\001 \001(\t\022 \n\030seco" +
-      "ndaryDevicePublicKey\030\002 \001(\t\022\030\n\020requestSig",
-      "nature\030\003 \001(\014\022\026\n\016grantSignature\030\004 \001(\014\"\231\001\n" +
-      "\023PrekeyBundleMessage\022\023\n\013identityKey\030\001 \001(" +
-      "\014\022\020\n\010deviceId\030\002 \001(\r\022\020\n\010preKeyId\030\003 \001(\r\022\023\n" +
-      "\013signedKeyId\030\004 \001(\r\022\016\n\006preKey\030\005 \001(\014\022\021\n\tsi" +
-      "gnedKey\030\006 \001(\014\022\021\n\tsignature\030\007 \001(\014\"\330\003\n\013Cal" +
-      "lMessage\022/\n\005offer\030\001 \001(\0132 .signalservice." +
-      "CallMessage.Offer\0221\n\006answer\030\002 \001(\0132!.sign" +
-      "alservice.CallMessage.Answer\0227\n\ticeUpdat" +
-      "e\030\003 \003(\0132$.signalservice.CallMessage.IceU" +
-      "pdate\0221\n\006hangup\030\004 \001(\0132!.signalservice.Ca",
-      "llMessage.Hangup\022-\n\004busy\030\005 \001(\0132\037.signals" +
-      "ervice.CallMessage.Busy\032(\n\005Offer\022\n\n\002id\030\001" +
-      " \001(\004\022\023\n\013description\030\002 \001(\t\032)\n\006Answer\022\n\n\002i" +
-      "d\030\001 \001(\004\022\023\n\013description\030\002 \001(\t\032K\n\tIceUpdat" +
-      "e\022\n\n\002id\030\001 \001(\004\022\016\n\006sdpMid\030\002 \001(\t\022\025\n\rsdpMLin" +
-      "eIndex\030\003 \001(\r\022\013\n\003sdp\030\004 \001(\t\032\022\n\004Busy\022\n\n\002id\030" +
-      "\001 \001(\004\032\024\n\006Hangup\022\n\n\002id\030\001 \001(\004\"\323\020\n\013DataMess" +
-      "age\022\014\n\004body\030\001 \001(\t\0225\n\013attachments\030\002 \003(\0132 " +
-      ".signalservice.AttachmentPointer\022*\n\005grou" +
-      "p\030\003 \001(\0132\033.signalservice.GroupContext\022\r\n\005",
-      "flags\030\004 \001(\r\022\023\n\013expireTimer\030\005 \001(\r\022\022\n\nprof" +
-      "ileKey\030\006 \001(\014\022\021\n\ttimestamp\030\007 \001(\004\022/\n\005quote" +
-      "\030\010 \001(\0132 .signalservice.DataMessage.Quote" +
-      "\0223\n\007contact\030\t \003(\0132\".signalservice.DataMe" +
-      "ssage.Contact\0223\n\007preview\030\n \003(\0132\".signals" +
-      "ervice.DataMessage.Preview\0223\n\007sticker\030\013 " +
-      "\001(\0132\".signalservice.DataMessage.Sticker\022" +
-      "+\n\007profile\030e \001(\0132\032.signalservice.LokiPro" +
-      "file\032\351\001\n\005Quote\022\n\n\002id\030\001 \001(\004\022\016\n\006author\030\002 \001" +
-      "(\t\022\014\n\004text\030\003 \001(\t\022F\n\013attachments\030\004 \003(\01321.",
-      "signalservice.DataMessage.Quote.QuotedAt" +
-      "tachment\032n\n\020QuotedAttachment\022\023\n\013contentT" +
-      "ype\030\001 \001(\t\022\020\n\010fileName\030\002 \001(\t\0223\n\tthumbnail" +
-      "\030\003 \001(\0132 .signalservice.AttachmentPointer" +
-      "\032\304\010\n\007Contact\0225\n\004name\030\001 \001(\0132\'.signalservi" +
-      "ce.DataMessage.Contact.Name\0228\n\006number\030\003 " +
-      "\003(\0132(.signalservice.DataMessage.Contact." +
-      "Phone\0227\n\005email\030\004 \003(\0132(.signalservice.Dat" +
-      "aMessage.Contact.Email\022A\n\007address\030\005 \003(\0132" +
-      "0.signalservice.DataMessage.Contact.Post",
-      "alAddress\0229\n\006avatar\030\006 \001(\0132).signalservic" +
-      "e.DataMessage.Contact.Avatar\022\024\n\014organiza" +
-      "tion\030\007 \001(\t\032v\n\004Name\022\021\n\tgivenName\030\001 \001(\t\022\022\n" +
-      "\nfamilyName\030\002 \001(\t\022\016\n\006prefix\030\003 \001(\t\022\016\n\006suf" +
-      "fix\030\004 \001(\t\022\022\n\nmiddleName\030\005 \001(\t\022\023\n\013display" +
-      "Name\030\006 \001(\t\032\226\001\n\005Phone\022\r\n\005value\030\001 \001(\t\022;\n\004t" +
-      "ype\030\002 \001(\0162-.signalservice.DataMessage.Co" +
-      "ntact.Phone.Type\022\r\n\005label\030\003 \001(\t\"2\n\004Type\022" +
-      "\010\n\004HOME\020\001\022\n\n\006MOBILE\020\002\022\010\n\004WORK\020\003\022\n\n\006CUSTO" +
-      "M\020\004\032\226\001\n\005Email\022\r\n\005value\030\001 \001(\t\022;\n\004type\030\002 \001",
-      "(\0162-.signalservice.DataMessage.Contact.E" +
-      "mail.Type\022\r\n\005label\030\003 \001(\t\"2\n\004Type\022\010\n\004HOME" +
-      "\020\001\022\n\n\006MOBILE\020\002\022\010\n\004WORK\020\003\022\n\n\006CUSTOM\020\004\032\201\002\n" +
-      "\rPostalAddress\022C\n\004type\030\001 \001(\01625.signalser" +
-      "vice.DataMessage.Contact.PostalAddress.T" +
-      "ype\022\r\n\005label\030\002 \001(\t\022\016\n\006street\030\003 \001(\t\022\r\n\005po" +
-      "box\030\004 \001(\t\022\024\n\014neighborhood\030\005 \001(\t\022\014\n\004city\030" +
-      "\006 \001(\t\022\016\n\006region\030\007 \001(\t\022\020\n\010postcode\030\010 \001(\t\022" +
-      "\017\n\007country\030\t \001(\t\"&\n\004Type\022\010\n\004HOME\020\001\022\010\n\004WO" +
-      "RK\020\002\022\n\n\006CUSTOM\020\003\032M\n\006Avatar\0220\n\006avatar\030\001 \001",
-      "(\0132 .signalservice.AttachmentPointer\022\021\n\t" +
-      "isProfile\030\002 \001(\010\032V\n\007Preview\022\013\n\003url\030\001 \001(\t\022" +
-      "\r\n\005title\030\002 \001(\t\022/\n\005image\030\003 \001(\0132 .signalse" +
-      "rvice.AttachmentPointer\032m\n\007Sticker\022\016\n\006pa" +
-      "ckId\030\001 \001(\014\022\017\n\007packKey\030\002 \001(\014\022\021\n\tstickerId" +
-      "\030\003 \001(\r\022.\n\004data\030\004 \001(\0132 .signalservice.Att" +
-      "achmentPointer\"\220\001\n\005Flags\022\017\n\013END_SESSION\020" +
-      "\001\022\033\n\027EXPIRATION_TIMER_UPDATE\020\002\022\026\n\022PROFIL" +
-      "E_KEY_UPDATE\020\004\022\023\n\017SESSION_RESTORE\020@\022\026\n\021U" +
-      "NPAIRING_REQUEST\020\200\001\022\024\n\017SESSION_REQUEST\020\200",
-      "\002\"2\n\013LokiProfile\022\023\n\013displayName\030\001 \001(\t\022\016\n" +
-      "\006avatar\030\002 \001(\t\"\036\n\013NullMessage\022\017\n\007padding\030" +
-      "\001 \001(\014\"u\n\016ReceiptMessage\0220\n\004type\030\001 \001(\0162\"." +
-      "signalservice.ReceiptMessage.Type\022\021\n\ttim" +
-      "estamp\030\002 \003(\004\"\036\n\004Type\022\014\n\010DELIVERY\020\000\022\010\n\004RE" +
-      "AD\020\001\"\214\001\n\rTypingMessage\022\021\n\ttimestamp\030\001 \001(" +
-      "\004\0223\n\006action\030\002 \001(\0162#.signalservice.Typing" +
-      "Message.Action\022\017\n\007groupId\030\003 \001(\014\"\"\n\006Actio" +
-      "n\022\013\n\007STARTED\020\000\022\013\n\007STOPPED\020\001\"\253\001\n\010Verified" +
-      "\022\023\n\013destination\030\001 \001(\t\022\023\n\013identityKey\030\002 \001",
-      "(\014\022,\n\005state\030\003 \001(\0162\035.signalservice.Verifi" +
-      "ed.State\022\023\n\013nullMessage\030\004 \001(\014\"2\n\005State\022\013" +
-      "\n\007DEFAULT\020\000\022\014\n\010VERIFIED\020\001\022\016\n\nUNVERIFIED\020" +
-      "\002\"\325\014\n\013SyncMessage\022-\n\004sent\030\001 \001(\0132\037.signal" +
-      "service.SyncMessage.Sent\0225\n\010contacts\030\002 \001" +
-      "(\0132#.signalservice.SyncMessage.Contacts\022" +
-      "1\n\006groups\030\003 \001(\0132!.signalservice.SyncMess" +
-      "age.Groups\0223\n\007request\030\004 \001(\0132\".signalserv" +
-      "ice.SyncMessage.Request\022-\n\004read\030\005 \003(\0132\037." +
-      "signalservice.SyncMessage.Read\0223\n\007blocke",
-      "d\030\006 \001(\0132\".signalservice.SyncMessage.Bloc" +
-      "ked\022)\n\010verified\030\007 \001(\0132\027.signalservice.Ve" +
-      "rified\022?\n\rconfiguration\030\t \001(\0132(.signalse" +
-      "rvice.SyncMessage.Configuration\022\017\n\007paddi" +
-      "ng\030\010 \001(\014\022M\n\024stickerPackOperation\030\n \003(\0132/" +
-      ".signalservice.SyncMessage.StickerPackOp" +
-      "eration\022?\n\nopenGroups\030d \003(\0132+.signalserv" +
-      "ice.SyncMessage.OpenGroupDetails\032\236\002\n\004Sen" +
-      "t\022\023\n\013destination\030\001 \001(\t\022\021\n\ttimestamp\030\002 \001(" +
-      "\004\022+\n\007message\030\003 \001(\0132\032.signalservice.DataM",
-      "essage\022 \n\030expirationStartTimestamp\030\004 \001(\004" +
-      "\022V\n\022unidentifiedStatus\030\005 \003(\0132:.signalser" +
-      "vice.SyncMessage.Sent.UnidentifiedDelive" +
-      "ryStatus\032G\n\032UnidentifiedDeliveryStatus\022\023" +
-      "\n\013destination\030\001 \001(\t\022\024\n\014unidentified\030\002 \001(" +
-      "\010\032a\n\010Contacts\022.\n\004blob\030\001 \001(\0132 .signalserv" +
-      "ice.AttachmentPointer\022\027\n\010complete\030\002 \001(\010:" +
-      "\005false\022\014\n\004data\030e \001(\014\032F\n\006Groups\022.\n\004blob\030\001" +
-      " \001(\0132 .signalservice.AttachmentPointer\022\014" +
-      "\n\004data\030e \001(\014\032,\n\007Blocked\022\017\n\007numbers\030\001 \003(\t",
-      "\022\020\n\010groupIds\030\002 \003(\014\032\217\001\n\007Request\0225\n\004type\030\001" +
-      " \001(\0162\'.signalservice.SyncMessage.Request" +
-      ".Type\"M\n\004Type\022\013\n\007UNKNOWN\020\000\022\014\n\010CONTACTS\020\001" +
-      "\022\n\n\006GROUPS\020\002\022\013\n\007BLOCKED\020\003\022\021\n\rCONFIGURATI" +
-      "ON\020\004\032)\n\004Read\022\016\n\006sender\030\001 \001(\t\022\021\n\ttimestam" +
-      "p\030\002 \001(\004\032}\n\rConfiguration\022\024\n\014readReceipts" +
-      "\030\001 \001(\010\022&\n\036unidentifiedDeliveryIndicators" +
-      "\030\002 \001(\010\022\030\n\020typingIndicators\030\003 \001(\010\022\024\n\014link" +
-      "Previews\030\004 \001(\010\032\234\001\n\024StickerPackOperation\022" +
-      "\016\n\006packId\030\001 \001(\014\022\017\n\007packKey\030\002 \001(\014\022B\n\004type",
-      "\030\003 \001(\01624.signalservice.SyncMessage.Stick" +
-      "erPackOperation.Type\"\037\n\004Type\022\013\n\007INSTALL\020" +
-      "\000\022\n\n\006REMOVE\020\001\0322\n\020OpenGroupDetails\022\013\n\003url" +
-      "\030\001 \001(\t\022\021\n\tchannelId\030\002 \001(\r\"\354\001\n\021Attachment" +
-      "Pointer\022\n\n\002id\030\001 \001(\006\022\023\n\013contentType\030\002 \001(\t" +
-      "\022\013\n\003key\030\003 \001(\014\022\014\n\004size\030\004 \001(\r\022\021\n\tthumbnail" +
-      "\030\005 \001(\014\022\016\n\006digest\030\006 \001(\014\022\020\n\010fileName\030\007 \001(\t" +
-      "\022\r\n\005flags\030\010 \001(\r\022\r\n\005width\030\t \001(\r\022\016\n\006height" +
-      "\030\n \001(\r\022\017\n\007caption\030\013 \001(\t\022\013\n\003url\030e \001(\t\"\032\n\005" +
-      "Flags\022\021\n\rVOICE_MESSAGE\020\001\"\243\002\n\014GroupContex",
-      "t\022\n\n\002id\030\001 \001(\014\022.\n\004type\030\002 \001(\0162 .signalserv" +
-      "ice.GroupContext.Type\022\014\n\004name\030\003 \001(\t\022\017\n\007m" +
-      "embers\030\004 \003(\t\0220\n\006avatar\030\005 \001(\0132 .signalser" +
-      "vice.AttachmentPointer\022\016\n\006admins\030\006 \003(\t\022\023" +
-      "\n\nnewMembers\030\346\007 \003(\t\022\027\n\016removedMembers\030\347\007" +
-      " \003(\t\"H\n\004Type\022\013\n\007UNKNOWN\020\000\022\n\n\006UPDATE\020\001\022\013\n" +
-      "\007DELIVER\020\002\022\010\n\004QUIT\020\003\022\020\n\014REQUEST_INFO\020\004\"\231" +
-      "\002\n\016ContactDetails\022\016\n\006number\030\001 \001(\t\022\014\n\004nam" +
-      "e\030\002 \001(\t\0224\n\006avatar\030\003 \001(\0132$.signalservice." +
-      "ContactDetails.Avatar\022\r\n\005color\030\004 \001(\t\022)\n\010",
-      "verified\030\005 \001(\0132\027.signalservice.Verified\022" +
-      "\022\n\nprofileKey\030\006 \001(\014\022\017\n\007blocked\030\007 \001(\010\022\023\n\013" +
-      "expireTimer\030\010 \001(\r\022\020\n\010nickname\030e \001(\t\032-\n\006A" +
-      "vatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006length\030\002 \001" +
-      "(\r\"\367\001\n\014GroupDetails\022\n\n\002id\030\001 \001(\014\022\014\n\004name\030" +
-      "\002 \001(\t\022\017\n\007members\030\003 \003(\t\0222\n\006avatar\030\004 \001(\0132\"" +
-      ".signalservice.GroupDetails.Avatar\022\024\n\006ac" +
-      "tive\030\005 \001(\010:\004true\022\023\n\013expireTimer\030\006 \001(\r\022\r\n" +
-      "\005color\030\007 \001(\t\022\017\n\007blocked\030\010 \001(\010\022\016\n\006admins\030" +
-      "\t \003(\t\032-\n\006Avatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006",
-      "length\030\002 \001(\rBE\n.org.whispersystems.signa" +
-      "lservice.internal.pushB\023SignalServicePro" +
-      "tos"
+      "tamp\030\n \001(\004\"\204\001\n\004Type\022\013\n\007UNKNOWN\020\000\022\016\n\nCIPH" +
+      "ERTEXT\020\001\022\020\n\014KEY_EXCHANGE\020\002\022\021\n\rPREKEY_BUN" +
+      "DLE\020\003\022\013\n\007RECEIPT\020\005\022\027\n\023UNIDENTIFIED_SENDE" +
+      "R\020\006\022\024\n\020FALLBACK_MESSAGE\020e\"\267\003\n\007Content\022/\n",
+      "\013dataMessage\030\001 \001(\0132\032.signalservice.DataM" +
+      "essage\022/\n\013syncMessage\030\002 \001(\0132\032.signalserv" +
+      "ice.SyncMessage\022/\n\013callMessage\030\003 \001(\0132\032.s" +
+      "ignalservice.CallMessage\022/\n\013nullMessage\030" +
+      "\004 \001(\0132\032.signalservice.NullMessage\0225\n\016rec" +
+      "eiptMessage\030\005 \001(\0132\035.signalservice.Receip" +
+      "tMessage\0223\n\rtypingMessage\030\006 \001(\0132\034.signal" +
+      "service.TypingMessage\022?\n\023preKeyBundleMes" +
+      "sage\030e \001(\0132\".signalservice.PreKeyBundleM" +
+      "essage\022;\n\021deviceLinkMessage\030g \001(\0132 .sign",
+      "alservice.DeviceLinkMessage\"\203\001\n\021DeviceLi" +
+      "nkMessage\022\030\n\020primaryPublicKey\030\001 \001(\t\022\032\n\022s" +
+      "econdaryPublicKey\030\002 \001(\t\022\030\n\020requestSignat" +
+      "ure\030\003 \001(\014\022\036\n\026authorizationSignature\030\004 \001(" +
+      "\014\"\231\001\n\023PreKeyBundleMessage\022\023\n\013identityKey" +
+      "\030\001 \001(\014\022\020\n\010deviceId\030\002 \001(\r\022\020\n\010preKeyId\030\003 \001" +
+      "(\r\022\023\n\013signedKeyId\030\004 \001(\r\022\016\n\006preKey\030\005 \001(\014\022" +
+      "\021\n\tsignedKey\030\006 \001(\014\022\021\n\tsignature\030\007 \001(\014\"\330\003" +
+      "\n\013CallMessage\022/\n\005offer\030\001 \001(\0132 .signalser" +
+      "vice.CallMessage.Offer\0221\n\006answer\030\002 \001(\0132!",
+      ".signalservice.CallMessage.Answer\0227\n\tice" +
+      "Update\030\003 \003(\0132$.signalservice.CallMessage" +
+      ".IceUpdate\0221\n\006hangup\030\004 \001(\0132!.signalservi" +
+      "ce.CallMessage.Hangup\022-\n\004busy\030\005 \001(\0132\037.si" +
+      "gnalservice.CallMessage.Busy\032(\n\005Offer\022\n\n" +
+      "\002id\030\001 \001(\004\022\023\n\013description\030\002 \001(\t\032)\n\006Answer" +
+      "\022\n\n\002id\030\001 \001(\004\022\023\n\013description\030\002 \001(\t\032K\n\tIce" +
+      "Update\022\n\n\002id\030\001 \001(\004\022\016\n\006sdpMid\030\002 \001(\t\022\025\n\rsd" +
+      "pMLineIndex\030\003 \001(\r\022\013\n\003sdp\030\004 \001(\t\032\022\n\004Busy\022\n" +
+      "\n\002id\030\001 \001(\004\032\024\n\006Hangup\022\n\n\002id\030\001 \001(\004\"\352\020\n\013Dat",
+      "aMessage\022\014\n\004body\030\001 \001(\t\0225\n\013attachments\030\002 " +
+      "\003(\0132 .signalservice.AttachmentPointer\022*\n" +
+      "\005group\030\003 \001(\0132\033.signalservice.GroupContex" +
+      "t\022\r\n\005flags\030\004 \001(\r\022\023\n\013expireTimer\030\005 \001(\r\022\022\n" +
+      "\nprofileKey\030\006 \001(\014\022\021\n\ttimestamp\030\007 \001(\004\022/\n\005" +
+      "quote\030\010 \001(\0132 .signalservice.DataMessage." +
+      "Quote\0223\n\007contact\030\t \003(\0132\".signalservice.D" +
+      "ataMessage.Contact\0223\n\007preview\030\n \003(\0132\".si" +
+      "gnalservice.DataMessage.Preview\0223\n\007stick" +
+      "er\030\013 \001(\0132\".signalservice.DataMessage.Sti",
+      "cker\022/\n\007profile\030e \001(\0132\036.signalservice.Lo" +
+      "kiUserProfile\032\351\001\n\005Quote\022\n\n\002id\030\001 \001(\004\022\016\n\006a" +
+      "uthor\030\002 \001(\t\022\014\n\004text\030\003 \001(\t\022F\n\013attachments" +
+      "\030\004 \003(\01321.signalservice.DataMessage.Quote" +
+      ".QuotedAttachment\032n\n\020QuotedAttachment\022\023\n" +
+      "\013contentType\030\001 \001(\t\022\020\n\010fileName\030\002 \001(\t\0223\n\t" +
+      "thumbnail\030\003 \001(\0132 .signalservice.Attachme" +
+      "ntPointer\032\304\010\n\007Contact\0225\n\004name\030\001 \001(\0132\'.si" +
+      "gnalservice.DataMessage.Contact.Name\0228\n\006" +
+      "number\030\003 \003(\0132(.signalservice.DataMessage",
+      ".Contact.Phone\0227\n\005email\030\004 \003(\0132(.signalse" +
+      "rvice.DataMessage.Contact.Email\022A\n\007addre" +
+      "ss\030\005 \003(\01320.signalservice.DataMessage.Con" +
+      "tact.PostalAddress\0229\n\006avatar\030\006 \001(\0132).sig" +
+      "nalservice.DataMessage.Contact.Avatar\022\024\n" +
+      "\014organization\030\007 \001(\t\032v\n\004Name\022\021\n\tgivenName" +
+      "\030\001 \001(\t\022\022\n\nfamilyName\030\002 \001(\t\022\016\n\006prefix\030\003 \001" +
+      "(\t\022\016\n\006suffix\030\004 \001(\t\022\022\n\nmiddleName\030\005 \001(\t\022\023" +
+      "\n\013displayName\030\006 \001(\t\032\226\001\n\005Phone\022\r\n\005value\030\001" +
+      " \001(\t\022;\n\004type\030\002 \001(\0162-.signalservice.DataM",
+      "essage.Contact.Phone.Type\022\r\n\005label\030\003 \001(\t" +
+      "\"2\n\004Type\022\010\n\004HOME\020\001\022\n\n\006MOBILE\020\002\022\010\n\004WORK\020\003" +
+      "\022\n\n\006CUSTOM\020\004\032\226\001\n\005Email\022\r\n\005value\030\001 \001(\t\022;\n" +
+      "\004type\030\002 \001(\0162-.signalservice.DataMessage." +
+      "Contact.Email.Type\022\r\n\005label\030\003 \001(\t\"2\n\004Typ" +
+      "e\022\010\n\004HOME\020\001\022\n\n\006MOBILE\020\002\022\010\n\004WORK\020\003\022\n\n\006CUS" +
+      "TOM\020\004\032\201\002\n\rPostalAddress\022C\n\004type\030\001 \001(\01625." +
+      "signalservice.DataMessage.Contact.Postal" +
+      "Address.Type\022\r\n\005label\030\002 \001(\t\022\016\n\006street\030\003 " +
+      "\001(\t\022\r\n\005pobox\030\004 \001(\t\022\024\n\014neighborhood\030\005 \001(\t",
+      "\022\014\n\004city\030\006 \001(\t\022\016\n\006region\030\007 \001(\t\022\020\n\010postco" +
+      "de\030\010 \001(\t\022\017\n\007country\030\t \001(\t\"&\n\004Type\022\010\n\004HOM" +
+      "E\020\001\022\010\n\004WORK\020\002\022\n\n\006CUSTOM\020\003\032M\n\006Avatar\0220\n\006a" +
+      "vatar\030\001 \001(\0132 .signalservice.AttachmentPo" +
+      "inter\022\021\n\tisProfile\030\002 \001(\010\032V\n\007Preview\022\013\n\003u" +
+      "rl\030\001 \001(\t\022\r\n\005title\030\002 \001(\t\022/\n\005image\030\003 \001(\0132 " +
+      ".signalservice.AttachmentPointer\032m\n\007Stic" +
+      "ker\022\016\n\006packId\030\001 \001(\014\022\017\n\007packKey\030\002 \001(\014\022\021\n\t" +
+      "stickerId\030\003 \001(\r\022.\n\004data\030\004 \001(\0132 .signalse" +
+      "rvice.AttachmentPointer\"\243\001\n\005Flags\022\017\n\013END",
+      "_SESSION\020\001\022\033\n\027EXPIRATION_TIMER_UPDATE\020\002\022" +
+      "\026\n\022PROFILE_KEY_UPDATE\020\004\022\037\n\033SESSION_RESTO" +
+      "RATION_REQUEST\020@\022\035\n\030DEVICE_UNLINKING_REQ" +
+      "UEST\020\200\001\022\024\n\017SESSION_REQUEST\020\200\002\"A\n\017LokiUse" +
+      "rProfile\022\023\n\013displayName\030\001 \001(\t\022\031\n\021profile" +
+      "PictureURL\030\002 \001(\t\"\036\n\013NullMessage\022\017\n\007paddi" +
+      "ng\030\001 \001(\014\"u\n\016ReceiptMessage\0220\n\004type\030\001 \001(\016" +
+      "2\".signalservice.ReceiptMessage.Type\022\021\n\t" +
+      "timestamp\030\002 \003(\004\"\036\n\004Type\022\014\n\010DELIVERY\020\000\022\010\n" +
+      "\004READ\020\001\"\214\001\n\rTypingMessage\022\021\n\ttimestamp\030\001",
+      " \001(\004\0223\n\006action\030\002 \001(\0162#.signalservice.Typ" +
+      "ingMessage.Action\022\017\n\007groupId\030\003 \001(\014\"\"\n\006Ac" +
+      "tion\022\013\n\007STARTED\020\000\022\013\n\007STOPPED\020\001\"\253\001\n\010Verif" +
+      "ied\022\023\n\013destination\030\001 \001(\t\022\023\n\013identityKey\030" +
+      "\002 \001(\014\022,\n\005state\030\003 \001(\0162\035.signalservice.Ver" +
+      "ified.State\022\023\n\013nullMessage\030\004 \001(\014\"2\n\005Stat" +
+      "e\022\013\n\007DEFAULT\020\000\022\014\n\010VERIFIED\020\001\022\016\n\nUNVERIFI" +
+      "ED\020\002\"\325\014\n\013SyncMessage\022-\n\004sent\030\001 \001(\0132\037.sig" +
+      "nalservice.SyncMessage.Sent\0225\n\010contacts\030" +
+      "\002 \001(\0132#.signalservice.SyncMessage.Contac",
+      "ts\0221\n\006groups\030\003 \001(\0132!.signalservice.SyncM" +
+      "essage.Groups\0223\n\007request\030\004 \001(\0132\".signals" +
+      "ervice.SyncMessage.Request\022-\n\004read\030\005 \003(\013" +
+      "2\037.signalservice.SyncMessage.Read\0223\n\007blo" +
+      "cked\030\006 \001(\0132\".signalservice.SyncMessage.B" +
+      "locked\022)\n\010verified\030\007 \001(\0132\027.signalservice" +
+      ".Verified\022?\n\rconfiguration\030\t \001(\0132(.signa" +
+      "lservice.SyncMessage.Configuration\022\017\n\007pa" +
+      "dding\030\010 \001(\014\022M\n\024stickerPackOperation\030\n \003(" +
+      "\0132/.signalservice.SyncMessage.StickerPac",
+      "kOperation\022?\n\nopenGroups\030d \003(\0132+.signals" +
+      "ervice.SyncMessage.OpenGroupDetails\032\236\002\n\004" +
+      "Sent\022\023\n\013destination\030\001 \001(\t\022\021\n\ttimestamp\030\002" +
+      " \001(\004\022+\n\007message\030\003 \001(\0132\032.signalservice.Da" +
+      "taMessage\022 \n\030expirationStartTimestamp\030\004 " +
+      "\001(\004\022V\n\022unidentifiedStatus\030\005 \003(\0132:.signal" +
+      "service.SyncMessage.Sent.UnidentifiedDel" +
+      "iveryStatus\032G\n\032UnidentifiedDeliveryStatu" +
+      "s\022\023\n\013destination\030\001 \001(\t\022\024\n\014unidentified\030\002" +
+      " \001(\010\032a\n\010Contacts\022.\n\004blob\030\001 \001(\0132 .signals",
+      "ervice.AttachmentPointer\022\027\n\010complete\030\002 \001" +
+      "(\010:\005false\022\014\n\004data\030e \001(\014\032F\n\006Groups\022.\n\004blo" +
+      "b\030\001 \001(\0132 .signalservice.AttachmentPointe" +
+      "r\022\014\n\004data\030e \001(\014\032,\n\007Blocked\022\017\n\007numbers\030\001 " +
+      "\003(\t\022\020\n\010groupIds\030\002 \003(\014\032\217\001\n\007Request\0225\n\004typ" +
+      "e\030\001 \001(\0162\'.signalservice.SyncMessage.Requ" +
+      "est.Type\"M\n\004Type\022\013\n\007UNKNOWN\020\000\022\014\n\010CONTACT" +
+      "S\020\001\022\n\n\006GROUPS\020\002\022\013\n\007BLOCKED\020\003\022\021\n\rCONFIGUR" +
+      "ATION\020\004\032)\n\004Read\022\016\n\006sender\030\001 \001(\t\022\021\n\ttimes" +
+      "tamp\030\002 \001(\004\032}\n\rConfiguration\022\024\n\014readRecei",
+      "pts\030\001 \001(\010\022&\n\036unidentifiedDeliveryIndicat" +
+      "ors\030\002 \001(\010\022\030\n\020typingIndicators\030\003 \001(\010\022\024\n\014l" +
+      "inkPreviews\030\004 \001(\010\032\234\001\n\024StickerPackOperati" +
+      "on\022\016\n\006packId\030\001 \001(\014\022\017\n\007packKey\030\002 \001(\014\022B\n\004t" +
+      "ype\030\003 \001(\01624.signalservice.SyncMessage.St" +
+      "ickerPackOperation.Type\"\037\n\004Type\022\013\n\007INSTA" +
+      "LL\020\000\022\n\n\006REMOVE\020\001\0322\n\020OpenGroupDetails\022\013\n\003" +
+      "url\030\001 \001(\t\022\021\n\tchannelID\030\002 \001(\r\"\354\001\n\021Attachm" +
+      "entPointer\022\n\n\002id\030\001 \001(\006\022\023\n\013contentType\030\002 " +
+      "\001(\t\022\013\n\003key\030\003 \001(\014\022\014\n\004size\030\004 \001(\r\022\021\n\tthumbn",
+      "ail\030\005 \001(\014\022\016\n\006digest\030\006 \001(\014\022\020\n\010fileName\030\007 " +
+      "\001(\t\022\r\n\005flags\030\010 \001(\r\022\r\n\005width\030\t \001(\r\022\016\n\006hei" +
+      "ght\030\n \001(\r\022\017\n\007caption\030\013 \001(\t\022\013\n\003url\030e \001(\t\"" +
+      "\032\n\005Flags\022\021\n\rVOICE_MESSAGE\020\001\"\243\002\n\014GroupCon" +
+      "text\022\n\n\002id\030\001 \001(\014\022.\n\004type\030\002 \001(\0162 .signals" +
+      "ervice.GroupContext.Type\022\014\n\004name\030\003 \001(\t\022\017" +
+      "\n\007members\030\004 \003(\t\0220\n\006avatar\030\005 \001(\0132 .signal" +
+      "service.AttachmentPointer\022\016\n\006admins\030\006 \003(" +
+      "\t\022\023\n\nnewMembers\030\346\007 \003(\t\022\027\n\016removedMembers" +
+      "\030\347\007 \003(\t\"H\n\004Type\022\013\n\007UNKNOWN\020\000\022\n\n\006UPDATE\020\001",
+      "\022\013\n\007DELIVER\020\002\022\010\n\004QUIT\020\003\022\020\n\014REQUEST_INFO\020" +
+      "\004\"\231\002\n\016ContactDetails\022\016\n\006number\030\001 \001(\t\022\014\n\004" +
+      "name\030\002 \001(\t\0224\n\006avatar\030\003 \001(\0132$.signalservi" +
+      "ce.ContactDetails.Avatar\022\r\n\005color\030\004 \001(\t\022" +
+      ")\n\010verified\030\005 \001(\0132\027.signalservice.Verifi" +
+      "ed\022\022\n\nprofileKey\030\006 \001(\014\022\017\n\007blocked\030\007 \001(\010\022" +
+      "\023\n\013expireTimer\030\010 \001(\r\022\020\n\010nickname\030e \001(\t\032-" +
+      "\n\006Avatar\022\023\n\013contentType\030\001 \001(\t\022\016\n\006length\030" +
+      "\002 \001(\r\"\367\001\n\014GroupDetails\022\n\n\002id\030\001 \001(\014\022\014\n\004na" +
+      "me\030\002 \001(\t\022\017\n\007members\030\003 \003(\t\0222\n\006avatar\030\004 \001(",
+      "\0132\".signalservice.GroupDetails.Avatar\022\024\n" +
+      "\006active\030\005 \001(\010:\004true\022\023\n\013expireTimer\030\006 \001(\r" +
+      "\022\r\n\005color\030\007 \001(\t\022\017\n\007blocked\030\010 \001(\010\022\016\n\006admi" +
+      "ns\030\t \003(\t\032-\n\006Avatar\022\023\n\013contentType\030\001 \001(\t\022" +
+      "\016\n\006length\030\002 \001(\rBE\n.org.whispersystems.si" +
+      "gnalservice.internal.pushB\023SignalService" +
+      "Protos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -44251,33 +43251,27 @@ public final class SignalServiceProtos {
           internal_static_signalservice_Envelope_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_Envelope_descriptor,
-              new java.lang.String[] { "Type", "Source", "SourceDevice", "Relay", "Timestamp", "LegacyMessage", "Content", "ServerGuid", "ServerTimestamp", "IsPtpMessage", });
+              new java.lang.String[] { "Type", "Source", "SourceDevice", "Relay", "Timestamp", "LegacyMessage", "Content", "ServerGuid", "ServerTimestamp", });
           internal_static_signalservice_Content_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_signalservice_Content_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_Content_descriptor,
-              new java.lang.String[] { "DataMessage", "SyncMessage", "CallMessage", "NullMessage", "ReceiptMessage", "TypingMessage", "PreKeyBundleMessage", "LokiAddressMessage", "PairingAuthorisation", });
-          internal_static_signalservice_LokiAddressMessage_descriptor =
+              new java.lang.String[] { "DataMessage", "SyncMessage", "CallMessage", "NullMessage", "ReceiptMessage", "TypingMessage", "PreKeyBundleMessage", "DeviceLinkMessage", });
+          internal_static_signalservice_DeviceLinkMessage_descriptor =
             getDescriptor().getMessageTypes().get(2);
-          internal_static_signalservice_LokiAddressMessage_fieldAccessorTable = new
+          internal_static_signalservice_DeviceLinkMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_signalservice_LokiAddressMessage_descriptor,
-              new java.lang.String[] { "PtpAddress", "PtpPort", "Type", });
-          internal_static_signalservice_PairingAuthorisationMessage_descriptor =
+              internal_static_signalservice_DeviceLinkMessage_descriptor,
+              new java.lang.String[] { "PrimaryPublicKey", "SecondaryPublicKey", "RequestSignature", "AuthorizationSignature", });
+          internal_static_signalservice_PreKeyBundleMessage_descriptor =
             getDescriptor().getMessageTypes().get(3);
-          internal_static_signalservice_PairingAuthorisationMessage_fieldAccessorTable = new
+          internal_static_signalservice_PreKeyBundleMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_signalservice_PairingAuthorisationMessage_descriptor,
-              new java.lang.String[] { "PrimaryDevicePublicKey", "SecondaryDevicePublicKey", "RequestSignature", "GrantSignature", });
-          internal_static_signalservice_PrekeyBundleMessage_descriptor =
-            getDescriptor().getMessageTypes().get(4);
-          internal_static_signalservice_PrekeyBundleMessage_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_signalservice_PrekeyBundleMessage_descriptor,
+              internal_static_signalservice_PreKeyBundleMessage_descriptor,
               new java.lang.String[] { "IdentityKey", "DeviceId", "PreKeyId", "SignedKeyId", "PreKey", "SignedKey", "Signature", });
           internal_static_signalservice_CallMessage_descriptor =
-            getDescriptor().getMessageTypes().get(5);
+            getDescriptor().getMessageTypes().get(4);
           internal_static_signalservice_CallMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_CallMessage_descriptor,
@@ -44313,7 +43307,7 @@ public final class SignalServiceProtos {
               internal_static_signalservice_CallMessage_Hangup_descriptor,
               new java.lang.String[] { "Id", });
           internal_static_signalservice_DataMessage_descriptor =
-            getDescriptor().getMessageTypes().get(6);
+            getDescriptor().getMessageTypes().get(5);
           internal_static_signalservice_DataMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_DataMessage_descriptor,
@@ -44378,38 +43372,38 @@ public final class SignalServiceProtos {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_DataMessage_Sticker_descriptor,
               new java.lang.String[] { "PackId", "PackKey", "StickerId", "Data", });
-          internal_static_signalservice_LokiProfile_descriptor =
-            getDescriptor().getMessageTypes().get(7);
-          internal_static_signalservice_LokiProfile_fieldAccessorTable = new
+          internal_static_signalservice_LokiUserProfile_descriptor =
+            getDescriptor().getMessageTypes().get(6);
+          internal_static_signalservice_LokiUserProfile_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_signalservice_LokiProfile_descriptor,
-              new java.lang.String[] { "DisplayName", "Avatar", });
+              internal_static_signalservice_LokiUserProfile_descriptor,
+              new java.lang.String[] { "DisplayName", "ProfilePictureURL", });
           internal_static_signalservice_NullMessage_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_signalservice_NullMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_NullMessage_descriptor,
               new java.lang.String[] { "Padding", });
           internal_static_signalservice_ReceiptMessage_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_signalservice_ReceiptMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_ReceiptMessage_descriptor,
               new java.lang.String[] { "Type", "Timestamp", });
           internal_static_signalservice_TypingMessage_descriptor =
-            getDescriptor().getMessageTypes().get(10);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_signalservice_TypingMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_TypingMessage_descriptor,
               new java.lang.String[] { "Timestamp", "Action", "GroupId", });
           internal_static_signalservice_Verified_descriptor =
-            getDescriptor().getMessageTypes().get(11);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_signalservice_Verified_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_Verified_descriptor,
               new java.lang.String[] { "Destination", "IdentityKey", "State", "NullMessage", });
           internal_static_signalservice_SyncMessage_descriptor =
-            getDescriptor().getMessageTypes().get(12);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_signalservice_SyncMessage_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_SyncMessage_descriptor,
@@ -44473,21 +43467,21 @@ public final class SignalServiceProtos {
           internal_static_signalservice_SyncMessage_OpenGroupDetails_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_SyncMessage_OpenGroupDetails_descriptor,
-              new java.lang.String[] { "Url", "ChannelId", });
+              new java.lang.String[] { "Url", "ChannelID", });
           internal_static_signalservice_AttachmentPointer_descriptor =
-            getDescriptor().getMessageTypes().get(13);
+            getDescriptor().getMessageTypes().get(12);
           internal_static_signalservice_AttachmentPointer_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_AttachmentPointer_descriptor,
               new java.lang.String[] { "Id", "ContentType", "Key", "Size", "Thumbnail", "Digest", "FileName", "Flags", "Width", "Height", "Caption", "Url", });
           internal_static_signalservice_GroupContext_descriptor =
-            getDescriptor().getMessageTypes().get(14);
+            getDescriptor().getMessageTypes().get(13);
           internal_static_signalservice_GroupContext_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_GroupContext_descriptor,
               new java.lang.String[] { "Id", "Type", "Name", "Members", "Avatar", "Admins", "NewMembers", "RemovedMembers", });
           internal_static_signalservice_ContactDetails_descriptor =
-            getDescriptor().getMessageTypes().get(15);
+            getDescriptor().getMessageTypes().get(14);
           internal_static_signalservice_ContactDetails_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_ContactDetails_descriptor,
@@ -44499,7 +43493,7 @@ public final class SignalServiceProtos {
               internal_static_signalservice_ContactDetails_Avatar_descriptor,
               new java.lang.String[] { "ContentType", "Length", });
           internal_static_signalservice_GroupDetails_descriptor =
-            getDescriptor().getMessageTypes().get(16);
+            getDescriptor().getMessageTypes().get(15);
           internal_static_signalservice_GroupDetails_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_signalservice_GroupDetails_descriptor,

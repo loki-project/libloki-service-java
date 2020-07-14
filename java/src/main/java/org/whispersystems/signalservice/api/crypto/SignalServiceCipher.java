@@ -82,7 +82,6 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Typing
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
 import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChat;
-import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceAddressMessage;
 import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceMessage;
 import org.whispersystems.signalservice.loki.protocol.meta.LokiServicePreKeyBundleMessage;
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
@@ -145,9 +144,9 @@ public class SignalServiceCipher {
       int type;
 
       switch (message.getType()) {
-        case CiphertextMessage.PREKEY_TYPE:              type = Type.PREKEY_BUNDLE_VALUE;  break;
-        case CiphertextMessage.WHISPER_TYPE:             type = Type.CIPHERTEXT_VALUE;     break;
-        case CiphertextMessage.LOKI_FRIEND_REQUEST_TYPE: type = Type.FRIEND_REQUEST_VALUE; break;
+        case CiphertextMessage.PREKEY_TYPE:              type = Type.PREKEY_BUNDLE_VALUE;    break;
+        case CiphertextMessage.WHISPER_TYPE:             type = Type.CIPHERTEXT_VALUE;       break;
+        case CiphertextMessage.LOKI_FRIEND_REQUEST_TYPE: type = Type.FALLBACK_MESSAGE_VALUE; break;
         default: throw new AssertionError("Bad type: " + message.getType());
       }
 
@@ -179,7 +178,7 @@ public class SignalServiceCipher {
         // Loki - Parse pre key bundle message if needed
         LokiServicePreKeyBundleMessage lokiPreKeyBundleMessage = null;
         if (message.hasPreKeyBundleMessage()) {
-          SignalServiceProtos.PrekeyBundleMessage preKeyBundleMessage = message.getPreKeyBundleMessage();
+          SignalServiceProtos.PreKeyBundleMessage preKeyBundleMessage = message.getPreKeyBundleMessage();
           lokiPreKeyBundleMessage = new LokiServicePreKeyBundleMessage(
               preKeyBundleMessage.getIdentityKey().toByteArray(),
               preKeyBundleMessage.getDeviceId(),
@@ -191,23 +190,16 @@ public class SignalServiceCipher {
           );
         }
 
-        // Loki - Parse address message if needed
-        LokiServiceAddressMessage lokiAddressMessage = null;
-        if (message.hasLokiAddressMessage()) {
-          SignalServiceProtos.LokiAddressMessage addressMessage = message.getLokiAddressMessage();
-          lokiAddressMessage = new LokiServiceAddressMessage(addressMessage.getPtpAddress(), addressMessage.getPtpPort());
-        }
-
         // Loki - Create Loki service message
-        LokiServiceMessage lokiServiceMessage = new LokiServiceMessage(lokiPreKeyBundleMessage, lokiAddressMessage);
+        LokiServiceMessage lokiServiceMessage = new LokiServiceMessage(lokiPreKeyBundleMessage, null);
 
-        if (message.hasPairingAuthorisation()) {
+        if (message.hasDeviceLinkMessage()) {
           // Loki - Parse device link message
-          SignalServiceProtos.PairingAuthorisationMessage deviceLinkMessage = message.getPairingAuthorisation();
-          String masterPublicKey = deviceLinkMessage.getPrimaryDevicePublicKey();
-          String slavePublicKey = deviceLinkMessage.getSecondaryDevicePublicKey();
+          SignalServiceProtos.DeviceLinkMessage deviceLinkMessage = message.getDeviceLinkMessage();
+          String masterPublicKey = deviceLinkMessage.getPrimaryPublicKey();
+          String slavePublicKey = deviceLinkMessage.getSecondaryPublicKey();
           byte[] requestSignature = deviceLinkMessage.hasRequestSignature() ? deviceLinkMessage.getRequestSignature().toByteArray() : null;
-          byte[] authorizationSignature = deviceLinkMessage.hasGrantSignature() ? deviceLinkMessage.getGrantSignature().toByteArray() : null;
+          byte[] authorizationSignature = deviceLinkMessage.hasAuthorizationSignature() ? deviceLinkMessage.getAuthorizationSignature().toByteArray() : null;
           DeviceLink deviceLink = new DeviceLink(masterPublicKey, slavePublicKey, requestSignature, authorizationSignature);
           SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
           SignalServiceContent content = new SignalServiceContent(deviceLink, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
@@ -311,9 +303,9 @@ public class SignalServiceCipher {
 
   private void setProfile(DataMessage message, SignalServiceContent content) {
     if (message.hasProfile()) {
-      SignalServiceProtos.LokiProfile profile = message.getProfile();
+      SignalServiceProtos.LokiUserProfile profile = message.getProfile();
       if (profile.hasDisplayName()) { content.setSenderDisplayName(profile.getDisplayName()); }
-      if (profile.hasAvatar()) { content.setSenderProfilePictureURL(profile.getAvatar()); }
+      if (profile.hasProfilePictureURL()) { content.setSenderProfilePictureURL(profile.getProfilePictureURL()); }
     }
   }
 
@@ -385,9 +377,9 @@ public class SignalServiceCipher {
     List<SharedContact>            sharedContacts              = createSharedContacts(content);
     List<Preview>                  previews                    = createPreviews(content);
     Sticker                        sticker                     = createSticker(content);
-    boolean                        isUnlinkingRequest          = ((content.getFlags() & DataMessage.Flags.UNPAIRING_REQUEST_VALUE      ) != 0);
-    boolean                        isSessionRestorationRequest = ((content.getFlags() & DataMessage.Flags.SESSION_RESTORE_VALUE        ) != 0);
-    boolean                        isSessionRequest            = ((content.getFlags() & DataMessage.Flags.SESSION_REQUEST_VALUE        ) != 0);
+    boolean                        isUnlinkingRequest          = ((content.getFlags() & DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE   ) != 0);
+    boolean                        isSessionRestorationRequest = ((content.getFlags() & DataMessage.Flags.SESSION_RESTORATION_REQUEST_VALUE) != 0);
+    boolean                        isSessionRequest            = ((content.getFlags() & DataMessage.Flags.SESSION_REQUEST_VALUE            ) != 0);
 
     for (AttachmentPointer pointer : content.getAttachmentsList()) {
       attachments.add(createAttachmentPointer(pointer));
@@ -529,7 +521,7 @@ public class SignalServiceCipher {
     if (openGroupDetails.size() > 0) {
         List<LokiPublicChat> openGroups = new LinkedList<>();
         for (SyncMessage.OpenGroupDetails details : content.getOpenGroupsList()) {
-            openGroups.add(new LokiPublicChat(details.getChannelId(), details.getUrl(), "", true));
+            openGroups.add(new LokiPublicChat(details.getChannelID(), details.getUrl(), "", true));
         }
         return SignalServiceSyncMessage.forOpenGroups(openGroups);
     }

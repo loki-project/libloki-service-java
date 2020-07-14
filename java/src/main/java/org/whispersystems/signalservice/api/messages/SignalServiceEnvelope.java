@@ -263,7 +263,7 @@ public class SignalServiceEnvelope {
   }
 
   public boolean isFriendRequest() {
-    return envelope.getType().getNumber() == Envelope.Type.FRIEND_REQUEST_VALUE;
+    return envelope.getType().getNumber() == Envelope.Type.FALLBACK_MESSAGE_VALUE;
   }
 
   private byte[] getPlaintext(byte[] ciphertext, SecretKeySpec cipherKey) throws IOException {

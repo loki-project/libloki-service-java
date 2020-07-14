@@ -64,8 +64,8 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.CallMe
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Content;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.GroupContext;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ReceiptMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.TypingMessage;
@@ -516,7 +516,7 @@ public class SignalServiceMessageSender {
     // Loki - Set the pre key bundle if needed
     if (message.getPreKeyBundle().isPresent()) {
       PreKeyBundle preKeyBundle = message.getPreKeyBundle().get();
-      PrekeyBundleMessage.Builder preKeyBuilder = PrekeyBundleMessage.newBuilder()
+      PreKeyBundleMessage.Builder preKeyBuilder = PreKeyBundleMessage.newBuilder()
           .setDeviceId(preKeyBundle.getDeviceId())
           .setIdentityKey(ByteString.copyFrom(preKeyBundle.getIdentityKey().serialize()))
           .setPreKeyId(preKeyBundle.getPreKeyId())
@@ -531,12 +531,14 @@ public class SignalServiceMessageSender {
     // Loki - Set the device link if needed
     if (message.getDeviceLink().isPresent()) {
       DeviceLink deviceLink = message.getDeviceLink().get();
-      SignalServiceProtos.PairingAuthorisationMessage.Builder builder = SignalServiceProtos.PairingAuthorisationMessage.newBuilder()
-          .setPrimaryDevicePublicKey(deviceLink.getMasterHexEncodedPublicKey())
-          .setSecondaryDevicePublicKey(deviceLink.getSlaveHexEncodedPublicKey());
+      SignalServiceProtos.DeviceLinkMessage.Builder builder = SignalServiceProtos.DeviceLinkMessage.newBuilder()
+          .setPrimaryPublicKey(deviceLink.getMasterHexEncodedPublicKey())
+          .setSecondaryPublicKey(deviceLink.getSlaveHexEncodedPublicKey());
       builder.setRequestSignature(ByteString.copyFrom(deviceLink.getRequestSignature()));
-      if (deviceLink.getAuthorizationSignature() != null) { builder.setGrantSignature(ByteString.copyFrom(deviceLink.getAuthorizationSignature())); }
-      container.setPairingAuthorisation(builder);
+      if (deviceLink.getAuthorizationSignature() != null) {
+          builder.setAuthorizationSignature(ByteString.copyFrom(deviceLink.getAuthorizationSignature()));
+      }
+      container.setDeviceLinkMessage(builder);
     }
 
     DataMessage.Builder builder = DataMessage.newBuilder();
@@ -564,7 +566,7 @@ public class SignalServiceMessageSender {
 
     // Loki - Set unlinking request flag if needed
     if (message.isUnlinkingRequest()) {
-      builder.setFlags(DataMessage.Flags.UNPAIRING_REQUEST_VALUE);
+      builder.setFlags(DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE);
     }
 
     if (message.isProfileKeyUpdate()) {
@@ -573,7 +575,7 @@ public class SignalServiceMessageSender {
 
     // Loki - Set session restoration request flag if needed
     if (message.isSessionRestorationRequest()) {
-      builder.setFlags(DataMessage.Flags.SESSION_RESTORE_VALUE);
+      builder.setFlags(DataMessage.Flags.SESSION_RESTORATION_REQUEST_VALUE);
     }
 
     // Loki - Set session request flag if needed
@@ -654,12 +656,12 @@ public class SignalServiceMessageSender {
 
     // Loki - Set display name & profile picture (exclude the profile picture if this is a friend request
     // to prevent unsolicited content from being sent)
-    LokiProfile.Builder profile = LokiProfile.newBuilder();
+    LokiUserProfile.Builder profile = LokiUserProfile.newBuilder();
     String displayName = userDatabase.getDisplayName(userHexEncodedPublicKey);
     if (displayName != null) { profile.setDisplayName(displayName); }
     String profilePictureURL = userDatabase.getProfilePictureURL(userHexEncodedPublicKey);
     boolean shouldIncludeProfilePicture = !message.isFriendRequest() && profilePictureURL != null;
-    profile.setAvatar(shouldIncludeProfilePicture ? profilePictureURL : "");
+    profile.setProfilePictureURL(shouldIncludeProfilePicture ? profilePictureURL : "");
     builder.setProfile(profile);
 
     builder.setTimestamp(message.getTimestamp());
@@ -735,7 +737,7 @@ public class SignalServiceMessageSender {
           int channel = Long.valueOf(openGroup.getChannel()).intValue();
           SyncMessage.OpenGroupDetails details = SyncMessage.OpenGroupDetails.newBuilder()
                                                                               .setUrl(url)
-                                                                              .setChannelId(channel)
+                                                                              .setChannelID(channel)
                                                                               .build();
           builder.addOpenGroups(details);
       }
@@ -1484,7 +1486,7 @@ public class SignalServiceMessageSender {
       byte[] ciphertext = sealedSessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), message);
       return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE, deviceID, 0, Base64.encodeBytes(ciphertext));
     } else {
-      return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.FRIEND_REQUEST_VALUE, deviceID, 0, Base64.encodeBytes(bytes));
+      return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.FALLBACK_MESSAGE_VALUE, deviceID, 0, Base64.encodeBytes(bytes));
     }
   }
 
