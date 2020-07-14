@@ -8,7 +8,7 @@ package org.whispersystems.signalservice.api.messages.multidevice;
 
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
-import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChat;
+import org.whispersystems.signalservice.loki.api.opengroups.PublicChat;
 import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 
 import java.util.LinkedList;
@@ -19,7 +19,7 @@ public class SignalServiceSyncMessage {
   private final Optional<SentTranscriptMessage>             sent;
   private final Optional<ContactsMessage>                   contacts;
   private final Optional<SignalServiceAttachment>           groups;
-  private final Optional<List<LokiPublicChat>>              openGroups;
+  private final Optional<List<PublicChat>>              openGroups;
   private final Optional<BlockedListMessage>                blockedList;
   private final Optional<RequestMessage>                    request;
   private final Optional<List<ReadMessage>>                 reads;
@@ -36,7 +36,7 @@ public class SignalServiceSyncMessage {
                                    Optional<VerifiedMessage>                   verified,
                                    Optional<ConfigurationMessage>              configuration,
                                    Optional<List<StickerPackOperationMessage>> stickerPackOperations,
-                                   Optional<List<LokiPublicChat>>              openGroups)
+                                   Optional<List<PublicChat>>              openGroups)
   {
     this.sent                  = sent;
     this.contacts              = contacts;
@@ -60,7 +60,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forContacts(ContactsMessage contacts) {
@@ -73,7 +73,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forGroups(SignalServiceAttachment groups) {
@@ -86,7 +86,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forRequest(RequestMessage request) {
@@ -99,7 +99,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forRead(List<ReadMessage> reads) {
@@ -112,7 +112,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forRead(ReadMessage read) {
@@ -128,7 +128,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forVerified(VerifiedMessage verifiedMessage) {
@@ -141,7 +141,7 @@ public class SignalServiceSyncMessage {
                                         Optional.of(verifiedMessage),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forBlocked(BlockedListMessage blocked) {
@@ -154,7 +154,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forConfiguration(ConfigurationMessage configuration) {
@@ -167,7 +167,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.of(configuration),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public static SignalServiceSyncMessage forStickerPackOperations(List<StickerPackOperationMessage> stickerPackOperations) {
@@ -180,10 +180,10 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.of(stickerPackOperations),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
-  public static SignalServiceSyncMessage forOpenGroups(List<LokiPublicChat> openGroups) {
+  public static SignalServiceSyncMessage forOpenGroups(List<PublicChat> openGroups) {
       return new SignalServiceSyncMessage(Optional.<SentTranscriptMessage>absent(),
                                           Optional.<ContactsMessage>absent(),
                                           Optional.<SignalServiceAttachment>absent(),
@@ -206,7 +206,7 @@ public class SignalServiceSyncMessage {
                                         Optional.<VerifiedMessage>absent(),
                                         Optional.<ConfigurationMessage>absent(),
                                         Optional.<List<StickerPackOperationMessage>>absent(),
-                                        Optional.<List<LokiPublicChat>>absent());
+                                        Optional.<List<PublicChat>>absent());
   }
 
   public Optional<SentTranscriptMessage> getSent() {
@@ -243,7 +243,7 @@ public class SignalServiceSyncMessage {
 
   public Optional<List<StickerPackOperationMessage>> getStickerPackOperations() { return stickerPackOperations; }
 
-  public Optional<List<LokiPublicChat>> getOpenGroups() { return openGroups; }
+  public Optional<List<PublicChat>> getOpenGroups() { return openGroups; }
 
   public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.SignalServiceSyncMessage); }
 }

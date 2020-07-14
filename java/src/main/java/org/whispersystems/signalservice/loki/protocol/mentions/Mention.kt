@@ -1,3 +1,3 @@
 package org.whispersystems.signalservice.loki.protocol.mentions
 
-data class Mention(val hexEncodedPublicKey: String, val displayName: String)
+data class Mention(val publicKey: String, val displayName: String)

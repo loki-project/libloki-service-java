@@ -1831,9 +1831,13 @@ public final class SignalProtos {
          */
         MESSAGE(1, 2),
         /**
-         * <code>LOKI_FRIEND_REQUEST = 3;</code>
+         * <code>FALLBACK_MESSAGE = 3;</code>
+         *
+         * <pre>
+         * Loki
+         * </pre>
          */
-        LOKI_FRIEND_REQUEST(2, 3),
+        FALLBACK_MESSAGE(2, 3),
         ;
 
         /**
@@ -1845,9 +1849,13 @@ public final class SignalProtos {
          */
         public static final int MESSAGE_VALUE = 2;
         /**
-         * <code>LOKI_FRIEND_REQUEST = 3;</code>
+         * <code>FALLBACK_MESSAGE = 3;</code>
+         *
+         * <pre>
+         * Loki
+         * </pre>
          */
-        public static final int LOKI_FRIEND_REQUEST_VALUE = 3;
+        public static final int FALLBACK_MESSAGE_VALUE = 3;
 
 
         public final int getNumber() { return value; }
@@ -1856,7 +1864,7 @@ public final class SignalProtos {
           switch (value) {
             case 1: return PREKEY_MESSAGE;
             case 2: return MESSAGE;
-            case 3: return LOKI_FRIEND_REQUEST;
+            case 3: return FALLBACK_MESSAGE;
             default: return null;
           }
         }
@@ -2900,16 +2908,16 @@ public final class SignalProtos {
       "ServerCertificate\022\023\n\013certificate\030\001 \001(\014\022\021" +
       "\n\tsignature\030\002 \001(\014\032&\n\013Certificate\022\n\n\002id\030\001" +
       " \001(\r\022\013\n\003key\030\002 \001(\014\"9\n\021SenderCertificate\022\016" +
-      "\n\006sender\030\001 \001(\t\022\024\n\014senderDevice\030\002 \001(\r\"\272\002\n" +
+      "\n\006sender\030\001 \001(\t\022\024\n\014senderDevice\030\002 \001(\r\"\267\002\n" +
       "\031UnidentifiedSenderMessage\022\027\n\017ephemeralP" +
       "ublic\030\001 \001(\014\022\027\n\017encryptedStatic\030\002 \001(\014\022\030\n\020" +
-      "encryptedMessage\030\003 \001(\014\032\320\001\n\007Message\022<\n\004ty" +
+      "encryptedMessage\030\003 \001(\014\032\315\001\n\007Message\022<\n\004ty" +
       "pe\030\001 \001(\0162..signal.UnidentifiedSenderMess" +
       "age.Message.Type\0224\n\021senderCertificate\030\002 ",
       "\001(\0132\031.signal.SenderCertificate\022\017\n\007conten" +
-      "t\030\003 \001(\014\"@\n\004Type\022\022\n\016PREKEY_MESSAGE\020\001\022\013\n\007M" +
-      "ESSAGE\020\002\022\027\n\023LOKI_FRIEND_REQUEST\020\003B-\n\035org" +
-      ".signal.libsignal.metadataB\014SignalProtos"
+      "t\030\003 \001(\014\"=\n\004Type\022\022\n\016PREKEY_MESSAGE\020\001\022\013\n\007M" +
+      "ESSAGE\020\002\022\024\n\020FALLBACK_MESSAGE\020\003B-\n\035org.si" +
+      "gnal.libsignal.metadataB\014SignalProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

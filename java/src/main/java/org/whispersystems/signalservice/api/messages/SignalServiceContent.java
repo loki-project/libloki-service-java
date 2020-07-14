@@ -19,10 +19,8 @@ public class SignalServiceContent {
   private final boolean needsReceipt;
 
   // Loki
-  private boolean isFriendRequest = false;
   private final boolean isSessionRequest;
-  private final boolean isSessionRestorationRequest;
-  private final boolean isUnlinkingRequest;
+  private final boolean isDeviceUnlinkingRequest;
 
   private Optional<SignalServiceDataMessage>          message;
   private Optional<SignalServiceSyncMessage>          synchronizeMessage;
@@ -38,140 +36,132 @@ public class SignalServiceContent {
   public Optional<String> senderProfilePictureURL = Optional.absent();
 
   public SignalServiceContent(LokiServiceMessage lokiServiceMessage, String sender, int senderDevice, long timestamp) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = false;
-    this.isSessionRequest            = false;
-    this.isSessionRestorationRequest = false;
-    this.message                     = Optional.absent();
-    this.synchronizeMessage          = Optional.absent();
-    this.callMessage                 = Optional.absent();
-    this.nullMessage                 = Optional.absent();
-    this.readMessage                 = Optional.absent();
-    this.typingMessage               = Optional.absent();
-    this.deviceLink                  = Optional.absent();
-    this.lokiServiceMessage          = Optional.fromNullable(lokiServiceMessage);
-    this.isUnlinkingRequest          = false;
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = false;
+    this.isSessionRequest         = false;
+    this.message                  = Optional.absent();
+    this.synchronizeMessage       = Optional.absent();
+    this.callMessage              = Optional.absent();
+    this.nullMessage              = Optional.absent();
+    this.readMessage              = Optional.absent();
+    this.typingMessage            = Optional.absent();
+    this.deviceLink               = Optional.absent();
+    this.lokiServiceMessage       = Optional.fromNullable(lokiServiceMessage);
+    this.isDeviceUnlinkingRequest = false;
   }
 
-  public SignalServiceContent(SignalServiceDataMessage message, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isSessionRequest, boolean isSessionRestorationRequest, boolean isUnlinkingRequest) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = needsReceipt;
-    this.isSessionRequest            = isSessionRequest;
-    this.isSessionRestorationRequest = isSessionRestorationRequest;
-    this.message                     = Optional.fromNullable(message);
-    this.synchronizeMessage          = Optional.absent();
-    this.callMessage                 = Optional.absent();
-    this.nullMessage                 = Optional.absent();
-    this.readMessage                 = Optional.absent();
-    this.typingMessage               = Optional.absent();
-    this.deviceLink                  = Optional.absent();
-    this.isUnlinkingRequest          = isUnlinkingRequest;
+  public SignalServiceContent(SignalServiceDataMessage message, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isSessionRequest, boolean isDeviceUnlinkingRequest) {
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = needsReceipt;
+    this.isSessionRequest         = isSessionRequest;
+    this.message                  = Optional.fromNullable(message);
+    this.synchronizeMessage       = Optional.absent();
+    this.callMessage              = Optional.absent();
+    this.nullMessage              = Optional.absent();
+    this.readMessage              = Optional.absent();
+    this.typingMessage            = Optional.absent();
+    this.deviceLink               = Optional.absent();
+    this.isDeviceUnlinkingRequest = isDeviceUnlinkingRequest;
   }
 
   public SignalServiceContent(SignalServiceSyncMessage synchronizeMessage, String sender, int senderDevice, long timestamp) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = false;
-    this.isSessionRequest            = false;
-    this.isSessionRestorationRequest = false;
-    this.message                     = Optional.absent();
-    this.synchronizeMessage          = Optional.fromNullable(synchronizeMessage);
-    this.callMessage                 = Optional.absent();
-    this.nullMessage                 = Optional.absent();
-    this.readMessage                 = Optional.absent();
-    this.typingMessage               = Optional.absent();
-    this.deviceLink                  = Optional.absent();
-    this.isUnlinkingRequest          = false;
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = false;
+    this.isSessionRequest         = false;
+    this.message                  = Optional.absent();
+    this.synchronizeMessage       = Optional.fromNullable(synchronizeMessage);
+    this.callMessage              = Optional.absent();
+    this.nullMessage              = Optional.absent();
+    this.readMessage              = Optional.absent();
+    this.typingMessage            = Optional.absent();
+    this.deviceLink               = Optional.absent();
+    this.isDeviceUnlinkingRequest = false;
   }
 
   public SignalServiceContent(SignalServiceCallMessage callMessage, String sender, int senderDevice, long timestamp) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = false;
-    this.isSessionRequest            = false;
-    this.isSessionRestorationRequest = false;
-    this.message                     = Optional.absent();
-    this.synchronizeMessage          = Optional.absent();
-    this.callMessage                 = Optional.of(callMessage);
-    this.nullMessage                 = Optional.absent();
-    this.readMessage                 = Optional.absent();
-    this.typingMessage               = Optional.absent();
-    this.deviceLink                  = Optional.absent();
-    this.isUnlinkingRequest          = false;
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = false;
+    this.isSessionRequest         = false;
+    this.message                  = Optional.absent();
+    this.synchronizeMessage       = Optional.absent();
+    this.callMessage              = Optional.of(callMessage);
+    this.nullMessage              = Optional.absent();
+    this.readMessage              = Optional.absent();
+    this.typingMessage            = Optional.absent();
+    this.deviceLink               = Optional.absent();
+    this.isDeviceUnlinkingRequest = false;
   }
 
   public SignalServiceContent(SignalServiceReceiptMessage receiptMessage, String sender, int senderDevice, long timestamp) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = false;
-    this.isSessionRequest            = false;
-    this.isSessionRestorationRequest = false;
-    this.message                     = Optional.absent();
-    this.synchronizeMessage          = Optional.absent();
-    this.callMessage                 = Optional.absent();
-    this.nullMessage                 = Optional.absent();
-    this.readMessage                 = Optional.of(receiptMessage);
-    this.typingMessage               = Optional.absent();
-    this.deviceLink                  = Optional.absent();
-    this.isUnlinkingRequest          = false;
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = false;
+    this.isSessionRequest         = false;
+    this.message                  = Optional.absent();
+    this.synchronizeMessage       = Optional.absent();
+    this.callMessage              = Optional.absent();
+    this.nullMessage              = Optional.absent();
+    this.readMessage              = Optional.of(receiptMessage);
+    this.typingMessage            = Optional.absent();
+    this.deviceLink               = Optional.absent();
+    this.isDeviceUnlinkingRequest = false;
   }
 
   public SignalServiceContent(SignalServiceTypingMessage typingMessage, String sender, int senderDevice, long timestamp) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = false;
-    this.isSessionRequest            = false;
-    this.isSessionRestorationRequest = false;
-    this.message                     = Optional.absent();
-    this.synchronizeMessage          = Optional.absent();
-    this.callMessage                 = Optional.absent();
-    this.nullMessage                 = Optional.absent();
-    this.readMessage                 = Optional.absent();
-    this.typingMessage               = Optional.of(typingMessage);
-    this.deviceLink                  = Optional.absent();
-    this.isUnlinkingRequest          = false;
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = false;
+    this.isSessionRequest         = false;
+    this.message                  = Optional.absent();
+    this.synchronizeMessage       = Optional.absent();
+    this.callMessage              = Optional.absent();
+    this.nullMessage              = Optional.absent();
+    this.readMessage              = Optional.absent();
+    this.typingMessage            = Optional.of(typingMessage);
+    this.deviceLink               = Optional.absent();
+    this.isDeviceUnlinkingRequest = false;
   }
 
   public SignalServiceContent(DeviceLink deviceLink, String sender, int senderDevice, long timestamp) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = false;
-    this.isSessionRequest            = false;
-    this.isSessionRestorationRequest = false;
-    this.message                     = Optional.absent();
-    this.synchronizeMessage          = Optional.absent();
-    this.callMessage                 = Optional.absent();
-    this.nullMessage                 = Optional.absent();
-    this.readMessage                 = Optional.absent();
-    this.typingMessage               = Optional.absent();
-    this.deviceLink                  = Optional.fromNullable(deviceLink);
-    this.isUnlinkingRequest          = false;
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = false;
+    this.isSessionRequest         = false;
+    this.message                  = Optional.absent();
+    this.synchronizeMessage       = Optional.absent();
+    this.callMessage              = Optional.absent();
+    this.nullMessage              = Optional.absent();
+    this.readMessage              = Optional.absent();
+    this.typingMessage            = Optional.absent();
+    this.deviceLink               = Optional.fromNullable(deviceLink);
+    this.isDeviceUnlinkingRequest = false;
   }
 
   public SignalServiceContent(SignalServiceNullMessage nullMessage, String sender, int senderDevice, long timestamp) {
-    this.sender                      = sender;
-    this.senderDevice                = senderDevice;
-    this.timestamp                   = timestamp;
-    this.needsReceipt                = false;
-    this.isSessionRequest            = false;
-    this.isSessionRestorationRequest = false;
-    this.message                     = Optional.absent();
-    this.synchronizeMessage          = Optional.absent();
-    this.callMessage                 = Optional.absent();
-    this.nullMessage                 = Optional.of(nullMessage);
-    this.readMessage                 = Optional.absent();
-    this.typingMessage               = Optional.absent();
-    this.deviceLink                  = Optional.absent();
-    this.isUnlinkingRequest          = false;
+    this.sender                   = sender;
+    this.senderDevice             = senderDevice;
+    this.timestamp                = timestamp;
+    this.needsReceipt             = false;
+    this.isSessionRequest         = false;
+    this.message                  = Optional.absent();
+    this.synchronizeMessage       = Optional.absent();
+    this.callMessage              = Optional.absent();
+    this.nullMessage              = Optional.of(nullMessage);
+    this.readMessage              = Optional.absent();
+    this.typingMessage            = Optional.absent();
+    this.deviceLink               = Optional.absent();
+    this.isDeviceUnlinkingRequest = false;
   }
 
   public Optional<SignalServiceDataMessage> getDataMessage() {
@@ -215,13 +205,9 @@ public class SignalServiceContent {
   public Optional<SignalServiceNullMessage> getNullMessage() { return nullMessage; }
 
   // Loki
-  public boolean isFriendRequest() { return isFriendRequest; }
-
   public boolean isSessionRequest() { return isSessionRequest; }
 
-  public boolean isSessionRestorationRequest() { return isSessionRestorationRequest; }
-
-  public boolean isUnlinkingRequest() { return isUnlinkingRequest; }
+  public boolean isDeviceUnlinkingRequest() { return isDeviceUnlinkingRequest; }
 
   public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
 
@@ -230,6 +216,4 @@ public class SignalServiceContent {
   public void setSenderDisplayName(String displayName) { senderDisplayName = Optional.fromNullable(displayName); }
 
   public void setSenderProfilePictureURL(String url) { senderProfilePictureURL = Optional.fromNullable(url); }
-
-  public void setIsFriendRequest(boolean isFriendRequest) { this.isFriendRequest = isFriendRequest; }
 }

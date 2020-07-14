@@ -262,7 +262,7 @@ public class SignalServiceEnvelope {
     return envelope.getType().getNumber() == Envelope.Type.UNIDENTIFIED_SENDER_VALUE;
   }
 
-  public boolean isFriendRequest() {
+  public boolean isFallbackMessage() {
     return envelope.getType().getNumber() == Envelope.Type.FALLBACK_MESSAGE_VALUE;
   }
 

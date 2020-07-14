@@ -2,7 +2,7 @@ package org.whispersystems.signalservice.loki.api.opengroups
 
 import org.whispersystems.signalservice.internal.util.JsonUtil
 
-public data class LokiPublicChat(
+public data class PublicChat(
     public val channel: Long,
     private val serverURL: String,
     public val displayName: String,
@@ -17,14 +17,14 @@ public data class LokiPublicChat(
             return "$server.$channel"
         }
 
-        @JvmStatic fun fromJSON(jsonAsString: String): LokiPublicChat? {
+        @JvmStatic fun fromJSON(jsonAsString: String): PublicChat? {
             try {
                 val json = JsonUtil.fromJson(jsonAsString)
                 val channel = json.get("channel").asLong()
                 val server = json.get("server").asText().toLowerCase()
                 val displayName = json.get("displayName").asText()
                 val isDeletable = json.get("isDeletable").asBoolean()
-                return LokiPublicChat(channel, server, displayName, isDeletable)
+                return PublicChat(channel, server, displayName, isDeletable)
             } catch (e: Exception) {
                 return null
             }

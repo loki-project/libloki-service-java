@@ -9,7 +9,6 @@ import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
  */
 class FallbackSessionCipher(private val userPrivateKey: ByteArray, private val hexEncodedContactPublicKey: String) {
 
-    // region Convenience
     private val contactPublicKey by lazy {
         val hexEncodedContactPublicKey = hexEncodedContactPublicKey.removing05PrefixIfNeeded()
         Hex.fromStringCondensed(hexEncodedContactPublicKey)
@@ -25,15 +24,11 @@ class FallbackSessionCipher(private val userPrivateKey: ByteArray, private val h
                 return null
             }
         }
-    // endregion
 
-    // region Settings
     companion object {
         @JvmStatic val sessionVersion = 3
     }
-    // endregion
 
-    // region Encryption
     fun encrypt(paddedMessageBody: ByteArray): ByteArray? {
         val symmetricKey = symmetricKey ?: return null
         try {
@@ -43,9 +38,7 @@ class FallbackSessionCipher(private val userPrivateKey: ByteArray, private val h
             return null
         }
     }
-    // endregion
 
-    // region Decryption
     fun decrypt(bytes: ByteArray): ByteArray? {
         val symmetricKey = symmetricKey ?: return null
         try {
@@ -55,5 +48,4 @@ class FallbackSessionCipher(private val userPrivateKey: ByteArray, private val h
             return null
         }
     }
-    // endregion
 }

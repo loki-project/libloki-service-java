@@ -5,9 +5,9 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 
-public data class LokiPublicChatMessage(
+public data class PublicChatMessage(
     public val serverID: Long?,
-    public val hexEncodedPublicKey: String,
+    public val publicKey: String,
     public val displayName: String,
     public val body: String,
     public val timestamp: Long,
@@ -34,7 +34,7 @@ public data class LokiPublicChatMessage(
 
     public data class Quote(
         public val quotedMessageTimestamp: Long,
-        public val quoteeHexEncodedPublicKey: String,
+        public val quoteePublicKey: String,
         public val quotedMessageBody: String,
         public val quotedMessageServerID: Long? = null
     )
@@ -84,7 +84,7 @@ public data class LokiPublicChatMessage(
     // endregion
 
     // region Crypto
-    internal fun sign(privateKey: ByteArray): LokiPublicChatMessage? {
+    internal fun sign(privateKey: ByteArray): PublicChatMessage? {
         val data = getValidationData(signatureVersion)
         if (data == null) {
             Log.d("Loki", "Failed to sign public chat message.")
@@ -103,7 +103,7 @@ public data class LokiPublicChatMessage(
     internal fun hasValidSignature(): Boolean {
         if (signature == null) { return false }
         val data = getValidationData(signature.version) ?: return false
-        val publicKey = Hex.fromStringCondensed(hexEncodedPublicKey.removing05PrefixIfNeeded())
+        val publicKey = Hex.fromStringCondensed(publicKey.removing05PrefixIfNeeded())
         try {
             return curve.verifySignature(publicKey, data, signature.data)
         } catch (e: Exception) {
@@ -117,7 +117,7 @@ public data class LokiPublicChatMessage(
     internal fun toJSON(): Map<String, Any> {
         val value = mutableMapOf<String, Any>( "timestamp" to timestamp )
         if (quote != null) {
-            value["quote"] = mapOf( "id" to quote.quotedMessageTimestamp, "author" to quote.quoteeHexEncodedPublicKey, "text" to quote.quotedMessageBody )
+            value["quote"] = mapOf( "id" to quote.quotedMessageTimestamp, "author" to quote.quoteePublicKey, "text" to quote.quotedMessageBody )
         }
         if (signature != null) {
             value["sig"] = Hex.toStringCondensed(signature.data)
@@ -160,7 +160,7 @@ public data class LokiPublicChatMessage(
     private fun getValidationData(signatureVersion: Long): ByteArray? {
         var string = "${body.trim()}$timestamp"
         if (quote != null) {
-            string += "${quote.quotedMessageTimestamp}${quote.quoteeHexEncodedPublicKey}${quote.quotedMessageBody.trim()}"
+            string += "${quote.quotedMessageTimestamp}${quote.quoteePublicKey}${quote.quotedMessageBody.trim()}"
             if (quote.quotedMessageServerID != null) {
                 string += "${quote.quotedMessageServerID}"
             }
