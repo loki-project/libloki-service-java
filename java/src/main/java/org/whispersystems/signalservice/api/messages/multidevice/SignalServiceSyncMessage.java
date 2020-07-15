@@ -245,5 +245,5 @@ public class SignalServiceSyncMessage {
 
   public Optional<List<PublicChat>> getOpenGroups() { return openGroups; }
 
-  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.SignalServiceSyncMessage); }
+  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.Sync); }
 }

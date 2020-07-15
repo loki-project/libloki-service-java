@@ -9,11 +9,11 @@ public object TTLUtilities {
 
     public enum class MessageType {
         // Unimportant control messages
-        Address, SignalServiceCallMessage, TypingIndicator, VerifiedMessage,
+        Address, Call, TypingIndicator, Verified,
         // Somewhat important control messages
-        LinkDevice,
+        DeviceLink,
         // Important control messages
-        Ephemeral, SessionRequest, SignalServiceReceiptMessage, SignalServiceSyncMessage, UnlinkDevice,
+        Ephemeral, SessionRequest, Receipt, Sync, DeviceUnlinkingRequest,
         // Visible messages
         Regular
     }
@@ -25,12 +25,12 @@ public object TTLUtilities {
         val dayInMs = 24 * hourInMs
         return when (messageType) {
             // Unimportant control messages
-            MessageType.Address, MessageType.SignalServiceCallMessage, MessageType.TypingIndicator, MessageType.VerifiedMessage -> 1 * minuteInMs
+            MessageType.Address, MessageType.Call, MessageType.TypingIndicator, MessageType.Verified -> 1 * minuteInMs
             // Somewhat important control messages
-            MessageType.LinkDevice -> 1 * hourInMs
+            MessageType.DeviceLink -> 1 * hourInMs
             // Important control messages
-            MessageType.Ephemeral, MessageType.SessionRequest, MessageType.SignalServiceReceiptMessage,
-            MessageType.SignalServiceSyncMessage, MessageType.UnlinkDevice -> 2 * dayInMs - 1 * hourInMs
+            MessageType.Ephemeral, MessageType.SessionRequest, MessageType.Receipt,
+            MessageType.Sync, MessageType.DeviceUnlinkingRequest -> 2 * dayInMs - 1 * hourInMs
             // Visible messages
             MessageType.Regular -> 2 * dayInMs
         }

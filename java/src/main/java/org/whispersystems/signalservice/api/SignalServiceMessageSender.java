@@ -541,9 +541,7 @@ public class SignalServiceMessageSender {
       builder.setFlags(DataMessage.Flags.PROFILE_KEY_UPDATE_VALUE);
     }
 
-    if (message.isSessionRequest()) {
-      builder.setFlags(DataMessage.Flags.SESSION_REQUEST_VALUE);
-    } else if (message.isDeviceUnlinkingRequest()) {
+    if (message.isDeviceUnlinkingRequest()) {
       builder.setFlags(DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE);
     }
 
@@ -626,6 +624,7 @@ public class SignalServiceMessageSender {
     builder.setProfile(lokiUserProfileBuilder.build());
 
     builder.setTimestamp(message.getTimestamp());
+
     container.setDataMessage(builder);
 
     return container.build().toByteArray();

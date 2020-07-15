@@ -37,7 +37,6 @@ public class SignalServiceDataMessage {
   private final Optional<PreKeyBundle>                  preKeyBundle;
   private final Optional<DeviceLink>                    deviceLink;
   private final boolean                                 isDeviceUnlinkingRequest;
-  private final boolean                                 isSessionRequest;
 
   /**
    * Construct a SignalServiceDataMessage with a body and no attachments.
@@ -131,7 +130,7 @@ public class SignalServiceDataMessage {
                                   Quote quote, List<SharedContact> sharedContacts, List<Preview> previews,
                                   Sticker sticker)
   {
-    this(timestamp, group, attachments, body, endSession, expiresInSeconds, expirationUpdate, profileKey, profileKeyUpdate, quote, sharedContacts, previews, sticker, null, null, false, false);
+    this(timestamp, group, attachments, body, endSession, expiresInSeconds, expirationUpdate, profileKey, profileKeyUpdate, quote, sharedContacts, previews, sticker, null, null, false);
   }
 
   /**
@@ -151,7 +150,7 @@ public class SignalServiceDataMessage {
                                   boolean expirationUpdate, byte[] profileKey, boolean profileKeyUpdate,
                                   Quote quote, List<SharedContact> sharedContacts, List<Preview> previews,
                                   Sticker sticker, PreKeyBundle preKeyBundle, DeviceLink deviceLink,
-                                  boolean isDeviceUnlinkingRequest, boolean isSessionRequest)
+                                  boolean isDeviceUnlinkingRequest)
   {
     this.timestamp                   = timestamp;
     this.body                        = Optional.fromNullable(body);
@@ -166,7 +165,6 @@ public class SignalServiceDataMessage {
     this.preKeyBundle                = Optional.fromNullable(preKeyBundle);
     this.deviceLink                  = Optional.fromNullable(deviceLink);
     this.isDeviceUnlinkingRequest    = isDeviceUnlinkingRequest;
-    this.isSessionRequest            = isSessionRequest;
 
     if (attachments != null && !attachments.isEmpty()) {
       this.attachments = Optional.of(attachments);
@@ -266,18 +264,14 @@ public class SignalServiceDataMessage {
     return isDeviceUnlinkingRequest;
   }
 
-  public boolean isSessionRequest() { return isSessionRequest; }
-
   public Optional<PreKeyBundle> getPreKeyBundle() { return preKeyBundle; }
 
   public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
 
   public int getTTL() {
-    TTLUtilities.MessageType messageType = TTLUtilities.MessageType.Regular;
-    if (deviceLink.isPresent()) { messageType = TTLUtilities.MessageType.LinkDevice; }
-    else if (isDeviceUnlinkingRequest) { messageType = TTLUtilities.MessageType.UnlinkDevice; }
-    else if (isSessionRequest) { messageType = TTLUtilities.MessageType.SessionRequest; }
-    return TTLUtilities.getTTL(messageType);
+    if (deviceLink.isPresent()) { return TTLUtilities.getTTL(TTLUtilities.MessageType.DeviceLink); }
+    else if (isDeviceUnlinkingRequest) { return TTLUtilities.getTTL(TTLUtilities.MessageType.DeviceUnlinkingRequest); }
+    return TTLUtilities.getTTL(TTLUtilities.MessageType.Regular);
   }
 
   public static class Builder {
@@ -298,7 +292,6 @@ public class SignalServiceDataMessage {
     private PreKeyBundle         preKeyBundle;
     private DeviceLink           deviceLink;
     private boolean              isDeviceUnlinkingRequest;
-    private boolean              isSessionRequest;
 
     private Builder() {}
 
@@ -400,18 +393,13 @@ public class SignalServiceDataMessage {
       return this;
     }
 
-    public Builder asSessionRequest(boolean isSessionRequest) {
-      this.isSessionRequest = isSessionRequest;
-      return this;
-    }
-
     public SignalServiceDataMessage build() {
       if (timestamp == 0) timestamp = System.currentTimeMillis();
       return new SignalServiceDataMessage(timestamp, group, attachments, body, endSession,
                                           expiresInSeconds, expirationUpdate, profileKey,
                                           profileKeyUpdate, quote, sharedContacts, previews,
                                           sticker, preKeyBundle, deviceLink,
-                                          isDeviceUnlinkingRequest, isSessionRequest);
+                                          isDeviceUnlinkingRequest);
     }
   }
 

@@ -41,5 +41,5 @@ public class SignalServiceReceiptMessage {
     return type == Type.READ;
   }
 
-  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.SignalServiceReceiptMessage); }
+  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.Receipt); }
 }

@@ -9,8 +9,8 @@ interface LokiAPIDatabaseProtocol {
     fun setSnodePool(newValue: Set<Snode>)
     fun getOnionRequestPaths(): List<List<Snode>>
     fun setOnionRequestPaths(newValue: List<List<Snode>>)
-    fun getSwarm(hexEncodedPublicKey: String): Set<Snode>?
-    fun setSwarm(hexEncodedPublicKey: String, newValue: Set<Snode>)
+    fun getSwarm(publicKey: String): Set<Snode>?
+    fun setSwarm(publicKey: String, newValue: Set<Snode>)
     fun getLastMessageHashValue(snode: Snode): String?
     fun setLastMessageHashValue(snode: Snode, newValue: String)
     fun getReceivedMessageHashValues(): Set<String>?
@@ -21,8 +21,8 @@ interface LokiAPIDatabaseProtocol {
     fun setLastMessageServerID(group: Long, server: String, newValue: Long)
     fun getLastDeletionServerID(group: Long, server: String): Long?
     fun setLastDeletionServerID(group: Long, server: String, newValue: Long)
-    fun getDeviceLinks(hexEncodedPublicKey: String): Set<DeviceLink>
-    fun clearDeviceLinks(hexEncodedPublicKey: String)
+    fun getDeviceLinks(publicKey: String): Set<DeviceLink>
+    fun clearDeviceLinks(publicKey: String)
     fun addDeviceLink(deviceLink: DeviceLink)
     fun removeDeviceLink(deviceLink: DeviceLink)
     fun setUserCount(userCount: Int, group: Long, server: String)

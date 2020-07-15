@@ -37,8 +37,7 @@ public class SessionManagementProtocol(private val sessionResetImpl: SessionRese
     /**
      * Called after an end session message is sent.
      */
-    public fun setSessionResetStatusToInProgressIfNeeded(recipient: SignalServiceAddress,
-            eventListener: Optional<SignalServiceMessageSender.EventListener>) {
+    public fun setSessionResetStatusToInProgressIfNeeded(recipient: SignalServiceAddress, eventListener: Optional<SignalServiceMessageSender.EventListener>) {
         val publicKey = recipient.number
         val sessionResetStatus = sessionResetImpl.getSessionResetStatus(publicKey)
         if (sessionResetStatus == SessionResetStatus.REQUEST_RECEIVED) { return }

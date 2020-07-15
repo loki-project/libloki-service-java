@@ -9,8 +9,8 @@ package org.whispersystems.signalservice.api.messages;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
-import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceMessage;
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
 
 public class SignalServiceContent {
   private final String  sender;
@@ -19,7 +19,6 @@ public class SignalServiceContent {
   private final boolean needsReceipt;
 
   // Loki
-  private final boolean isSessionRequest;
   private final boolean isDeviceUnlinkingRequest;
 
   private Optional<SignalServiceDataMessage>          message;
@@ -30,34 +29,16 @@ public class SignalServiceContent {
   private final Optional<SignalServiceTypingMessage>  typingMessage;
 
   // Loki
-  private final Optional<DeviceLink> deviceLink;
-  public Optional<LokiServiceMessage> lokiServiceMessage = Optional.absent();
-  public Optional<String> senderDisplayName = Optional.absent();
-  public Optional<String> senderProfilePictureURL = Optional.absent();
+  private final Optional<DeviceLink>   deviceLink;
+  public Optional<PreKeyBundleMessage> preKeyBundleMessage     = Optional.absent();
+  public Optional<String>              senderDisplayName       = Optional.absent();
+  public Optional<String>              senderProfilePictureURL = Optional.absent();
 
-  public SignalServiceContent(LokiServiceMessage lokiServiceMessage, String sender, int senderDevice, long timestamp) {
-    this.sender                   = sender;
-    this.senderDevice             = senderDevice;
-    this.timestamp                = timestamp;
-    this.needsReceipt             = false;
-    this.isSessionRequest         = false;
-    this.message                  = Optional.absent();
-    this.synchronizeMessage       = Optional.absent();
-    this.callMessage              = Optional.absent();
-    this.nullMessage              = Optional.absent();
-    this.readMessage              = Optional.absent();
-    this.typingMessage            = Optional.absent();
-    this.deviceLink               = Optional.absent();
-    this.lokiServiceMessage       = Optional.fromNullable(lokiServiceMessage);
-    this.isDeviceUnlinkingRequest = false;
-  }
-
-  public SignalServiceContent(SignalServiceDataMessage message, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isSessionRequest, boolean isDeviceUnlinkingRequest) {
+  public SignalServiceContent(SignalServiceDataMessage message, String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isDeviceUnlinkingRequest) {
     this.sender                   = sender;
     this.senderDevice             = senderDevice;
     this.timestamp                = timestamp;
     this.needsReceipt             = needsReceipt;
-    this.isSessionRequest         = isSessionRequest;
     this.message                  = Optional.fromNullable(message);
     this.synchronizeMessage       = Optional.absent();
     this.callMessage              = Optional.absent();
@@ -73,7 +54,6 @@ public class SignalServiceContent {
     this.senderDevice             = senderDevice;
     this.timestamp                = timestamp;
     this.needsReceipt             = false;
-    this.isSessionRequest         = false;
     this.message                  = Optional.absent();
     this.synchronizeMessage       = Optional.fromNullable(synchronizeMessage);
     this.callMessage              = Optional.absent();
@@ -89,7 +69,6 @@ public class SignalServiceContent {
     this.senderDevice             = senderDevice;
     this.timestamp                = timestamp;
     this.needsReceipt             = false;
-    this.isSessionRequest         = false;
     this.message                  = Optional.absent();
     this.synchronizeMessage       = Optional.absent();
     this.callMessage              = Optional.of(callMessage);
@@ -105,7 +84,6 @@ public class SignalServiceContent {
     this.senderDevice             = senderDevice;
     this.timestamp                = timestamp;
     this.needsReceipt             = false;
-    this.isSessionRequest         = false;
     this.message                  = Optional.absent();
     this.synchronizeMessage       = Optional.absent();
     this.callMessage              = Optional.absent();
@@ -121,7 +99,6 @@ public class SignalServiceContent {
     this.senderDevice             = senderDevice;
     this.timestamp                = timestamp;
     this.needsReceipt             = false;
-    this.isSessionRequest         = false;
     this.message                  = Optional.absent();
     this.synchronizeMessage       = Optional.absent();
     this.callMessage              = Optional.absent();
@@ -137,7 +114,6 @@ public class SignalServiceContent {
     this.senderDevice             = senderDevice;
     this.timestamp                = timestamp;
     this.needsReceipt             = false;
-    this.isSessionRequest         = false;
     this.message                  = Optional.absent();
     this.synchronizeMessage       = Optional.absent();
     this.callMessage              = Optional.absent();
@@ -153,7 +129,6 @@ public class SignalServiceContent {
     this.senderDevice             = senderDevice;
     this.timestamp                = timestamp;
     this.needsReceipt             = false;
-    this.isSessionRequest         = false;
     this.message                  = Optional.absent();
     this.synchronizeMessage       = Optional.absent();
     this.callMessage              = Optional.absent();
@@ -205,13 +180,11 @@ public class SignalServiceContent {
   public Optional<SignalServiceNullMessage> getNullMessage() { return nullMessage; }
 
   // Loki
-  public boolean isSessionRequest() { return isSessionRequest; }
-
   public boolean isDeviceUnlinkingRequest() { return isDeviceUnlinkingRequest; }
 
   public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
 
-  public void setLokiServiceMessage(LokiServiceMessage lokiServiceMessage) { this.lokiServiceMessage = Optional.fromNullable(lokiServiceMessage); }
+  public void setPreKeyBundleMessage(PreKeyBundleMessage preKeyBundleMessage) { this.preKeyBundleMessage = Optional.fromNullable(preKeyBundleMessage); }
 
   public void setSenderDisplayName(String displayName) { senderDisplayName = Optional.fromNullable(displayName); }
 

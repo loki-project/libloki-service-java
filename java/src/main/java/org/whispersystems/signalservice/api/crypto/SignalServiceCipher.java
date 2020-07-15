@@ -82,9 +82,8 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Typing
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
 import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.loki.api.opengroups.PublicChat;
-import org.whispersystems.signalservice.loki.protocol.meta.LokiServiceMessage;
-import org.whispersystems.signalservice.loki.protocol.meta.LokiServicePreKeyBundleMessage;
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -174,10 +173,10 @@ public class SignalServiceCipher {
         Plaintext plaintext = decrypt(envelope, envelope.getContent());
         Content   message   = Content.parseFrom(plaintext.getData());
 
-        LokiServicePreKeyBundleMessage preKeyBundleMessage = null;
+        PreKeyBundleMessage preKeyBundleMessage = null;
         if (message.hasPreKeyBundleMessage()) {
           SignalServiceProtos.PreKeyBundleMessage protoPreKeyBundleMessage = message.getPreKeyBundleMessage();
-          preKeyBundleMessage = new LokiServicePreKeyBundleMessage(
+          preKeyBundleMessage = new PreKeyBundleMessage(
               protoPreKeyBundleMessage.getIdentityKey().toByteArray(),
               protoPreKeyBundleMessage.getDeviceId(),
               protoPreKeyBundleMessage.getPreKeyId(),
@@ -187,8 +186,6 @@ public class SignalServiceCipher {
               protoPreKeyBundleMessage.getSignature().toByteArray()
           );
         }
-
-        LokiServiceMessage lokiServiceMessage = new LokiServiceMessage(preKeyBundleMessage, null);
 
         if (message.hasDeviceLinkMessage()) {
           SignalServiceProtos.DeviceLinkMessage protoDeviceLinkMessage = message.getDeviceLinkMessage();
@@ -200,7 +197,7 @@ public class SignalServiceCipher {
           SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
           SignalServiceContent content = new SignalServiceContent(deviceLink, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
 
-          content.setLokiServiceMessage(lokiServiceMessage);
+          content.setPreKeyBundleMessage(preKeyBundleMessage);
 
           if (message.hasSyncMessage() && message.getSyncMessage().hasContacts()) {
             SignalServiceSyncMessage syncMessage = createSynchronizeMessage(metadata, message.getSyncMessage());
@@ -224,10 +221,10 @@ public class SignalServiceCipher {
               plaintext.getMetadata().getSenderDevice(),
               plaintext.getMetadata().getTimestamp(),
               plaintext.getMetadata().isNeedsReceipt(),
-              signalServiceDataMessage.isSessionRequest(),
               signalServiceDataMessage.isDeviceUnlinkingRequest());
 
-          content.setLokiServiceMessage(lokiServiceMessage);
+          content.setPreKeyBundleMessage(preKeyBundleMessage);
+
           setProfile(dataMessage, content);
 
           return content;
@@ -265,14 +262,11 @@ public class SignalServiceCipher {
                                                             plaintext.getMetadata().getSender(),
                                                             plaintext.getMetadata().getSenderDevice(),
                                                             plaintext.getMetadata().getTimestamp());
-            content.setLokiServiceMessage(lokiServiceMessage);
+
+            content.setPreKeyBundleMessage(preKeyBundleMessage);
+
             return content;
         }
-
-      if (lokiServiceMessage.isValid()) {
-        SignalServiceCipher.Metadata metadata = plaintext.getMetadata();
-        return new SignalServiceContent(lokiServiceMessage, metadata.getSender(), metadata.getSenderDevice(), metadata.getTimestamp());
-      }
 
       return null;
     } catch (InvalidProtocolBufferException e) {
@@ -315,8 +309,9 @@ public class SignalServiceCipher {
       } else if (envelope.isUnidentifiedSender()) {
         Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp());
         Pair<Integer, byte[]> data = results.second();
-        paddedMessage  = data.second();
-        metadata       = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false, data.first().equals(CiphertextMessage.FALLBACK_MESSAGE_TYPE));
+        paddedMessage = data.second();
+        boolean isFallbackMessage = data.first().equals(CiphertextMessage.FALLBACK_MESSAGE_TYPE);
+        metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false, isFallbackMessage);
         sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
       } else {
         throw new InvalidMetadataMessageException("Unknown type: " + envelope.getType());
@@ -383,8 +378,7 @@ public class SignalServiceCipher {
                                         sticker,
                                         null,
                                         null,
-                                        isDeviceUnlinkingRequest,
-                                        isSessionRequest);
+                                        isDeviceUnlinkingRequest);
   }
 
   private SignalServiceSyncMessage createSynchronizeMessage(Metadata metadata, SyncMessage content)
