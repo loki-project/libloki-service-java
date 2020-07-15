@@ -300,18 +300,17 @@ public class SignalServiceCipher {
 
       if (envelope.isPreKeySignalMessage()) {
         paddedMessage  = sessionCipher.decrypt(new PreKeySignalMessage(ciphertext));
-        metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false, false);
+        metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
         sessionVersion = sessionCipher.getSessionVersion();
       } else if (envelope.isSignalMessage()) {
         paddedMessage  = sessionCipher.decrypt(new SignalMessage(ciphertext));
-        metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false, false);
+        metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
         sessionVersion = sessionCipher.getSessionVersion();
       } else if (envelope.isUnidentifiedSender()) {
         Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp());
         Pair<Integer, byte[]> data = results.second();
         paddedMessage = data.second();
-        boolean isFallbackMessage = data.first().equals(CiphertextMessage.FALLBACK_MESSAGE_TYPE);
-        metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false, isFallbackMessage);
+        metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false);
         sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
       } else {
         throw new InvalidMetadataMessageException("Unknown type: " + envelope.getType());
@@ -350,8 +349,8 @@ public class SignalServiceCipher {
     List<SharedContact>            sharedContacts              = createSharedContacts(content);
     List<Preview>                  previews                    = createPreviews(content);
     Sticker                        sticker                     = createSticker(content);
-    boolean                        isDeviceUnlinkingRequest    = ((content.getFlags() & DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE   ) != 0);
-    boolean                        isSessionRequest            = ((content.getFlags() & DataMessage.Flags.SESSION_REQUEST_VALUE            ) != 0);
+    boolean                        isDeviceUnlinkingRequest    = ((content.getFlags() & DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE) != 0);
+    boolean                        isSessionRequest            = ((content.getFlags() & DataMessage.Flags.SESSION_REQUEST_VALUE         ) != 0);
 
     for (AttachmentPointer pointer : content.getAttachmentsList()) {
       attachments.add(createAttachmentPointer(pointer));
@@ -774,14 +773,12 @@ public class SignalServiceCipher {
     private final int     senderDevice;
     private final long    timestamp;
     private final boolean needsReceipt;
-    private final boolean isFallbackMessage;
 
-    public Metadata(String sender, int senderDevice, long timestamp, boolean needsReceipt, boolean isFallbackMessage) {
+    public Metadata(String sender, int senderDevice, long timestamp, boolean needsReceipt) {
       this.sender            = sender;
       this.senderDevice      = senderDevice;
       this.timestamp         = timestamp;
       this.needsReceipt      = needsReceipt;
-      this.isFallbackMessage = isFallbackMessage;
     }
 
     public String getSender() {
@@ -799,8 +796,6 @@ public class SignalServiceCipher {
     public boolean isNeedsReceipt() {
       return needsReceipt;
     }
-
-    public boolean isFallbackMessage() { return isFallbackMessage; }
   }
 
   protected static class Plaintext {
