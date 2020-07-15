@@ -1,7 +1,6 @@
 package org.whispersystems.signalservice.loki.database
 
 import org.whispersystems.signalservice.loki.api.opengroups.PublicChat
-import org.whispersystems.signalservice.loki.protocol.todo.LokiThreadFriendRequestStatus
 
 interface LokiThreadDatabaseProtocol {
 

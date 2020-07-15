@@ -15,7 +15,7 @@ public object TTLUtilities {
         // Important control messages
         Ephemeral, SessionRequest, SignalServiceReceiptMessage, SignalServiceSyncMessage, UnlinkDevice,
         // Visible messages
-        FriendRequest, Regular
+        Regular
     }
 
     @JvmStatic
@@ -32,7 +32,7 @@ public object TTLUtilities {
             MessageType.Ephemeral, MessageType.SessionRequest, MessageType.SignalServiceReceiptMessage,
             MessageType.SignalServiceSyncMessage, MessageType.UnlinkDevice -> 2 * dayInMs - 1 * hourInMs
             // Visible messages
-            MessageType.FriendRequest, MessageType.Regular -> 2 * dayInMs
+            MessageType.Regular -> 2 * dayInMs
         }
     }
 }
