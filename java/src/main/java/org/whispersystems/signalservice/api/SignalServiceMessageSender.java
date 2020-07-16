@@ -1369,6 +1369,7 @@ public class SignalServiceMessageSender {
                                                   boolean                      isClosedGroup)
       throws IOException, InvalidKeyException, UntrustedIdentityException
   {
+    Log.d("Loki", "Using Signal cipher.");
     int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
     SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(recipient.getNumber(), deviceID);
     SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sessionResetImpl, null);
