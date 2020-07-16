@@ -1344,6 +1344,7 @@ public class SignalServiceMessageSender {
   private OutgoingPushMessage getFallbackCipherEncryptedMessage(SignalServiceAddress recipient, byte[] plaintext, Optional<UnidentifiedAccess> unidentifiedAccess)
       throws InvalidKeyException
   {
+    Log.d("Loki", "Using fallback cipher.");
     int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
     SignalProtocolAddress destination = new SignalProtocolAddress(recipient.getNumber(), deviceID);
     byte[] userPrivateKey = store.getIdentityKeyPair().getPrivateKey().serialize();
