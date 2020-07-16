@@ -50,7 +50,6 @@ public class SessionManagementProtocol(private val sessionResetImpl: SessionRese
     public fun repairSessionIfNeeded(recipient: SignalServiceAddress, isClosedGroup: Boolean) {
         val publicKey = recipient.number
         if (!isClosedGroup) { return }
-        if (SnodeAPI.shared.database.getSessionRequestTimestamp(publicKey) != null) { return }
         delegate.sendSessionRequestIfNeeded(publicKey)
     }
 

@@ -36,7 +36,7 @@ public class SignalServiceSyncMessage {
                                    Optional<VerifiedMessage>                   verified,
                                    Optional<ConfigurationMessage>              configuration,
                                    Optional<List<StickerPackOperationMessage>> stickerPackOperations,
-                                   Optional<List<PublicChat>>              openGroups)
+                                   Optional<List<PublicChat>>                  openGroups)
   {
     this.sent                  = sent;
     this.contacts              = contacts;

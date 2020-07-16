@@ -59,6 +59,7 @@ import org.whispersystems.signalservice.api.messages.calls.HangupMessage;
 import org.whispersystems.signalservice.api.messages.calls.IceUpdateMessage;
 import org.whispersystems.signalservice.api.messages.calls.OfferMessage;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
+import org.whispersystems.signalservice.api.messages.multidevice.BlockedListMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ContactsMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.ReadMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage;
@@ -86,6 +87,7 @@ import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -492,6 +494,12 @@ public class SignalServiceCipher {
             openGroups.add(new PublicChat(details.getChannelID(), details.getUrl(), "", true));
         }
         return SignalServiceSyncMessage.forOpenGroups(openGroups);
+    }
+
+    if (content.hasBlocked()) {
+        SyncMessage.Blocked blocked = content.getBlocked();
+        List<String> publicKeys = blocked.getNumbersList();
+        return SignalServiceSyncMessage.forBlocked(new BlockedListMessage(publicKeys, new ArrayList<byte[]>()));
     }
 
     return SignalServiceSyncMessage.empty();
