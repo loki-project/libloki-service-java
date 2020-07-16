@@ -23,7 +23,7 @@ class LokiServiceCipher(localAddress: SignalServiceAddress, private val signalPr
         val paddedMessageBody = cipher.decrypt(ciphertext) ?: throw InvalidMessageException("Failed to decrypt fallback message.")
         val transportDetails = PushTransportDetails(FallbackSessionCipher.sessionVersion)
         val unpaddedMessageBody = transportDetails.getStrippedPaddingMessageBody(paddedMessageBody)
-        val metadata = Metadata(envelope.source, envelope.sourceDevice, envelope.timestamp, false, true)
+        val metadata = Metadata(envelope.source, envelope.sourceDevice, envelope.timestamp, false)
         return Plaintext(metadata, unpaddedMessageBody)
     }
 }
