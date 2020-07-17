@@ -169,7 +169,7 @@ public object OnionRequestAPI {
         if (paths.count() >= pathCount) {
             return Promise.of(getPath())
         } else {
-            return buildPaths().map(SnodeAPI.sharedContext) { paths ->
+            return buildPaths().map(SnodeAPI.sharedContext) { _ ->
                 getPath()
             }
         }
@@ -197,7 +197,7 @@ public object OnionRequestAPI {
                 targetSnodeSymmetricKey = r.symmetricKey
                 // Recursively encrypt the layers of the onion (again in reverse order)
                 encryptionResult = r
-                var path = path
+                @Suppress("NAME_SHADOWING") var path = path
                 var rhs = snode
                 fun addLayer(): Promise<OnionRequestEncryption.EncryptionResult, Exception> {
                     if (path.isEmpty()) {
@@ -222,7 +222,7 @@ public object OnionRequestAPI {
     /**
      * Sends an onion request to `snode`. Builds new paths as needed.
      *
-     * `hexEncodedPublicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
+     * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
     internal fun sendOnionRequest(method: Snode.Method, snode: Snode, publicKey: String, parameters: Map<*, *>): Promise<Map<*, *>, Exception> {
         val deferred = deferred<Map<*, *>, Exception>()

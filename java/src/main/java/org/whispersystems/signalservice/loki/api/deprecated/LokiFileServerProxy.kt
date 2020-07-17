@@ -16,7 +16,7 @@ import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.api.SwarmAPI
-import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI
+import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 
 internal class LokiFileServerProxy(val server: String, private val isFileUpload: Boolean = false) : LokiHTTPClient(60) {
@@ -30,7 +30,7 @@ internal class LokiFileServerProxy(val server: String, private val isFileUpload:
     }
 
     override fun execute(request: Request): Promise<Response, Exception> {
-        if (server != LokiFileServerAPI.shared.server) { return super.execute(request) }
+        if (server != FileServerAPI.shared.server) { return super.execute(request) }
         val keyPair = this.keyPair
         val body = getRequestBody(request)
         val canonicalHeaders = getCanonicalHeaders(request)
@@ -57,7 +57,7 @@ internal class LokiFileServerProxy(val server: String, private val isFileUpload:
                 execute(proxyRequest, getClearnetConnection())
             }.map(SnodeAPI.sharedContext) { response ->
                 var statusCode = response.code()
-                var body: String? = response.body()?.string()
+                @Suppress("NAME_SHADOWING") var body: String? = response.body()?.string()
                 if (response.isSuccessful && body != null) {
                     try {
                         val info = unwrap(body)

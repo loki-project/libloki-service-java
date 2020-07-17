@@ -22,7 +22,6 @@ import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SessionStore;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.state.SignedPreKeyStore;
-import org.whispersystems.libsignal.util.Medium;
 import org.whispersystems.libsignal.util.guava.Optional;
 
 /**
@@ -45,10 +44,10 @@ public class SessionBuilder {
 
   private static final String TAG = SessionBuilder.class.getSimpleName();
 
-  private final SessionStore      sessionStore;
-  private final PreKeyStore       preKeyStore;
-  private final SignedPreKeyStore signedPreKeyStore;
-  private final IdentityKeyStore  identityKeyStore;
+  private final SessionStore          sessionStore;
+  private final PreKeyStore           preKeyStore;
+  private final SignedPreKeyStore     signedPreKeyStore;
+  private final IdentityKeyStore      identityKeyStore;
   private final SignalProtocolAddress remoteAddress;
 
   /**

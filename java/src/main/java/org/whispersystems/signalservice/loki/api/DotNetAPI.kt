@@ -23,7 +23,7 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.deprecated.LokiHTTPClient
-import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI
+import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
 import org.whispersystems.signalservice.loki.api.deprecated.LokiFileServerProxy
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.recover
@@ -34,7 +34,7 @@ import java.util.*
 /**
  * Base class that provides utilities for .NET based APIs.
  */
-open class LokiDotNetAPI(private val userPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol) {
+open class LokiDotNetAPI(internal val userPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol) {
 
     internal enum class HTTPVerb { GET, PUT, POST, DELETE, PATCH }
 
@@ -226,7 +226,7 @@ open class LokiDotNetAPI(private val userPublicKey: String, private val userPriv
     @Throws(PushNetworkException::class, NonSuccessfulResponseCodeException::class)
     private fun upload(server: String, request: Request.Builder, parse: (String) -> UploadResult): Promise<UploadResult, Exception> {
         val promise: Promise<LokiHTTPClient.Response, Exception>
-        if (server == LokiFileServerAPI.shared.server) {
+        if (server == FileServerAPI.shared.server) {
             request.addHeader("Authorization", "Bearer loki")
             // Uploads to the Loki File Server shouldn't include any personally identifiable information, so use a dummy auth token
             promise = LokiFileServerProxy(server, true).execute(request.build())

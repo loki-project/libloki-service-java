@@ -1,13 +1,11 @@
 package org.whispersystems.signalservice.loki.database
 
-import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChat
-import org.whispersystems.signalservice.loki.protocol.todo.LokiThreadFriendRequestStatus
+import org.whispersystems.signalservice.loki.api.opengroups.PublicChat
 
 interface LokiThreadDatabaseProtocol {
 
-    fun getThreadID(hexEncodedPublicKey: String): Long
-    fun setFriendRequestStatus(threadID: Long, friendRequestStatus: LokiThreadFriendRequestStatus)
-    fun getPublicChat(threadID: Long): LokiPublicChat?
-    fun setPublicChat(publicChat: LokiPublicChat, threadID: Long)
+    fun getThreadID(publicKey: String): Long
+    fun getPublicChat(threadID: Long): PublicChat?
+    fun setPublicChat(publicChat: PublicChat, threadID: Long)
     fun removePublicChat(threadID: Long)
 }

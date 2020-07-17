@@ -123,7 +123,7 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
     @kotlin.ExperimentalUnsignedTypes
     fun sendSignalMessage(message: SignalMessageInfo): Promise<Set<RawResponsePromise>, Exception> {
         val lokiMessage = LokiMessage.from(message) ?: return task { throw Error.MessageConversionFailed }
-        val destination = lokiMessage.destination
+        val destination = lokiMessage.recipientPublicKey
         fun broadcast(event: String) {
             val dayInMs = 86400000
             if (message.ttl != dayInMs && message.ttl != 4 * dayInMs) { return }

@@ -1,6 +1,5 @@
 package org.signal.libsignal.metadata;
 
-
 import org.signal.libsignal.metadata.certificate.CertificateValidator;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
 import org.signal.libsignal.metadata.certificate.SenderCertificate;
@@ -26,7 +25,7 @@ import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.kdf.HKDFv3;
 import org.whispersystems.libsignal.loki.FallbackSessionCipher;
 import org.whispersystems.libsignal.loki.LokiSessionCipher;
-import org.whispersystems.libsignal.loki.LokiSessionResetProtocol;
+import org.whispersystems.libsignal.loki.SessionResetProtocol;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
@@ -52,16 +51,16 @@ import javax.crypto.spec.SecretKeySpec;
 public class SealedSessionCipher {
 
   private final SignalProtocolStore   signalProtocolStore;
-  private final LokiSessionResetProtocol lokiSessionResetProtocol;
+  private final SessionResetProtocol  sessionResetProtocol;
   private final SignalProtocolAddress localAddress;
 
   public SealedSessionCipher(SignalProtocolStore signalProtocolStore,
-                             LokiSessionResetProtocol lokiSessionResetProtocol,
+                             SessionResetProtocol sessionResetProtocol,
                              SignalProtocolAddress localAddress)
   {
-    this.signalProtocolStore = signalProtocolStore;
-    this.lokiSessionResetProtocol = lokiSessionResetProtocol;
-    this.localAddress        = localAddress;
+    this.signalProtocolStore  = signalProtocolStore;
+    this.sessionResetProtocol = sessionResetProtocol;
+    this.localAddress         = localAddress;
   }
 
   public byte[] encrypt(SignalProtocolAddress destinationAddress, SenderCertificate senderCertificate, byte[] paddedPlaintext)
@@ -75,10 +74,10 @@ public class SealedSessionCipher {
       throws InvalidKeyException
   {
       try {
-          IdentityKeyPair   ourIdentity   = signalProtocolStore.getIdentityKeyPair();
+          IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
 
-          byte[] theirPublicKey = Hex.fromStringCondensed(destinationAddress.getName());
-          ECPublicKey       theirIdentity = new IdentityKey(theirPublicKey, 0).getPublicKey();
+          byte[]      theirPublicKey = Hex.fromStringCondensed(destinationAddress.getName());
+          ECPublicKey theirIdentity  = new IdentityKey(theirPublicKey, 0).getPublicKey();
 
           ECKeyPair     ephemeral           = Curve.generateKeyPair();
           byte[]        ephemeralSalt       = ByteUtil.combine("UnidentifiedDelivery".getBytes(), theirIdentity.serialize(), ephemeral.getPublicKey().serialize());
@@ -203,17 +202,17 @@ public class SealedSessionCipher {
     SignalProtocolAddress sender = new SignalProtocolAddress(message.getSenderCertificate().getSender(), message.getSenderCertificate().getSenderDeviceId());
 
     switch (message.getType()) {
-      case CiphertextMessage.WHISPER_TYPE: return new LokiSessionCipher(signalProtocolStore, lokiSessionResetProtocol, sender).decrypt(new SignalMessage(message.getContent()));
-      case CiphertextMessage.PREKEY_TYPE:  return new LokiSessionCipher(signalProtocolStore, lokiSessionResetProtocol, sender).decrypt(new PreKeySignalMessage(message.getContent()));
-      case CiphertextMessage.LOKI_FRIEND_REQUEST_TYPE: {
+      case CiphertextMessage.WHISPER_TYPE: return new LokiSessionCipher(signalProtocolStore, sessionResetProtocol, sender).decrypt(new SignalMessage(message.getContent()));
+      case CiphertextMessage.PREKEY_TYPE:  return new LokiSessionCipher(signalProtocolStore, sessionResetProtocol, sender).decrypt(new PreKeySignalMessage(message.getContent()));
+      case CiphertextMessage.FALLBACK_MESSAGE_TYPE: {
           try {
               byte[] privateKey = signalProtocolStore.getIdentityKeyPair().getPrivateKey().serialize();
               return new FallbackSessionCipher(privateKey, sender.getName()).decrypt(message.getContent());
           } catch (Exception e) {
-              throw new InvalidMessageException("Failed to decrypt friend request message.");
+              throw new InvalidMessageException("Failed to decrypt fallback message.");
           }
       }
-      default:                             throw new InvalidMessageException("Unknown type: " + message.getType());
+      default: throw new InvalidMessageException("Unknown type: " + message.getType());
     }
   }
 
@@ -283,7 +282,6 @@ public class SealedSessionCipher {
     }
   }
 
-
   private static class EphemeralKeys {
     private final byte[]        chainKey;
     private final SecretKeySpec cipherKey;
@@ -305,5 +303,4 @@ public class SealedSessionCipher {
       this.macKey    = new SecretKeySpec(macKey, "HmacSHA256");
     }
   }
-
 }

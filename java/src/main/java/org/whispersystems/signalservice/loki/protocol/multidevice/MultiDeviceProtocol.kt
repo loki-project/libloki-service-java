@@ -17,21 +17,21 @@ public class MultiDeviceProtocol(private val apiDatabase: LokiAPIDatabaseProtoco
     // endregion
 
     // region Utilities
-    public fun getMasterDevice(hexEncodedPublicKey: String): String? {
-        val deviceLinks = apiDatabase.getDeviceLinks(hexEncodedPublicKey)
-        return deviceLinks.firstOrNull { it.slaveHexEncodedPublicKey == hexEncodedPublicKey }?.masterHexEncodedPublicKey
+    public fun getMasterDevice(publicKey: String): String? {
+        val deviceLinks = apiDatabase.getDeviceLinks(publicKey)
+        return deviceLinks.firstOrNull { it.slavePublicKey == publicKey }?.masterPublicKey
     }
 
-    public fun getSlaveDevices(hexEncodedPublicKey: String): Set<String> {
-        val deviceLinks = apiDatabase.getDeviceLinks(hexEncodedPublicKey)
+    public fun getSlaveDevices(publicKey: String): Set<String> {
+        val deviceLinks = apiDatabase.getDeviceLinks(publicKey)
         if (deviceLinks.isEmpty()) { return setOf() }
-        return deviceLinks.map { it.slaveHexEncodedPublicKey }.toSet()
+        return deviceLinks.map { it.slavePublicKey }.toSet()
     }
 
-    public fun getAllLinkedDevices(hexEncodedPublicKey: String): Set<String> {
-        val deviceLinks = apiDatabase.getDeviceLinks(hexEncodedPublicKey)
-        if (deviceLinks.isEmpty()) { return setOf( hexEncodedPublicKey ) }
-        return deviceLinks.flatMap { listOf( it.masterHexEncodedPublicKey, it.slaveHexEncodedPublicKey ) }.toSet()
+    public fun getAllLinkedDevices(publicKey: String): Set<String> {
+        val deviceLinks = apiDatabase.getDeviceLinks(publicKey)
+        if (deviceLinks.isEmpty()) { return setOf( publicKey ) }
+        return deviceLinks.flatMap { listOf( it.masterPublicKey, it.slavePublicKey ) }.toSet()
     }
     // endregion
 }

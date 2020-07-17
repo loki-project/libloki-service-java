@@ -4,6 +4,6 @@ import org.whispersystems.libsignal.state.PreKeyBundle
 
 interface LokiPreKeyBundleDatabaseProtocol {
 
-    fun getPreKeyBundle(hexEncodedPublicKey: String): PreKeyBundle?
-    fun removePreKeyBundle(hexEncodedPublicKey: String)
+    fun getPreKeyBundle(publicKey: String): PreKeyBundle?
+    fun removePreKeyBundle(publicKey: String)
 }

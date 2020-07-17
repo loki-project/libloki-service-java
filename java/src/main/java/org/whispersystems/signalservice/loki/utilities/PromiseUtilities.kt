@@ -21,8 +21,8 @@ fun Kovenant.createContext(contextName: String, threadCount: Int = max(recommend
             name = "${contextName}WorkerDispatcher"
             concurrentTasks = threadCount
         }
-        multipleCompletion = { lhs, rhs ->
-            Log.d("Loki", "Promise resolved more than once (first with $lhs, then with $rhs); ignoring $rhs.")
+        multipleCompletion = { v1, v2 ->
+            Log.d("Loki", "Promise resolved more than once (first with $v1, then with $v2); ignoring $v2.")
         }
     }
 }

@@ -38,5 +38,5 @@ public class VerifiedMessage {
     return timestamp;
   }
 
-  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.VerifiedMessage); }
+  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.Verified); }
 }

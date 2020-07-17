@@ -34,12 +34,9 @@ public class SignalServiceDataMessage {
   private final Optional<List<Preview>>                 previews;
   private final Optional<Sticker>                       sticker;
   // Loki
-  private final boolean                                 isFriendRequest;
   private final Optional<PreKeyBundle>                  preKeyBundle;
   private final Optional<DeviceLink>                    deviceLink;
-  private final boolean                                 isUnlinkingRequest;
-  private final boolean                                 isSessionRestorationRequest;
-  private final boolean                                 isSessionRequest;
+  private final boolean                                 isDeviceUnlinkingRequest;
 
   /**
    * Construct a SignalServiceDataMessage with a body and no attachments.
@@ -133,7 +130,7 @@ public class SignalServiceDataMessage {
                                   Quote quote, List<SharedContact> sharedContacts, List<Preview> previews,
                                   Sticker sticker)
   {
-    this(timestamp, group, attachments, body, endSession, expiresInSeconds, expirationUpdate, profileKey, profileKeyUpdate, quote, sharedContacts, previews, sticker, false, null, null, false, false, false);
+    this(timestamp, group, attachments, body, endSession, expiresInSeconds, expirationUpdate, profileKey, profileKeyUpdate, quote, sharedContacts, previews, sticker, null, null, false);
   }
 
   /**
@@ -145,7 +142,6 @@ public class SignalServiceDataMessage {
    * @param body The message contents.
    * @param endSession Flag indicating whether this message should close a session.
    * @param expiresInSeconds Number of seconds in which the message should disappear after being seen.
-   * @param isFriendRequest Whether this is a friend request message.
    * @param preKeyBundle The pre key bundle to attach to this message (or null if none).
    */
   public SignalServiceDataMessage(long timestamp, SignalServiceGroup group,
@@ -153,8 +149,8 @@ public class SignalServiceDataMessage {
                                   String body, boolean endSession, int expiresInSeconds,
                                   boolean expirationUpdate, byte[] profileKey, boolean profileKeyUpdate,
                                   Quote quote, List<SharedContact> sharedContacts, List<Preview> previews,
-                                  Sticker sticker, boolean isFriendRequest, PreKeyBundle preKeyBundle, DeviceLink deviceLink,
-                                  boolean isUnlinkingRequest, boolean isSessionRestorationRequest, boolean isSessionRequest)
+                                  Sticker sticker, PreKeyBundle preKeyBundle, DeviceLink deviceLink,
+                                  boolean isDeviceUnlinkingRequest)
   {
     this.timestamp                   = timestamp;
     this.body                        = Optional.fromNullable(body);
@@ -166,12 +162,9 @@ public class SignalServiceDataMessage {
     this.profileKeyUpdate            = profileKeyUpdate;
     this.quote                       = Optional.fromNullable(quote);
     this.sticker                     = Optional.fromNullable(sticker);
-    this.isFriendRequest             = isFriendRequest;
     this.preKeyBundle                = Optional.fromNullable(preKeyBundle);
     this.deviceLink                  = Optional.fromNullable(deviceLink);
-    this.isUnlinkingRequest          = isUnlinkingRequest;
-    this.isSessionRestorationRequest = isSessionRestorationRequest;
-    this.isSessionRequest            = isSessionRequest;
+    this.isDeviceUnlinkingRequest    = isDeviceUnlinkingRequest;
 
     if (attachments != null && !attachments.isEmpty()) {
       this.attachments = Optional.of(attachments);
@@ -267,29 +260,18 @@ public class SignalServiceDataMessage {
   }
 
   // Loki
-  public boolean isFriendRequest() {
-    return isFriendRequest;
+  public boolean isDeviceUnlinkingRequest() {
+    return isDeviceUnlinkingRequest;
   }
-
-  public boolean isUnlinkingRequest() {
-    return isUnlinkingRequest;
-  }
-
-  public boolean isSessionRestorationRequest() { return isSessionRestorationRequest; }
-
-  public boolean isSessionRequest() { return isSessionRequest; }
 
   public Optional<PreKeyBundle> getPreKeyBundle() { return preKeyBundle; }
 
   public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
 
   public int getTTL() {
-    TTLUtilities.MessageType messageType = TTLUtilities.MessageType.Regular;
-    if (deviceLink.isPresent()) { messageType = TTLUtilities.MessageType.LinkDevice; }
-    else if (isFriendRequest) { messageType = TTLUtilities.MessageType.FriendRequest; }
-    else if (isUnlinkingRequest) { messageType = TTLUtilities.MessageType.UnlinkDevice; }
-    else if (isSessionRequest) { messageType = TTLUtilities.MessageType.SessionRequest; }
-    return TTLUtilities.getTTL(messageType);
+    if (deviceLink.isPresent()) { return TTLUtilities.getTTL(TTLUtilities.MessageType.DeviceLink); }
+    else if (isDeviceUnlinkingRequest) { return TTLUtilities.getTTL(TTLUtilities.MessageType.DeviceUnlinkingRequest); }
+    return TTLUtilities.getTTL(TTLUtilities.MessageType.Regular);
   }
 
   public static class Builder {
@@ -307,12 +289,9 @@ public class SignalServiceDataMessage {
     private boolean              profileKeyUpdate;
     private Quote                quote;
     private Sticker              sticker;
-    private boolean              isFriendRequest;
     private PreKeyBundle         preKeyBundle;
     private DeviceLink           deviceLink;
-    private boolean              isUnlinkingRequest;
-    private boolean              isSessionRestorationRequest;
-    private boolean              isSessionRequest;
+    private boolean              isDeviceUnlinkingRequest;
 
     private Builder() {}
 
@@ -399,11 +378,6 @@ public class SignalServiceDataMessage {
       return this;
     }
 
-    public Builder asFriendRequest(boolean isFriendRequest) {
-      this.isFriendRequest = isFriendRequest;
-      return this;
-    }
-
     public Builder withPreKeyBundle(PreKeyBundle preKeyBundle) {
       this.preKeyBundle = preKeyBundle;
       return this;
@@ -414,18 +388,8 @@ public class SignalServiceDataMessage {
       return this;
     }
 
-    public Builder asUnlinkingRequest(boolean isUnlinkingRequest) {
-      this.isUnlinkingRequest = isUnlinkingRequest;
-      return this;
-    }
-
-    public Builder asSessionRestorationRequest(boolean isSessionRestorationRequest) {
-      this.isSessionRestorationRequest = isSessionRestorationRequest;
-      return this;
-    }
-
-    public Builder asSessionRequest(boolean isSessionRequest) {
-      this.isSessionRequest = isSessionRequest;
+    public Builder asDeviceUnlinkingRequest(boolean isDeviceUnlinkingRequest) {
+      this.isDeviceUnlinkingRequest = isDeviceUnlinkingRequest;
       return this;
     }
 
@@ -434,8 +398,8 @@ public class SignalServiceDataMessage {
       return new SignalServiceDataMessage(timestamp, group, attachments, body, endSession,
                                           expiresInSeconds, expirationUpdate, profileKey,
                                           profileKeyUpdate, quote, sharedContacts, previews,
-                                          sticker, isFriendRequest, preKeyBundle, deviceLink,
-                                          isUnlinkingRequest, isSessionRestorationRequest, isSessionRequest);
+                                          sticker, preKeyBundle, deviceLink,
+                                          isDeviceUnlinkingRequest);
     }
   }
 

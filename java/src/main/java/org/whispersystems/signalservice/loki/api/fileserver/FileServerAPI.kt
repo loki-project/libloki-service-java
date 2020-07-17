@@ -15,7 +15,7 @@ import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
-class LokiFileServerAPI(public val server: String, private val userHexEncodedPublicKey: String, userPrivateKey: ByteArray, private val database: LokiAPIDatabaseProtocol) : LokiDotNetAPI(userHexEncodedPublicKey, userPrivateKey, database) {
+class FileServerAPI(public val server: String, userPublicKey: String, userPrivateKey: ByteArray, private val database: LokiAPIDatabaseProtocol) : LokiDotNetAPI(userPublicKey, userPrivateKey, database) {
 
     companion object {
         // region Settings
@@ -30,58 +30,58 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
         // endregion
 
         // region Initialization
-        lateinit var shared: LokiFileServerAPI
+        lateinit var shared: FileServerAPI
 
         /**
          * Must be called before `LokiAPI` is used.
          */
-        fun configure(isDebugMode: Boolean, userHexEncodedPublicKey: String, userPrivateKey: ByteArray, database: LokiAPIDatabaseProtocol) {
+        fun configure(userPublicKey: String, userPrivateKey: ByteArray, database: LokiAPIDatabaseProtocol) {
             if (Companion::shared.isInitialized) { return }
             val server = "https://file.getsession.org"
-            shared = LokiFileServerAPI(server, userHexEncodedPublicKey, userPrivateKey, database)
+            shared = FileServerAPI(server, userPublicKey, userPrivateKey, database)
         }
         // endregion
     }
 
     // region Device Link Update Result
     sealed class DeviceLinkUpdateResult {
-        class Success(val hexEncodedPublicKey: String, val deviceLinks: Set<DeviceLink>) : DeviceLinkUpdateResult()
-        class Failure(val hexEncodedPublicKey: String, val error: Exception) : DeviceLinkUpdateResult()
+        class Success(val publicKey: String, val deviceLinks: Set<DeviceLink>) : DeviceLinkUpdateResult()
+        class Failure(val publicKey: String, val error: Exception) : DeviceLinkUpdateResult()
     }
     // endregion
 
     // region API
-    public fun hasDeviceLinkCacheExpired(referenceTime: Long = System.currentTimeMillis(), hexEncodedPublicKey: String): Boolean {
-        return !lastDeviceLinkUpdate.containsKey(hexEncodedPublicKey) || (referenceTime - lastDeviceLinkUpdate[hexEncodedPublicKey]!! > deviceLinkUpdateInterval)
+    public fun hasDeviceLinkCacheExpired(referenceTime: Long = System.currentTimeMillis(), publicKey: String): Boolean {
+        return !lastDeviceLinkUpdate.containsKey(publicKey) || (referenceTime - lastDeviceLinkUpdate[publicKey]!! > deviceLinkUpdateInterval)
     }
 
-    fun getDeviceLinks(hexEncodedPublicKey: String, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
-        if (deviceLinkRequestCache.containsKey(hexEncodedPublicKey) && !isForcedUpdate) {
-            val result = deviceLinkRequestCache[hexEncodedPublicKey]
+    fun getDeviceLinks(publicKey: String, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
+        if (deviceLinkRequestCache.containsKey(publicKey) && !isForcedUpdate) {
+            val result = deviceLinkRequestCache[publicKey]
             if (result != null) { return result } // A request was already pending
         }
-        val promise = getDeviceLinks(setOf(hexEncodedPublicKey), isForcedUpdate)
-        deviceLinkRequestCache[hexEncodedPublicKey] = promise
+        val promise = getDeviceLinks(setOf(publicKey), isForcedUpdate)
+        deviceLinkRequestCache[publicKey] = promise
         promise.always {
-            deviceLinkRequestCache.remove(hexEncodedPublicKey)
+            deviceLinkRequestCache.remove(publicKey)
         }
         return promise
     }
 
-    fun getDeviceLinks(hexEncodedPublicKeys: Set<String>, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
-        val validHexEncodedPublicKeys = hexEncodedPublicKeys.filter { PublicKeyValidation.isValid(it) }
+    fun getDeviceLinks(publicKeys: Set<String>, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
+        val validPublicKeys = publicKeys.filter { PublicKeyValidation.isValid(it) }
         val now = System.currentTimeMillis()
         // IMPORTANT: Don't fetch device links for the current user (i.e. don't remove the it != userHexEncodedPublicKey) check below
-        val updatees = validHexEncodedPublicKeys.filter { it != userHexEncodedPublicKey && (hasDeviceLinkCacheExpired(now, it) || isForcedUpdate) }.toSet()
-        val cachedDeviceLinks = validHexEncodedPublicKeys.minus(updatees).flatMap { database.getDeviceLinks(it) }.toSet()
+        val updatees = validPublicKeys.filter { it != userPublicKey && (hasDeviceLinkCacheExpired(now, it) || isForcedUpdate) }.toSet()
+        val cachedDeviceLinks = validPublicKeys.minus(updatees).flatMap { database.getDeviceLinks(it) }.toSet()
         if (updatees.isEmpty()) {
             return Promise.of(cachedDeviceLinks)
         } else {
             return getUserProfiles(updatees, server, true).map(SnodeAPI.sharedContext) { data ->
                 data.map dataMap@ { node ->
-                    val hexEncodedPublicKey = node.get("username").asText()
+                    val publicKey = node.get("username").asText()
                     val annotations = node.get("annotations")
-                    val deviceLinksAnnotation = annotations.find { annotation -> annotation.get("type").asText() == deviceLinkType } ?: return@dataMap DeviceLinkUpdateResult.Success(hexEncodedPublicKey, setOf())
+                    val deviceLinksAnnotation = annotations.find { annotation -> annotation.get("type").asText() == deviceLinkType } ?: return@dataMap DeviceLinkUpdateResult.Success(publicKey, setOf())
                     val value = deviceLinksAnnotation.get("value")
                     val deviceLinksAsJSON = value.get("authorisations")
                     val deviceLinks = deviceLinksAsJSON.mapNotNull { deviceLinkAsJSON ->
@@ -106,18 +106,18 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                             }
                             deviceLink
                         } catch (e: Exception) {
-                            Log.d("Loki", "Failed to parse device links for $hexEncodedPublicKey from $deviceLinkAsJSON due to error: $e.")
+                            Log.d("Loki", "Failed to parse device links for $publicKey from $deviceLinkAsJSON due to error: $e.")
                             null
                         }
                     }.toSet()
-                    DeviceLinkUpdateResult.Success(hexEncodedPublicKey, deviceLinks)
+                    DeviceLinkUpdateResult.Success(publicKey, deviceLinks)
                 }
             }.recover { e ->
-                hexEncodedPublicKeys.map { DeviceLinkUpdateResult.Failure(it, e) }
+                publicKeys.map { DeviceLinkUpdateResult.Failure(it, e) }
             }.success { updateResults ->
                 for (updateResult in updateResults) {
                     if (updateResult is DeviceLinkUpdateResult.Success) {
-                        database.clearDeviceLinks(updateResult.hexEncodedPublicKey)
+                        database.clearDeviceLinks(updateResult.publicKey)
                         updateResult.deviceLinks.forEach { database.addDeviceLink(it) }
                     } else {
                         // Do nothing
@@ -128,14 +128,14 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                 for (updateResult in updateResults) {
                     when (updateResult) {
                         is DeviceLinkUpdateResult.Success -> {
-                            lastDeviceLinkUpdate[updateResult.hexEncodedPublicKey] = now
+                            lastDeviceLinkUpdate[updateResult.publicKey] = now
                             deviceLinks.addAll(updateResult.deviceLinks)
                         }
                         is DeviceLinkUpdateResult.Failure -> {
                             if (updateResult.error is SnodeAPI.Error.ParsingFailed) {
-                                lastDeviceLinkUpdate[updateResult.hexEncodedPublicKey] = now // Don't infinitely update in case of a parsing failure
+                                lastDeviceLinkUpdate[updateResult.publicKey] = now // Don't infinitely update in case of a parsing failure
                             }
-                            deviceLinks.addAll(database.getDeviceLinks(updateResult.hexEncodedPublicKey)) // Fall back on cached device links in case of a failure
+                            deviceLinks.addAll(database.getDeviceLinks(updateResult.publicKey)) // Fall back on cached device links in case of a failure
                         }
                     }
                 }
@@ -143,8 +143,8 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                 val excludedUpdatees = updatees.filter { updatee ->
                     updateResults.find { updateResult ->
                         when (updateResult) {
-                            is DeviceLinkUpdateResult.Success -> updateResult.hexEncodedPublicKey == updatee
-                            is DeviceLinkUpdateResult.Failure -> updateResult.hexEncodedPublicKey == updatee
+                            is DeviceLinkUpdateResult.Success -> updateResult.publicKey == updatee
+                            is DeviceLinkUpdateResult.Failure -> updateResult.publicKey == updatee
                         }
                     } == null
                 }
@@ -153,13 +153,13 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
                 }
                 deviceLinks.union(cachedDeviceLinks)
             }.recover {
-                hexEncodedPublicKeys.flatMap { database.getDeviceLinks(it) }.toSet()
+                publicKeys.flatMap { database.getDeviceLinks(it) }.toSet()
             }
         }
     }
 
     fun setDeviceLinks(deviceLinks: Set<DeviceLink>): Promise<Unit, Exception> {
-        val isMaster = deviceLinks.find { it.masterHexEncodedPublicKey == userHexEncodedPublicKey } != null
+        val isMaster = deviceLinks.find { it.masterPublicKey == userPublicKey } != null
         val deviceLinksAsJSON = deviceLinks.map { it.toJSON() }
         val value = if (deviceLinks.isNotEmpty()) mapOf( "isPrimary" to isMaster, "authorisations" to deviceLinksAsJSON ) else null
         val annotation = mapOf( "type" to deviceLinkType, "value" to value )
@@ -171,7 +171,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
 
     fun addDeviceLink(deviceLink: DeviceLink): Promise<Unit, Exception> {
         Log.d("Loki", "Updating device links.")
-        return getDeviceLinks(userHexEncodedPublicKey, true).bind { deviceLinks ->
+        return getDeviceLinks(userPublicKey, true).bind { deviceLinks ->
             val mutableDeviceLinks = deviceLinks.toMutableSet()
             mutableDeviceLinks.add(deviceLink)
             setDeviceLinks(mutableDeviceLinks)
@@ -182,7 +182,7 @@ class LokiFileServerAPI(public val server: String, private val userHexEncodedPub
 
     fun removeDeviceLink(deviceLink: DeviceLink): Promise<Unit, Exception> {
         Log.d("Loki", "Updating device links.")
-        return getDeviceLinks(userHexEncodedPublicKey, true).bind { deviceLinks ->
+        return getDeviceLinks(userPublicKey, true).bind { deviceLinks ->
             val mutableDeviceLinks = deviceLinks.toMutableSet()
             mutableDeviceLinks.remove(deviceLink)
             setDeviceLinks(mutableDeviceLinks)

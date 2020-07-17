@@ -1,23 +1,26 @@
 package org.whispersystems.signalservice.loki.protocol.sessionmanagement
 
+import org.whispersystems.libsignal.SignalProtocolAddress
 import org.whispersystems.libsignal.logging.Log
-import org.whispersystems.libsignal.loki.LokiSessionResetProtocol
-import org.whispersystems.libsignal.loki.LokiSessionResetStatus
+import org.whispersystems.libsignal.loki.SessionResetProtocol
+import org.whispersystems.libsignal.loki.SessionResetStatus
+import org.whispersystems.libsignal.state.SignalProtocolStore
 import org.whispersystems.libsignal.util.guava.Optional
 import org.whispersystems.signalservice.api.SignalServiceMessageSender
+import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage
 import org.whispersystems.signalservice.api.push.SignalServiceAddress
 import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol
 
-public class SessionManagementProtocol(private val sessionResetImpl: LokiSessionResetProtocol, private val threadDatabase: LokiThreadDatabaseProtocol,
-        private val delegate: SessionManagementProtocolDelegate) {
+public class SessionManagementProtocol(private val sessionResetImpl: SessionResetProtocol, private val threadDatabase: LokiThreadDatabaseProtocol,
+    private val delegate: SessionManagementProtocolDelegate) {
 
     // region Initialization
     companion object {
 
         public lateinit var shared: SessionManagementProtocol
 
-        public fun configureIfNeeded(sessionResetImpl: LokiSessionResetProtocol, threadDatabase: LokiThreadDatabaseProtocol, delegate: SessionManagementProtocolDelegate) {
+        public fun configureIfNeeded(sessionResetImpl: SessionResetProtocol, threadDatabase: LokiThreadDatabaseProtocol, delegate: SessionManagementProtocolDelegate) {
             if (::shared.isInitialized) { return; }
             shared = SessionManagementProtocol(sessionResetImpl, threadDatabase, delegate)
         }
@@ -25,16 +28,21 @@ public class SessionManagementProtocol(private val sessionResetImpl: LokiSession
     // endregion
 
     // region Sending
+    public fun shouldMessageUseFallbackEncryption(message: Any, publicKey: String, store: SignalProtocolStore): Boolean {
+        if (message is SignalServiceDataMessage && message.preKeyBundle.isPresent) { return true; }
+        val recipient = SignalProtocolAddress(publicKey, SignalServiceAddress.DEFAULT_DEVICE_ID)
+        return !store.containsSession(recipient)
+    }
+
     /**
      * Called after an end session message is sent.
      */
-    public fun setSessionResetStatusToInProgressIfNeeded(recipient: SignalServiceAddress,
-            eventListener: Optional<SignalServiceMessageSender.EventListener>) {
+    public fun setSessionResetStatusToInProgressIfNeeded(recipient: SignalServiceAddress, eventListener: Optional<SignalServiceMessageSender.EventListener>) {
         val publicKey = recipient.number
         val sessionResetStatus = sessionResetImpl.getSessionResetStatus(publicKey)
-        if (sessionResetStatus == LokiSessionResetStatus.REQUEST_RECEIVED) { return }
+        if (sessionResetStatus == SessionResetStatus.REQUEST_RECEIVED) { return }
         Log.d("Loki", "Starting session reset")
-        sessionResetImpl.setSessionResetStatus(publicKey, LokiSessionResetStatus.IN_PROGRESS)
+        sessionResetImpl.setSessionResetStatus(publicKey, SessionResetStatus.IN_PROGRESS)
         if (!eventListener.isPresent) { return }
         eventListener.get().onSecurityEvent(recipient)
     }
@@ -42,8 +50,7 @@ public class SessionManagementProtocol(private val sessionResetImpl: LokiSession
     public fun repairSessionIfNeeded(recipient: SignalServiceAddress, isClosedGroup: Boolean) {
         val publicKey = recipient.number
         if (!isClosedGroup) { return }
-        if (SnodeAPI.shared.database.getSessionRequestTimestamp(publicKey) != null) { return }
-        delegate.sendSessionRequest(publicKey)
+        delegate.sendSessionRequestIfNeeded(publicKey)
     }
 
     public fun shouldIgnoreMissingPreKeyBundleException(isClosedGroup: Boolean): Boolean {

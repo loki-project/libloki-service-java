@@ -1,3 +1,5 @@
+syntax = "proto2";
+
 package signal;
 
 option java_package = "org.signal.libsignal.metadata";
@@ -22,9 +24,9 @@ message UnidentifiedSenderMessage {
 
     message Message {
         enum Type {
-            PREKEY_MESSAGE = 1;
-            MESSAGE        = 2;
-            LOKI_FRIEND_REQUEST = 3;
+            PREKEY_MESSAGE   = 1;
+            MESSAGE          = 2;
+            FALLBACK_MESSAGE = 3; // Loki
         }
 
         optional Type              type              = 1;
