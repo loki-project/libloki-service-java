@@ -1327,6 +1327,14 @@ public class SignalServiceMessageSender {
   {
     List<OutgoingPushMessage> messages = new LinkedList<>();
 
+    // Loki - The way this works is:
+    // • Alice sends a session request (i.e. a pre key bundle) to Bob using fallback encryption.
+    // • She may send any number of subsequent messages also encrypted using fallback encryption.
+    // • When Bob receives the session request, he sets up his Signal cipher session locally and sends back a null message,
+    //   now encrypted using Signal encryption.
+    // • Alice receives this, sets up her Signal cipher session locally, and sends any subsequent messages
+    //   using Signal encryption.
+
     if (!recipient.equals(localAddress) || unidentifiedAccess.isPresent()) {
       if (useFallbackEncryption) {
         messages.add(getFallbackCipherEncryptedMessage(recipient, plaintext, unidentifiedAccess));
