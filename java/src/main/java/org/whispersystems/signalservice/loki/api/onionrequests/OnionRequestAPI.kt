@@ -5,15 +5,13 @@ import nl.komponents.kovenant.all
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
+import okhttp3.Request
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.*
 import org.whispersystems.signalservice.loki.api.utilities.HTTP
-import org.whispersystems.signalservice.loki.utilities.getRandomElement
-import org.whispersystems.signalservice.loki.utilities.getRandomElementOrNull
-import org.whispersystems.signalservice.loki.utilities.recover
-import org.whispersystems.signalservice.loki.utilities.toHexString
+import org.whispersystems.signalservice.loki.utilities.*
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -53,8 +51,13 @@ public object OnionRequestAPI {
     private data class OnionBuildingResult(
         internal val guardSnode: Snode,
         internal val finalEncryptionResult: OnionRequestEncryption.EncryptionResult,
-        internal val targetSnodeSymmetricKey: ByteArray
+        internal val destinationSymmetricKey: ByteArray
     )
+
+    internal sealed class Destination {
+        class Snode(val snode: org.whispersystems.signalservice.loki.api.Snode) : Destination()
+        class Server(val host: String, val x25519PublicKey: String) : Destination()
+    }
 
     // region Private API
     /**
@@ -157,14 +160,17 @@ public object OnionRequestAPI {
     /**
      * Returns a `Path` to be used for building an onion request. Builds new paths as needed.
      */
-    private fun getPath(snodeToExclude: Snode): Promise<Path, Exception> {
+    private fun getPath(snodeToExclude: Snode?): Promise<Path, Exception> {
         if (pathSize < 1) { throw Exception("Can't build path of size zero.") }
         if (guardSnodes.isEmpty() && paths.count() >= pathCount) {
             guardSnodes = setOf( paths[0][0], paths[1][0] )
         }
         fun getPath(): Path {
-            val filteredPaths = paths.filter { !it.contains(snodeToExclude) }
-            return filteredPaths.getRandomElement()
+            if (snodeToExclude != null) {
+                return paths.filter { !it.contains(snodeToExclude) }.getRandomElement()
+            } else {
+                return paths.getRandomElement()
+            }
         }
         if (paths.count() >= pathCount) {
             return Promise.of(getPath())
@@ -186,24 +192,28 @@ public object OnionRequestAPI {
     /**
      * Builds an onion around `payload` and returns the result.
      */
-    private fun buildOnionForTargetSnode(payload: Map<*, *>, snode: Snode): Promise<OnionBuildingResult, Exception> {
+    private fun buildOnionForDestination(payload: Map<*, *>, destination: Destination): Promise<OnionBuildingResult, Exception> {
         lateinit var guardSnode: Snode
-        lateinit var targetSnodeSymmetricKey: ByteArray // Needed by LokiAPI to decrypt the response sent back by the target snode
+        lateinit var destinationSymmetricKey: ByteArray // Needed by LokiAPI to decrypt the response sent back by the destination
         lateinit var encryptionResult: OnionRequestEncryption.EncryptionResult
-        return getPath(snode).bind(SnodeAPI.sharedContext) { path ->
+        val snodeToExclude = when (destination) {
+            is Destination.Snode -> destination.snode
+            is Destination.Server -> null
+        }
+        return getPath(snodeToExclude).bind(SnodeAPI.sharedContext) { path ->
             guardSnode = path.first()
-            // Encrypt in reverse order, i.e. the target snode first
-            OnionRequestEncryption.encryptPayloadForTargetSnode(payload, snode).bind(SnodeAPI.sharedContext) { r ->
-                targetSnodeSymmetricKey = r.symmetricKey
+            // Encrypt in reverse order, i.e. the destination first
+            OnionRequestEncryption.encryptPayloadForDestination(payload, destination).bind(SnodeAPI.sharedContext) { r ->
+                destinationSymmetricKey = r.symmetricKey
                 // Recursively encrypt the layers of the onion (again in reverse order)
                 encryptionResult = r
                 @Suppress("NAME_SHADOWING") var path = path
-                var rhs = snode
+                var rhs = destination
                 fun addLayer(): Promise<OnionRequestEncryption.EncryptionResult, Exception> {
                     if (path.isEmpty()) {
                         return Promise.of(encryptionResult)
                     } else {
-                        val lhs = path.last()
+                        val lhs = Destination.Snode(path.last())
                         path = path.dropLast(1)
                         return OnionRequestEncryption.encryptHop(lhs, rhs, encryptionResult).bind(SnodeAPI.sharedContext) { r ->
                             encryptionResult = r
@@ -214,21 +224,57 @@ public object OnionRequestAPI {
                 }
                 addLayer()
             }
-        }.map(SnodeAPI.sharedContext) { OnionBuildingResult(guardSnode, encryptionResult, targetSnodeSymmetricKey) }
+        }.map(SnodeAPI.sharedContext) { OnionBuildingResult(guardSnode, encryptionResult, destinationSymmetricKey) }
     }
     // endregion
 
     // region Internal API
     /**
      * Sends an onion request to `snode`. Builds new paths as needed.
+     */
+    internal fun sendOnionRequest(method: Snode.Method, parameters: Map<*, *>, snode: Snode, publicKey: String): Promise<Map<*, *>, Exception> {
+        val payload = mapOf( "method" to method.rawValue, "params" to parameters )
+        return sendOnionRequest(Destination.Snode(snode), payload).recover { exception ->
+            @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtTargetSnodeException ?: throw exception
+            throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, publicKey)
+        }
+    }
+
+    /**
+     * Sends an onion request to `server`. Builds new paths as needed.
      *
      * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
-    internal fun sendOnionRequest(method: Snode.Method, snode: Snode, publicKey: String, parameters: Map<*, *>): Promise<Map<*, *>, Exception> {
+    internal fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
+        val headers = request.getCanonicalHeaders()
+        val url = request.url()
+        val urlAsString = url.toString()
+        val host = url.host()
+        val endpoint = when {
+            server.count() < urlAsString.count() -> urlAsString.substringAfter(server)
+            else -> ""
+        }
+        val bodyAsString = request.getBodyAsString()
+        val payload = mapOf(
+            "body" to bodyAsString,
+            "endpoint" to endpoint,
+            "method" to request.method(),
+            "headers" to headers
+        )
+        val destination = Destination.Server(host, x25519PublicKey)
+        return sendOnionRequest(destination, payload, isJSONRequired).recover { exception ->
+            Log.d("Loki", "Couldn't reach server: $server due to error: $exception.")
+            throw exception
+        }
+    }
+
+    /**
+     * Sends an onion request to `destination`. Builds new paths as needed.
+     */
+    internal fun sendOnionRequest(destination: Destination, payload: Map<*, *>, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
         val deferred = deferred<Map<*, *>, Exception>()
         lateinit var guardSnode: Snode
-        val payload = mapOf( "method" to method.rawValue, "params" to parameters )
-        buildOnionForTargetSnode(payload, snode).success { result ->
+        buildOnionForDestination(payload, destination).success { result ->
             guardSnode = result.guardSnode
             val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
             val finalEncryptionResult = result.finalEncryptionResult
@@ -237,7 +283,7 @@ public object OnionRequestAPI {
                 "ciphertext" to Base64.encodeBytes(onion),
                 "ephemeral_key" to finalEncryptionResult.ephemeralPublicKey.toHexString()
             )
-            val targetSnodeSymmetricKey = result.targetSnodeSymmetricKey
+            val destinationSymmetricKey = result.destinationSymmetricKey
             Thread {
                 try {
                     val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
@@ -247,23 +293,34 @@ public object OnionRequestAPI {
                     val ciphertext = ivAndCiphertext.sliceArray(OnionRequestEncryption.ivSize until ivAndCiphertext.count())
                     try {
                         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-                        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(targetSnodeSymmetricKey, "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
+                        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(destinationSymmetricKey, "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
                         val plaintext = cipher.doFinal(ciphertext)
                         try {
                             @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(plaintext.toString(Charsets.UTF_8), Map::class.java)
-                            val bodyAsString = json["body"] as String
                             val statusCode = json["status"] as Int
                             if (statusCode == 406) {
                                 val body = mapOf( "result" to "Your clock is out of sync with the service node network." )
                                 val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, body)
                                 return@Thread deferred.reject(exception)
-                            } else {
-                                val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                            } else if (json["body"] != null) {
+                                val bodyAsString = json["body"] as String
+                                val body: Map<*, *>
+                                if (!isJSONRequired) {
+                                    body = mapOf( "result" to bodyAsString )
+                                } else {
+                                    body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                                }
                                 if (statusCode != 200) {
                                     val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, body)
                                     return@Thread deferred.reject(exception)
                                 }
                                 deferred.resolve(body)
+                            } else {
+                                if (statusCode != 200) {
+                                    val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, json)
+                                    return@Thread deferred.reject(exception)
+                                }
+                                deferred.resolve(json)
                             }
                         } catch (exception: Exception) {
                             deferred.reject(Exception("Invalid JSON."))
@@ -284,10 +341,6 @@ public object OnionRequestAPI {
                 dropPathContaining(guardSnode)
                 dropGuardSnode(guardSnode)
             }
-        }
-        promise.recover { exception ->
-            @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtTargetSnodeException ?: throw exception
-            throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, publicKey)
         }
         return promise
     }

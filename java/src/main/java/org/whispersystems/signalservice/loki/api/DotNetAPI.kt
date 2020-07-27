@@ -24,7 +24,6 @@ import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.deprecated.LokiHTTPClient
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
-import org.whispersystems.signalservice.loki.api.deprecated.LokiFileServerProxy
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.recover
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded

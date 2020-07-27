@@ -19,11 +19,12 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
 
     companion object {
         // region Settings
-        private val lastDeviceLinkUpdate = ConcurrentHashMap<String, Long>()
+        private val deviceLinkType = "network.loki.messenger.devicemapping"
         private val deviceLinkRequestCache = ConcurrentHashMap<String, Promise<Set<DeviceLink>, Exception>>()
         private val deviceLinkUpdateInterval = 60 * 1000
-        private val deviceLinkType = "network.loki.messenger.devicemapping"
+        private val lastDeviceLinkUpdate = ConcurrentHashMap<String, Long>()
 
+        internal val fileServerPublicKey = "62509D59BDEEC404DD0D489C1E15BA8F94FD3D619B01C1BF48A9922BFCB7311C"
         internal val maxRetryCount = 4
 
         public val maxFileSize = 10_000_000 // 10 MB
