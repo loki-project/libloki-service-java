@@ -254,10 +254,9 @@ public object OnionRequestAPI {
             server.count() < urlAsString.count() -> urlAsString.substringAfter("$server/")
             else -> ""
         }
-        var bodyAsString = request.getBodyAsString() ?: "null"
-        if (bodyAsString.isEmpty()) { bodyAsString = "null" }
+        val body = request.getBody() ?: "null"
         val payload = mapOf(
-            "body" to bodyAsString,
+            "body" to body,
             "endpoint" to endpoint,
             "method" to request.method(),
             "headers" to headers

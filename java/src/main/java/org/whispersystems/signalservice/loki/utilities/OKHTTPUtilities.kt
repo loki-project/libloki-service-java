@@ -1,7 +1,9 @@
 package org.whispersystems.signalservice.loki.utilities
 
+import okhttp3.MultipartBody
 import okhttp3.Request
 import okio.Buffer
+import org.whispersystems.signalservice.internal.util.Base64
 import java.io.IOException
 import java.util.*
 
@@ -27,20 +29,21 @@ internal fun Request.getCanonicalHeaders(): Map<String, Any> {
     return result
 }
 
-internal fun Request.getBody(): ByteArray? {
+internal fun Request.getBody(): Any? {
     try {
-        val copy = newBuilder().build()
+        val copyOfThis = newBuilder().build()
         val buffer = Buffer()
-        val body = copy.body() ?: return null
+        val body = copyOfThis.body() ?: return null
         body.writeTo(buffer)
-        return buffer.readByteArray()
+        val bodyAsData = buffer.readByteArray()
+        if (body is MultipartBody) {
+            val base64EncodedBody: String = Base64.encodeBytes(bodyAsData)
+            return mapOf( "fileUpload" to base64EncodedBody )
+        } else {
+            val charset = body.contentType()?.charset() ?: Charsets.UTF_8
+            return bodyAsData?.toString(charset)
+        }
     } catch (e: IOException) {
         return null
     }
-}
-
-internal fun Request.getBodyAsString(): String? {
-    val body = getBody()
-    val charset = body()?.contentType()?.charset() ?: Charsets.UTF_8
-    return body?.toString(charset)
 }
