@@ -60,66 +60,66 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         } else {
             parameters["count"] = fallbackBatchCount
         }
-        return execute(HTTPVerb.GET, server, "channels/$channel/messages", parameters = parameters).then(sharedContext) { response ->
+        return execute(HTTPVerb.GET, server, "channels/$channel/messages", parameters = parameters).then(sharedContext) { json ->
             try {
-                val bodyAsString = response.body!!
-                val body = JsonUtil.fromJson(bodyAsString)
-                val data = body.get("data")
+                val data = json["data"] as List<Map<*, *>>
                 val messages = data.mapNotNull { message ->
                     try {
-                        val isDeleted = message.has("is_deleted") && message.get("is_deleted").asBoolean(false)
+                        val isDeleted = message["is_deleted"] as? Boolean ?: false
                         if (isDeleted) { return@mapNotNull null }
                         // Ignore messages without annotations
-                        if (!message.hasNonNull("annotations")) { return@mapNotNull null }
-                        val annotation = message.get("annotations").find {
-                            (it.get("type").asText("") == publicChatMessageType) && it.hasNonNull("value")
+                        if (message["annotations"] == null) { return@mapNotNull null }
+                        val annotation = (message["annotations"] as List<Map<*, *>>).find {
+                            ((it["type"] as? String ?: "") == publicChatMessageType) && it["value"] != null
                         } ?: return@mapNotNull null
-                        val value = annotation.get("value")
-                        val serverID = message.get("id").asLong()
-                        val user = message.get("user")
-                        val hexEncodedPublicKey = user.get("username").asText()
-                        val displayName = if (user.hasNonNull("name")) user.get("name").asText() else "Anonymous"
+                        val value = annotation["value"] as Map<*, *>
+                        val serverID = message["id"] as? Long ?: (message["id"] as? Int)?.toLong() ?: (message["id"] as String).toLong()
+                        val user = message["user"] as Map<*, *>
+                        val publicKey = user["username"] as String
+                        val displayName = user["name"] as? String ?: "Anonymous"
                         var profilePicture: PublicChatMessage.ProfilePicture? = null
-                        if (user.hasNonNull("annotations")) {
-                            val profilePictureAnnotation = user.get("annotations").find {
-                                (it.get("type").asText("") == profilePictureType) && it.hasNonNull("value")
+                        if (user["annotations"] != null) {
+                            val profilePictureAnnotation = (user["annotations"] as List<Map< *, *>>).find {
+                                ((it["type"] as? String ?: "") == profilePictureType) && it["value"] != null
                             }
-                            val profilePictureAnnotationValue = profilePictureAnnotation?.get("value")
-                            if (profilePictureAnnotationValue != null && profilePictureAnnotationValue.hasNonNull("profileKey") && profilePictureAnnotationValue.hasNonNull("url")) {
+                            val profilePictureAnnotationValue = profilePictureAnnotation?.get("value") as? Map<*, *>
+                            if (profilePictureAnnotationValue != null && profilePictureAnnotationValue["profileKey"] != null && profilePictureAnnotationValue["url"] != null) {
                                 try {
-                                    val profileKey = Base64.decode(profilePictureAnnotationValue.get("profileKey").asText())
-                                    val url = profilePictureAnnotationValue.get("url").asText()
+                                    val profileKey = Base64.decode(profilePictureAnnotationValue["profileKey"] as String)
+                                    val url = profilePictureAnnotationValue["url"] as String
                                     profilePicture = PublicChatMessage.ProfilePicture(profileKey, url)
                                 } catch (e: Exception) {}
                             }
                         }
-                        @Suppress("NAME_SHADOWING") val body = message.get("text").asText()
-                        val timestamp = value.get("timestamp").asLong()
+                        @Suppress("NAME_SHADOWING") val body = message["text"] as String
+                        val timestamp = value["timestamp"] as? Long ?: (value["timestamp"] as? Int)?.toLong() ?: (value["timestamp"] as String).toLong()
                         var quote: PublicChatMessage.Quote? = null
-                        if (value.hasNonNull("quote")) {
-                            val replyTo = if (message.hasNonNull("reply_to")) message.get("reply_to").asLong() else null
-                            val quoteAnnotation = value.get("quote")
-                            val quoteTimestamp = quoteAnnotation.get("id").asLong()
-                            val author = quoteAnnotation.get("author").asText()
-                            val text = quoteAnnotation.get("text").asText()
+                        if (value["quote"] != null) {
+                            val replyTo = message["reply_to"] as? Long ?: (message["reply_to"] as? Int)?.toLong() ?: (message["reply_to"] as String).toLong()
+                            val quoteAnnotation = value["quote"] as? Map<*, *>
+                            val quoteTimestamp = quoteAnnotation?.get("id") as? Long ?: (quoteAnnotation?.get("id") as? Int)?.toLong() ?: (quoteAnnotation?.get("id") as? String)?.toLong() ?: 0L
+                            val author = quoteAnnotation?.get("author") as? String
+                            val text = quoteAnnotation?.get("text") as? String
                             quote = if (quoteTimestamp > 0L && author != null && text != null) PublicChatMessage.Quote(quoteTimestamp, author, text, replyTo) else null
                         }
-                        val attachmentsAsJSON = message.get("annotations").filter { (it.get("type").asText("") == attachmentType) && it.hasNonNull("value") }
-                        val attachments = attachmentsAsJSON.map { it.get("value") }.mapNotNull { attachmentAsJSON ->
+                        val attachmentsAsJSON = (message["annotations"] as List<Map<*, *>>).filter {
+                            ((it["type"] as? String ?: "") == attachmentType) && it["value"] != null
+                        }
+                        val attachments = attachmentsAsJSON.mapNotNull { it["value"] as? Map<*, *> }.mapNotNull { attachmentAsJSON ->
                             try {
-                                val kindAsString = attachmentAsJSON.get("lokiType").asText()
+                                val kindAsString = attachmentAsJSON["lokiType"] as String
                                 val kind = PublicChatMessage.Attachment.Kind.values().first { it.rawValue == kindAsString }
-                                val id = attachmentAsJSON.get("id").asLong()
-                                val contentType = attachmentAsJSON.get("contentType").asText()
-                                val size = attachmentAsJSON.get("size").asInt()
-                                val fileName = attachmentAsJSON.get("fileName").asText()
+                                val id = attachmentAsJSON["id"] as? Long ?: (attachmentAsJSON["id"] as? Int)?.toLong() ?: (attachmentAsJSON["id"] as String).toLong()
+                                val contentType = attachmentAsJSON["contentType"] as String
+                                val size = attachmentAsJSON["size"] as? Int ?: (attachmentAsJSON["size"] as? Long)?.toInt() ?: (attachmentAsJSON["size"] as String).toInt()
+                                val fileName = attachmentAsJSON["fileName"] as String
                                 val flags = 0
-                                val width = attachmentAsJSON.get("width").asInt()
-                                val height = attachmentAsJSON.get("height").asInt()
-                                val url = attachmentAsJSON.get("url").asText()
-                                val caption = if (attachmentAsJSON.hasNonNull("caption")) attachmentAsJSON.get("caption").asText() else null
-                                val linkPreviewURL = if (attachmentAsJSON.hasNonNull("linkPreviewUrl")) attachmentAsJSON.get("linkPreviewUrl").asText() else null
-                                val linkPreviewTitle = if (attachmentAsJSON.hasNonNull("linkPreviewTitle")) attachmentAsJSON.get("linkPreviewTitle").asText() else null
+                                val width = attachmentAsJSON["width"] as? Int ?: (attachmentAsJSON["width"] as? Long)?.toInt() ?: (attachmentAsJSON["width"] as String).toInt()
+                                val height = attachmentAsJSON["height"] as? Int ?: (attachmentAsJSON["height"] as? Long)?.toInt() ?: (attachmentAsJSON["height"] as String).toInt()
+                                val url = attachmentAsJSON["url"] as String
+                                val caption = attachmentAsJSON["caption"] as? String
+                                val linkPreviewURL = attachmentAsJSON["linkPreviewUrl"] as? String
+                                val linkPreviewTitle = attachmentAsJSON["linkPreviewTitle"] as? String
                                 if (kind == PublicChatMessage.Attachment.Kind.LinkPreview && (linkPreviewURL == null || linkPreviewTitle == null)) {
                                     null
                                 } else {
@@ -132,11 +132,11 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                         // Set the last message server ID here to avoid the situation where a message doesn't have a valid signature and this function is called over and over
                         @Suppress("NAME_SHADOWING") val lastMessageServerID = apiDatabase.getLastMessageServerID(channel, server)
                         if (serverID > lastMessageServerID ?: 0) { apiDatabase.setLastMessageServerID(channel, server, serverID) }
-                        val hexEncodedSignature = value.get("sig").asText()
-                        val signatureVersion = value.get("sigver").asLong()
+                        val hexEncodedSignature = value["sig"] as String
+                        val signatureVersion = value["sigver"] as? Long ?: (value["sigver"] as? Int)?.toLong() ?: (value["sigver"] as String).toLong()
                         val signature = PublicChatMessage.Signature(Hex.fromStringCondensed(hexEncodedSignature), signatureVersion)
                         // Verify the message
-                        val groupMessage = PublicChatMessage(serverID, hexEncodedPublicKey, displayName, body, timestamp, publicChatMessageType, quote, attachments, profilePicture, signature)
+                        val groupMessage = PublicChatMessage(serverID, publicKey, displayName, body, timestamp, publicChatMessageType, quote, attachments, profilePicture, signature)
                         if (groupMessage.hasValidSignature()) groupMessage else null
                     } catch (exception: Exception) {
                         Log.d("Loki", "Couldn't parse message for open group with ID: $channel on server: $server from: ${JsonUtil.toJson(message)}. Exception: ${exception.message}")
@@ -160,14 +160,12 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         } else {
             parameters["count"] = fallbackBatchCount
         }
-        return execute(HTTPVerb.GET, server, "loki/v1/channel/$channel/deletes", parameters = parameters).then(sharedContext) { response ->
+        return execute(HTTPVerb.GET, server, "loki/v1/channel/$channel/deletes", parameters = parameters).then(sharedContext) { json ->
             try {
-                val bodyAsString = response.body!!
-                val body = JsonUtil.fromJson(bodyAsString)
-                val deletedMessageServerIDs = body.get("data").mapNotNull { deletion ->
+                val deletedMessageServerIDs = (json["data"] as List<Map<*, *>>).mapNotNull { deletion ->
                     try {
-                        val serverID = deletion.get("id").asLong()
-                        val messageServerID = deletion.get("message_id").asLong()
+                        val serverID = deletion["id"] as? Long ?: (deletion["id"] as? Int)?.toLong() ?: (deletion["id"] as String).toLong()
+                        val messageServerID = deletion["message_id"] as? Long ?: (deletion["message_id"] as? Int)?.toLong() ?: (deletion["message_id"] as String).toLong()
                         @Suppress("NAME_SHADOWING") val lastDeletionServerID = apiDatabase.getLastDeletionServerID(channel, server)
                         if (serverID > (lastDeletionServerID ?: 0)) { apiDatabase.setLastDeletionServerID(channel, server, serverID) }
                         messageServerID
@@ -194,16 +192,14 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                 retryIfNeeded(maxRetryCount) {
                     Log.d("Loki", "Sending message to open group with ID: $channel on server: $server.")
                     val parameters = signedMessage.toJSON()
-                    execute(HTTPVerb.POST, server, "channels/$channel/messages", parameters = parameters).then(sharedContext) { response ->
+                    execute(HTTPVerb.POST, server, "channels/$channel/messages", parameters = parameters).then(sharedContext) { json ->
                         try {
-                            val bodyAsString = response.body!!
-                            val body = JsonUtil.fromJson(bodyAsString)
-                            val data = body.get("data")
-                            val serverID = data.get("id").asLong()
+                            val data = json["data"] as Map<*, *>
+                            val serverID = (data["id"] as? Long) ?: (data["id"] as? Int)?.toLong() ?: (data["id"] as String).toLong()
                             val displayName = userDatabase.getDisplayName(userPublicKey) ?: "Anonymous"
-                            val text = data.get("text").asText()
+                            val text = data["text"] as String
                             val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-                            val dateAsString = data.get("created_at").asText()
+                            val dateAsString = data["created_at"] as String
                             val timestamp = format.parse(dateAsString).time
                             @Suppress("NAME_SHADOWING") val message = PublicChatMessage(serverID, userPublicKey, displayName, text, timestamp, publicChatMessageType, message.quote, message.attachments, null, signedMessage.signature)
                             message
@@ -248,11 +244,9 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
     }
 
     public fun getModerators(channel: Long, server: String): Promise<Set<String>, Exception> {
-        return execute(HTTPVerb.GET, server, "loki/v1/channel/$channel/get_moderators").then(sharedContext) { response ->
+        return execute(HTTPVerb.GET, server, "loki/v1/channel/$channel/get_moderators").then(sharedContext) { json ->
             try {
-                val bodyAsString = response.body!!
-                @Suppress("NAME_SHADOWING") val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
-                @Suppress("UNCHECKED_CAST") val moderators = body["moderators"] as? List<String>
+                @Suppress("UNCHECKED_CAST") val moderators = json["moderators"] as? List<String>
                 val moderatorsAsSet = moderators.orEmpty().toSet()
                 if (Companion.moderators[server] != null) {
                     Companion.moderators[server]!![channel] = moderatorsAsSet
@@ -270,17 +264,15 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
     public fun getChannelInfo(channel: Long, server: String): Promise<String, Exception> {
         return retryIfNeeded(maxRetryCount) {
             val parameters = mapOf( "include_annotations" to 1 )
-            execute(HTTPVerb.GET, server, "/channels/$channel", parameters = parameters).then(sharedContext) { response ->
+            execute(HTTPVerb.GET, server, "/channels/$channel", parameters = parameters).then(sharedContext) { json ->
                 try {
-                    val bodyAsString = response.body!!
-                    val body = JsonUtil.fromJson(bodyAsString)
-                    val data = body.get("data")
-                    val annotations = data.get("annotations")
-                    val annotation = annotations.find { it.get("type").asText("") == channelInfoType } ?: throw SnodeAPI.Error.ParsingFailed
-                    val info = annotation.get("value")
-                    val displayName = info.get("name").asText()
-                    val countInfo = data.get("counts")
-                    val memberCount = countInfo.get("subscribers").asInt()
+                    val data = json["data"] as Map<*, *>
+                    val annotations = data["annotations"] as List<Map<*, *>>
+                    val annotation = annotations.find { (it["type"] as? String ?: "") == channelInfoType } ?: throw SnodeAPI.Error.ParsingFailed
+                    val info = annotation["value"] as Map<*, *>
+                    val displayName = info["name"] as String
+                    val countInfo = data["counts"] as Map<*, *>
+                    val memberCount = countInfo["subscribers"] as? Int ?: (countInfo["subscribers"] as? Long)?.toInt() ?: (countInfo["subscribers"] as String).toInt()
                     apiDatabase.setUserCount(memberCount, channel, server)
                     displayName
                 } catch (exception: Exception) {
@@ -311,10 +303,10 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         return getUserProfiles(hexEncodedPublicKeys, server, false).map(sharedContext) { data ->
             val mapping = mutableMapOf<String, String>()
             for (user in data) {
-                if (user.hasNonNull("username")) {
-                    val hexEncodedPublicKey = user.get("username").asText()
-                    val displayName = if (user.hasNonNull("name")) user.get("name").asText() else "Anonymous"
-                    mapping[hexEncodedPublicKey] = displayName
+                if (user["username"] != null) {
+                    val publicKey = user["username"] as String
+                    val displayName = user["name"] as? String ?: "Anonymous"
+                    mapping[publicKey] = displayName
                 }
             }
             mapping

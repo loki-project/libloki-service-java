@@ -85,8 +85,7 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
             return Promise.of(cachedDeviceLinks)
         } else {
             return getUserProfiles(updatees, server, true).map(SnodeAPI.sharedContext) { data ->
-                data.map dataMap@ { entry ->
-                    val node = entry.value as Map<*, *>
+                data.map dataMap@ { node ->
                     val publicKey = node["username"] as String
                     val annotations = node["annotations"] as List<Map<*, *>>
                     val deviceLinksAnnotation = annotations.find {

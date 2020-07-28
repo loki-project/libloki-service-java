@@ -141,15 +141,15 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
         }
     }
 
-    internal fun getUserProfiles(publicKeys: Set<String>, server: String, includeAnnotations: Boolean): Promise<Map<*, *>, Exception> {
+    internal fun getUserProfiles(publicKeys: Set<String>, server: String, includeAnnotations: Boolean): Promise<List<Map<*, *>>, Exception> {
         val parameters = mapOf( "include_user_annotations" to includeAnnotations.toInt(), "ids" to publicKeys.joinToString { "@$it" } )
         return execute(HTTPVerb.GET, server, "users", parameters = parameters).map { json ->
-            val data = json["data"] as? Map<*, *>
+            val data = json["data"] as? List<Map<*, *>>
             if (data == null) {
                 Log.d("Loki", "Couldn't parse user profiles for: $publicKeys from: $json.")
                 throw SnodeAPI.Error.ParsingFailed
             }
-            data
+            data!!
         }
     }
 
