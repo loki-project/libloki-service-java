@@ -22,8 +22,9 @@ import org.whispersystems.signalservice.internal.push.http.ProfileCipherOutputSt
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.loki.api.deprecated.LokiHTTPClient
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
+import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
+import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.recover
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
@@ -63,13 +64,11 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
     private fun requestNewAuthToken(server: String): Promise<String, Exception> {
         Log.d("Loki", "Requesting auth token for server: $server.")
         val parameters: Map<String, Any> = mapOf( "pubKey" to userPublicKey )
-        return execute(HTTPVerb.GET, server, "loki/v1/get_challenge", false, parameters).map(SnodeAPI.sharedContext) { response ->
+        return execute(HTTPVerb.GET, server, "loki/v1/get_challenge", false, parameters).map(SnodeAPI.sharedContext) { json ->
             try {
-                val bodyAsString = response.body!!
-                @Suppress("NAME_SHADOWING") val body = JsonUtil.fromJson(bodyAsString, Map::class.java)
-                val base64EncodedChallenge = body["cipherText64"] as String
+                val base64EncodedChallenge = json["cipherText64"] as String
                 val challenge = Base64.decode(base64EncodedChallenge)
-                val base64EncodedServerPublicKey = body["serverPubKey64"] as String
+                val base64EncodedServerPublicKey = json["serverPubKey64"] as String
                 var serverPublicKey = Base64.decode(base64EncodedServerPublicKey)
                 // Discard the "05" prefix if needed
                 if (serverPublicKey.count() == 33) {
@@ -90,11 +89,11 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
     private fun submitAuthToken(token: String, server: String): Promise<String, Exception> {
         Log.d("Loki", "Submitting auth token for server: $server.")
         val parameters = mapOf( "pubKey" to userPublicKey, "token" to token )
-        return execute(HTTPVerb.POST, server, "loki/v1/submit_challenge", false, parameters).map { token }
+        return execute(HTTPVerb.POST, server, "loki/v1/submit_challenge", false, parameters, isJSONRequired = false).map { token }
     }
 
-    internal fun execute(verb: HTTPVerb, server: String, endpoint: String, isAuthRequired: Boolean = true, parameters: Map<String, Any> = mapOf()): Promise<LokiHTTPClient.Response, Exception> {
-        fun execute(token: String?): Promise<LokiHTTPClient.Response, Exception> {
+    internal fun execute(verb: HTTPVerb, server: String, endpoint: String, isAuthRequired: Boolean = true, parameters: Map<String, Any> = mapOf(), isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
+        fun execute(token: String?): Promise<Map<*, *>, Exception> {
             val sanitizedEndpoint = endpoint.removePrefix("/")
             var url = "$server/$sanitizedEndpoint"
             if (verb == HTTPVerb.GET || verb == HTTPVerb.DELETE) {
@@ -120,15 +119,19 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
                     }
                 }
             }
-            return LokiFileServerProxy(server).execute(request.build()).map { response ->
-                if (!response.isSuccess) {
-                    if (response.statusCode == 401 || response.statusCode == 403) {
-                        apiDatabase.setAuthToken(server, null)
-                        throw SnodeAPI.Error.TokenExpired
+            val serverPublicKeyPromise = if (server == FileServerAPI.shared.server) Promise.of(FileServerAPI.fileServerPublicKey)
+                else FileServerAPI.shared.getPublicKeyForOpenGroupServer(server)
+            return serverPublicKeyPromise.bind { serverPublicKey ->
+                OnionRequestAPI.sendOnionRequest(request.build(), server, serverPublicKey, isJSONRequired).recover { exception ->
+                    if (exception is HTTP.HTTPRequestFailedException) {
+                        val statusCode = exception.statusCode
+                        if (statusCode == 401 || statusCode == 403) {
+                            apiDatabase.setAuthToken(server, null)
+                            throw SnodeAPI.Error.TokenExpired
+                        }
                     }
-                    throw SnodeAPI.Error.HTTPRequestFailed(response.statusCode)
+                    throw exception
                 }
-                return@map response
             }
         }
         return if (isAuthRequired) {
@@ -138,21 +141,19 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
         }
     }
 
-    internal fun getUserProfiles(hexEncodedPublicKeys: Set<String>, server: String, includeAnnotations: Boolean): Promise<JsonNode, Exception> {
-        val parameters = mapOf( "include_user_annotations" to includeAnnotations.toInt(), "ids" to hexEncodedPublicKeys.joinToString { "@$it" } )
-        return execute(HTTPVerb.GET, server, "users", parameters = parameters).map { rawResponse ->
-            val bodyAsString = rawResponse.body!!
-            val body = JsonUtil.fromJson(bodyAsString)
-            val data = body.get("data")
+    internal fun getUserProfiles(publicKeys: Set<String>, server: String, includeAnnotations: Boolean): Promise<Map<*, *>, Exception> {
+        val parameters = mapOf( "include_user_annotations" to includeAnnotations.toInt(), "ids" to publicKeys.joinToString { "@$it" } )
+        return execute(HTTPVerb.GET, server, "users", parameters = parameters).map { json ->
+            val data = json["data"] as? Map<*, *>
             if (data == null) {
-                Log.d("Loki", "Couldn't parse user profiles for: $hexEncodedPublicKeys from: $rawResponse.")
+                Log.d("Loki", "Couldn't parse user profiles for: $publicKeys from: $json.")
                 throw SnodeAPI.Error.ParsingFailed
             }
             data
         }
     }
 
-    internal fun setSelfAnnotation(server: String, type: String, newValue: Any?): Promise<LokiHTTPClient.Response, Exception> {
+    internal fun setSelfAnnotation(server: String, type: String, newValue: Any?): Promise<Map<*, *>, Exception> {
         val annotation = mutableMapOf<String, Any>( "type" to type )
         if (newValue != null) { annotation["value"] = newValue }
         val parameters = mapOf( "annotations" to listOf( annotation ) )
@@ -172,17 +173,16 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
             .build()
         val request = Request.Builder().url("$server/files").post(body)
         return retryIfNeeded(8) {
-            upload(server, request) { jsonAsString ->
-                val json = JsonUtil.fromJson(jsonAsString)
-                val data = json.get("data")
+            upload(server, request) { json ->
+                val data = json["data"] as? Map<*, *>
                 if (data == null) {
-                    Log.d("Loki", "Couldn't parse attachment from: $jsonAsString.")
+                    Log.d("Loki", "Couldn't parse attachment from: $json.")
                     throw SnodeAPI.Error.ParsingFailed
                 }
-                val id = data.get("id").asLong()
-                val url = data.get("url").asText()
-                if (url.isEmpty()) {
-                    Log.d("Loki", "Couldn't parse upload from: $jsonAsString.")
+                val id = data["id"] as? Long ?: (data["id"] as? Int)?.toLong() ?: (data["id"] as? String)?.toLong()
+                val url = data["url"] as? String
+                if (id == null || url == null || url.isEmpty()) {
+                    Log.d("Loki", "Couldn't parse upload from: $json.")
                     throw SnodeAPI.Error.ParsingFailed
                 }
                 UploadResult(id, url, file.transmittedDigest)
@@ -203,17 +203,16 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
             .build()
         val request = Request.Builder().url("$server/files").post(body)
         return retryIfNeeded(8) {
-            upload(server, request) { jsonAsString ->
-                val json = JsonUtil.fromJson(jsonAsString)
-                val data = json.get("data")
+            upload(server, request) { json ->
+                val data = json["data"] as? Map<*, *>
                 if (data == null) {
-                    Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
+                    Log.d("Loki", "Couldn't parse profile picture from: $json.")
                     throw SnodeAPI.Error.ParsingFailed
                 }
-                val id = data.get("id").asLong()
-                val url = data.get("url").asText()
-                if (url.isEmpty()) {
-                    Log.d("Loki", "Couldn't parse profile picture from: $jsonAsString.")
+                val id = data["id"] as? Long ?: (data["id"] as? Int)?.toLong() ?: (data["id"] as? String)?.toLong()
+                val url = data["url"] as? String
+                if (id == null || url == null || url.isEmpty()) {
+                    Log.d("Loki", "Couldn't parse profile picture from: $json.")
                     throw SnodeAPI.Error.ParsingFailed
                 }
                 setLastProfilePictureUpload()
@@ -223,32 +222,29 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
     }
 
     @Throws(PushNetworkException::class, NonSuccessfulResponseCodeException::class)
-    private fun upload(server: String, request: Request.Builder, parse: (String) -> UploadResult): Promise<UploadResult, Exception> {
-        val promise: Promise<LokiHTTPClient.Response, Exception>
+    private fun upload(server: String, request: Request.Builder, parse: (Map<*, *>) -> UploadResult): Promise<UploadResult, Exception> {
+        val promise: Promise<Map<*, *>, Exception>
         if (server == FileServerAPI.shared.server) {
             request.addHeader("Authorization", "Bearer loki")
             // Uploads to the Loki File Server shouldn't include any personally identifiable information, so use a dummy auth token
-            promise = LokiFileServerProxy(server, true).execute(request.build())
+            promise = OnionRequestAPI.sendOnionRequest(request.build(), FileServerAPI.shared.server, FileServerAPI.fileServerPublicKey)
         } else {
-            promise = getAuthToken(server).bind { token ->
-                request.addHeader("Authorization", "Bearer $token")
-                LokiFileServerProxy(server, true).execute(request.build())
+            promise = FileServerAPI.shared.getPublicKeyForOpenGroupServer(server).bind { openGroupServerPublicKey ->
+                getAuthToken(server).bind { token ->
+                    request.addHeader("Authorization", "Bearer $token")
+                    OnionRequestAPI.sendOnionRequest(request.build(), server, openGroupServerPublicKey)
+                }
             }
         }
-        return promise.map { response ->
-            if (!response.isSuccess) {
-                if (response.statusCode == 401) {
-                    apiDatabase.setAuthToken(server, null)
-                    throw SnodeAPI.Error.TokenExpired
-                }
-                throw SnodeAPI.Error.HTTPRequestFailed(response.statusCode)
-            }
-            val jsonAsString = response.body ?: throw SnodeAPI.Error.ParsingFailed
-            parse(jsonAsString)
+        return promise.map { json ->
+            parse(json)
         }.recover { exception ->
-            val nestedException = exception.cause ?: exception
-            if (nestedException is SnodeAPI.Error.HTTPRequestFailed) {
-                throw NonSuccessfulResponseCodeException("Request returned with status code ${nestedException.code}.")
+            if (exception is HTTP.HTTPRequestFailedException) {
+                val statusCode = exception.statusCode
+                if (statusCode == 401 || statusCode == 403) {
+                    apiDatabase.setAuthToken(server, null)
+                }
+                throw NonSuccessfulResponseCodeException("Request returned with status code ${exception.statusCode}.")
             }
             throw PushNetworkException(exception)
         }

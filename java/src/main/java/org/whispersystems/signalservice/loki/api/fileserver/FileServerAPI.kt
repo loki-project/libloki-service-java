@@ -3,15 +3,21 @@ package org.whispersystems.signalservice.loki.api.fileserver
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.functional.bind
 import nl.komponents.kovenant.functional.map
+import okhttp3.Request
 import org.whispersystems.libsignal.logging.Log
+import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Base64
+import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
+import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
 import org.whispersystems.signalservice.loki.utilities.PublicKeyValidation
 import org.whispersystems.signalservice.loki.utilities.recover
+import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
+import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
@@ -79,27 +85,30 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
             return Promise.of(cachedDeviceLinks)
         } else {
             return getUserProfiles(updatees, server, true).map(SnodeAPI.sharedContext) { data ->
-                data.map dataMap@ { node ->
-                    val publicKey = node.get("username").asText()
-                    val annotations = node.get("annotations")
-                    val deviceLinksAnnotation = annotations.find { annotation -> annotation.get("type").asText() == deviceLinkType } ?: return@dataMap DeviceLinkUpdateResult.Success(publicKey, setOf())
-                    val value = deviceLinksAnnotation.get("value")
-                    val deviceLinksAsJSON = value.get("authorisations")
+                data.map dataMap@ { entry ->
+                    val node = entry.value as Map<*, *>
+                    val publicKey = node["username"] as String
+                    val annotations = node["annotations"] as List<Map<*, *>>
+                    val deviceLinksAnnotation = annotations.find {
+                        annotation -> (annotation["type"] as String) == deviceLinkType
+                    } ?: return@dataMap DeviceLinkUpdateResult.Success(publicKey, setOf())
+                    val value = deviceLinksAnnotation["value"] as Map<*, *>
+                    val deviceLinksAsJSON = value["authorisations"] as List<Map<*, *>>
                     val deviceLinks = deviceLinksAsJSON.mapNotNull { deviceLinkAsJSON ->
                         try {
-                            val masterHexEncodedPublicKey = deviceLinkAsJSON.get("primaryDevicePubKey").asText()
-                            val slaveHexEncodedPublicKey = deviceLinkAsJSON.get("secondaryDevicePubKey").asText()
+                            val masterPublicKey = deviceLinkAsJSON["primaryDevicePubKey"] as String
+                            val slavePublicKey = deviceLinkAsJSON["secondaryDevicePubKey"] as String
                             var requestSignature: ByteArray? = null
                             var authorizationSignature: ByteArray? = null
-                            if (deviceLinkAsJSON.hasNonNull("requestSignature")) {
-                                val base64EncodedSignature = deviceLinkAsJSON.get("requestSignature").asText()
+                            if (deviceLinkAsJSON["requestSignature"] != null) {
+                                val base64EncodedSignature = deviceLinkAsJSON["requestSignature"] as String
                                 requestSignature = Base64.decode(base64EncodedSignature)
                             }
-                            if (deviceLinkAsJSON.hasNonNull("grantSignature")) {
-                                val base64EncodedSignature = deviceLinkAsJSON.get("grantSignature").asText()
+                            if (deviceLinkAsJSON["grantSignature"] != null) {
+                                val base64EncodedSignature = deviceLinkAsJSON["grantSignature"] as String
                                 authorizationSignature = Base64.decode(base64EncodedSignature)
                             }
-                            val deviceLink = DeviceLink(masterHexEncodedPublicKey, slaveHexEncodedPublicKey, requestSignature, authorizationSignature)
+                            val deviceLink = DeviceLink(masterPublicKey, slavePublicKey, requestSignature, authorizationSignature)
                             val isValid = deviceLink.verify()
                             if (!isValid) {
                                 Log.d("Loki", "Ignoring invalid device link: $deviceLinkAsJSON.")
@@ -192,4 +201,25 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
         }.map { Unit }
     }
     // endregion
+
+    // region Open Group Server Public Key
+    fun getPublicKeyForOpenGroupServer(openGroupServer: String): Promise<String, Exception> {
+        val url = "$server/loki/v1/getOpenGroupKey/${URL(openGroupServer).host}"
+        val request = Request.Builder().url(url)
+        request.addHeader("Content-Type", "application/json")
+        request.addHeader("Authorization", "Bearer loki") // Tokenless request; use a dummy token
+        return OnionRequestAPI.sendOnionRequest(request.build(), server, fileServerPublicKey).map { json ->
+            try {
+                val bodyAsString = json["data"] as String
+                val body = JsonUtil.fromJson(bodyAsString)
+                val base64EncodedPublicKey = body.get("data").asText()
+                val prefixedPublicKey = Base64.decode(base64EncodedPublicKey)
+                val hexEncodedPrefixedPublicKey = Hex.toStringCondensed(prefixedPublicKey)
+                hexEncodedPrefixedPublicKey.removing05PrefixIfNeeded()
+            } catch (exception: Exception) {
+                Log.d("Loki", "Couldn't parse open group public key from: $json.")
+                throw exception
+            }
+        }
+    }
 }
