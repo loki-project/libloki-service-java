@@ -25,9 +25,11 @@ interface LokiAPIDatabaseProtocol {
     fun clearDeviceLinks(publicKey: String)
     fun addDeviceLink(deviceLink: DeviceLink)
     fun removeDeviceLink(deviceLink: DeviceLink)
-    fun setUserCount(userCount: Int, group: Long, server: String)
+    fun setUserCount(group: Long, server: String, newValue: Int)
     fun getSessionRequestSentTimestamp(publicKey: String): Long?
-    fun setSessionRequestSentTimestamp(publicKey: String, timestamp: Long)
+    fun setSessionRequestSentTimestamp(publicKey: String, newValue: Long)
     fun getSessionRequestProcessedTimestamp(publicKey: String): Long?
-    fun setSessionRequestProcessedTimestamp(publicKey: String, timestamp: Long)
+    fun setSessionRequestProcessedTimestamp(publicKey: String, newValue: Long)
+    fun getOpenGroupPublicKey(server: String): String?
+    fun setOpenGroupPublicKey(server: String, newValue: String)
 }

@@ -273,7 +273,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                     val displayName = info["name"] as String
                     val countInfo = data["counts"] as Map<*, *>
                     val memberCount = countInfo["subscribers"] as? Int ?: (countInfo["subscribers"] as? Long)?.toInt() ?: (countInfo["subscribers"] as String).toInt()
-                    apiDatabase.setUserCount(memberCount, channel, server)
+                    apiDatabase.setUserCount(channel, server, memberCount)
                     displayName
                 } catch (exception: Exception) {
                     Log.d("Loki", "Couldn't parse info for open group with ID: $channel on server: $server.")

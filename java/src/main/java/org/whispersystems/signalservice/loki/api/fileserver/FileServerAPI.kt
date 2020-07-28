@@ -200,21 +200,28 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
 
     // region Open Group Server Public Key
     fun getPublicKeyForOpenGroupServer(openGroupServer: String): Promise<String, Exception> {
-        val url = "$server/loki/v1/getOpenGroupKey/${URL(openGroupServer).host}"
-        val request = Request.Builder().url(url)
-        request.addHeader("Content-Type", "application/json")
-        request.addHeader("Authorization", "Bearer loki") // Tokenless request; use a dummy token
-        return OnionRequestAPI.sendOnionRequest(request.build(), server, fileServerPublicKey).map { json ->
-            try {
-                val bodyAsString = json["data"] as String
-                val body = JsonUtil.fromJson(bodyAsString)
-                val base64EncodedPublicKey = body.get("data").asText()
-                val prefixedPublicKey = Base64.decode(base64EncodedPublicKey)
-                val hexEncodedPrefixedPublicKey = prefixedPublicKey.toHexString()
-                hexEncodedPrefixedPublicKey.removing05PrefixIfNeeded()
-            } catch (exception: Exception) {
-                Log.d("Loki", "Couldn't parse open group public key from: $json.")
-                throw exception
+        val publicKey = database.getOpenGroupPublicKey(openGroupServer)
+        if (publicKey != null) {
+            return Promise.of(publicKey)
+        } else {
+            val url = "$server/loki/v1/getOpenGroupKey/${URL(openGroupServer).host}"
+            val request = Request.Builder().url(url)
+            request.addHeader("Content-Type", "application/json")
+            request.addHeader("Authorization", "Bearer loki") // Tokenless request; use a dummy token
+            return OnionRequestAPI.sendOnionRequest(request.build(), server, fileServerPublicKey).map { json ->
+                try {
+                    val bodyAsString = json["data"] as String
+                    val body = JsonUtil.fromJson(bodyAsString)
+                    val base64EncodedPublicKey = body.get("data").asText()
+                    val prefixedPublicKey = Base64.decode(base64EncodedPublicKey)
+                    val hexEncodedPrefixedPublicKey = prefixedPublicKey.toHexString()
+                    val result = hexEncodedPrefixedPublicKey.removing05PrefixIfNeeded()
+                    database.setOpenGroupPublicKey(openGroupServer, result)
+                    result
+                } catch (exception: Exception) {
+                    Log.d("Loki", "Couldn't parse open group public key from: $json.")
+                    throw exception
+                }
             }
         }
     }
