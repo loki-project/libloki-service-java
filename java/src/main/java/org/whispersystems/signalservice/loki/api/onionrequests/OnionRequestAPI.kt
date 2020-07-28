@@ -11,6 +11,8 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.*
 import org.whispersystems.signalservice.loki.api.utilities.HTTP
+import org.whispersystems.signalservice.loki.api.utilities.getBodyForOnionRequest
+import org.whispersystems.signalservice.loki.api.utilities.getHeadersForOnionRequest
 import org.whispersystems.signalservice.loki.utilities.*
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
@@ -246,7 +248,7 @@ public object OnionRequestAPI {
      * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
     internal fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
-        val headers = request.getCanonicalHeaders()
+        val headers = request.getHeadersForOnionRequest()
         val url = request.url()
         val urlAsString = url.toString()
         val host = url.host()
@@ -254,7 +256,7 @@ public object OnionRequestAPI {
             server.count() < urlAsString.count() -> urlAsString.substringAfter("$server/")
             else -> ""
         }
-        val body = request.getBody() ?: "null"
+        val body = request.getBodyForOnionRequest() ?: "null"
         val payload = mapOf(
             "body" to body,
             "endpoint" to endpoint,

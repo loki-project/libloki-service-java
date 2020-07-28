@@ -299,8 +299,8 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         }
     }
 
-    public fun getDisplayNames(hexEncodedPublicKeys: Set<String>, server: String): Promise<Map<String, String>, Exception> {
-        return getUserProfiles(hexEncodedPublicKeys, server, false).map(sharedContext) { data ->
+    public fun getDisplayNames(publicKeys: Set<String>, server: String): Promise<Map<String, String>, Exception> {
+        return getUserProfiles(publicKeys, server, false).map(sharedContext) { data ->
             val mapping = mutableMapOf<String, String>()
             for (user in data) {
                 if (user["username"] != null) {

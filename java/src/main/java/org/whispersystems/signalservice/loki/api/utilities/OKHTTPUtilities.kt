@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.utilities
+package org.whispersystems.signalservice.loki.api.utilities
 
 import okhttp3.MultipartBody
 import okhttp3.Request
@@ -7,7 +7,7 @@ import org.whispersystems.signalservice.internal.util.Base64
 import java.io.IOException
 import java.util.*
 
-internal fun Request.getCanonicalHeaders(): Map<String, Any> {
+internal fun Request.getHeadersForOnionRequest(): Map<String, Any> {
     val result = mutableMapOf<String, Any>()
     val contentType = body()?.contentType()
     if (contentType != null) {
@@ -29,7 +29,7 @@ internal fun Request.getCanonicalHeaders(): Map<String, Any> {
     return result
 }
 
-internal fun Request.getBody(): Any? {
+internal fun Request.getBodyForOnionRequest(): Any? {
     try {
         val copyOfThis = newBuilder().build()
         val buffer = Buffer()

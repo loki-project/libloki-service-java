@@ -149,7 +149,7 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
                 Log.d("Loki", "Couldn't parse user profiles for: $publicKeys from: $json.")
                 throw SnodeAPI.Error.ParsingFailed
             }
-            data!!
+            data!! // For some reason the compiler can't infer that this can't be null at this point
         }
     }
 
