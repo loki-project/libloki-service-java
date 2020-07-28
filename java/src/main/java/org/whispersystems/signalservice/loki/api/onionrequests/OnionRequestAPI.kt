@@ -44,8 +44,8 @@ public object OnionRequestAPI {
         get() = pathCount // One per path
     // endregion
 
-    class HTTPRequestFailedAtTargetSnodeException(val statusCode: Int, val json: Map<*, *>)
-        : Exception("HTTP request failed at target snode with status code $statusCode.")
+    class HTTPRequestFailedAtDestinationException(val statusCode: Int, val json: Map<*, *>)
+        : Exception("HTTP request failed at destination with status code $statusCode.")
     class InsufficientSnodesException : Exception("Couldn't find enough snodes to build a path.")
 
     private data class OnionBuildingResult(
@@ -235,7 +235,7 @@ public object OnionRequestAPI {
     internal fun sendOnionRequest(method: Snode.Method, parameters: Map<*, *>, snode: Snode, publicKey: String): Promise<Map<*, *>, Exception> {
         val payload = mapOf( "method" to method.rawValue, "params" to parameters )
         return sendOnionRequest(Destination.Snode(snode), payload).recover { exception ->
-            @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtTargetSnodeException ?: throw exception
+            @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtDestinationException ?: throw exception
             throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, publicKey)
         }
     }
@@ -251,10 +251,11 @@ public object OnionRequestAPI {
         val urlAsString = url.toString()
         val host = url.host()
         val endpoint = when {
-            server.count() < urlAsString.count() -> urlAsString.substringAfter(server)
+            server.count() < urlAsString.count() -> urlAsString.substringAfter("$server/")
             else -> ""
         }
-        val bodyAsString = request.getBodyAsString()
+        var bodyAsString = request.getBodyAsString() ?: "null"
+        if (bodyAsString.isEmpty()) { bodyAsString = "null" }
         val payload = mapOf(
             "body" to bodyAsString,
             "endpoint" to endpoint,
@@ -300,7 +301,7 @@ public object OnionRequestAPI {
                             val statusCode = json["status"] as Int
                             if (statusCode == 406) {
                                 val body = mapOf( "result" to "Your clock is out of sync with the service node network." )
-                                val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, body)
+                                val exception = HTTPRequestFailedAtDestinationException(statusCode, body)
                                 return@Thread deferred.reject(exception)
                             } else if (json["body"] != null) {
                                 val bodyAsString = json["body"] as String
@@ -311,13 +312,13 @@ public object OnionRequestAPI {
                                     body = JsonUtil.fromJson(bodyAsString, Map::class.java)
                                 }
                                 if (statusCode != 200) {
-                                    val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, body)
+                                    val exception = HTTPRequestFailedAtDestinationException(statusCode, body)
                                     return@Thread deferred.reject(exception)
                                 }
                                 deferred.resolve(body)
                             } else {
                                 if (statusCode != 200) {
-                                    val exception = HTTPRequestFailedAtTargetSnodeException(statusCode, json)
+                                    val exception = HTTPRequestFailedAtDestinationException(statusCode, json)
                                     return@Thread deferred.reject(exception)
                                 }
                                 deferred.resolve(json)

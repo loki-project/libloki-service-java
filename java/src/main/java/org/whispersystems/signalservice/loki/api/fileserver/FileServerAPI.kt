@@ -13,10 +13,7 @@ import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
-import org.whispersystems.signalservice.loki.utilities.PublicKeyValidation
-import org.whispersystems.signalservice.loki.utilities.recover
-import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
-import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
+import org.whispersystems.signalservice.loki.utilities.*
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
@@ -213,7 +210,7 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
                 val body = JsonUtil.fromJson(bodyAsString)
                 val base64EncodedPublicKey = body.get("data").asText()
                 val prefixedPublicKey = Base64.decode(base64EncodedPublicKey)
-                val hexEncodedPrefixedPublicKey = Hex.toStringCondensed(prefixedPublicKey)
+                val hexEncodedPrefixedPublicKey = prefixedPublicKey.toHexString()
                 hexEncodedPrefixedPublicKey.removing05PrefixIfNeeded()
             } catch (exception: Exception) {
                 Log.d("Loki", "Couldn't parse open group public key from: $json.")
