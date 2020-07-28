@@ -66,19 +66,17 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
         object InsufficientProofOfWork : Error("The proof of work is insufficient.")
         object TokenExpired : Error("The auth token being used has expired.")
         object ParsingFailed : Error("Couldn't parse JSON.")
-        object MissingSnodeVersion : Error("Missing service node version.")
-        class TargetPublicKeySetMissing(target: Snode) : Error("Missing public key set for: $target.")
     }
     // endregion
 
     // region Internal API
     /**
-     * `hexEncodedPublicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
+     * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
-    internal fun invoke(method: Snode.Method, snode: Snode, hexEncodedPublicKey: String, parameters: Map<String, String>): RawResponsePromise {
+    internal fun invoke(method: Snode.Method, snode: Snode, publicKey: String, parameters: Map<String, String>): RawResponsePromise {
         val url = "${snode.address}:${snode.port}/storage_rpc/v1"
         if (useOnionRequests) {
-            return OnionRequestAPI.sendOnionRequest(method, snode, hexEncodedPublicKey, parameters)
+            return OnionRequestAPI.sendOnionRequest(method, parameters, snode, publicKey)
         } else {
             val deferred = deferred<Map<*, *>, Exception>()
             Thread {
@@ -88,11 +86,11 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
                     deferred.resolve(json)
                 } catch (exception: Exception) {
                     if (exception is ConnectException || exception is SocketTimeoutException) {
-                        dropSnodeIfNeeded(snode, hexEncodedPublicKey)
+                        dropSnodeIfNeeded(snode, publicKey)
                     } else {
                         val httpRequestFailedException = exception as? HTTP.HTTPRequestFailedException
                         if (httpRequestFailedException != null) {
-                            @Suppress("NAME_SHADOWING") val exception = handleSnodeError(httpRequestFailedException.statusCode, httpRequestFailedException.json, snode, hexEncodedPublicKey)
+                            @Suppress("NAME_SHADOWING") val exception = handleSnodeError(httpRequestFailedException.statusCode, httpRequestFailedException.json, snode, publicKey)
                             return@Thread deferred.reject(exception)
                         }
                         Log.d("Loki", "Unhandled exception: $exception.")
