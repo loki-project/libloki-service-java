@@ -201,7 +201,7 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
     // region Open Group Server Public Key
     fun getPublicKeyForOpenGroupServer(openGroupServer: String): Promise<String, Exception> {
         val publicKey = database.getOpenGroupPublicKey(openGroupServer)
-        if (publicKey != null) {
+        if (publicKey != null && PublicKeyValidation.isValid(publicKey, 64, false)) {
             return Promise.of(publicKey)
         } else {
             val url = "$server/loki/v1/getOpenGroupKey/${URL(openGroupServer).host}"
