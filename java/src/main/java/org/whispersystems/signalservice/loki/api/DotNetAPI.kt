@@ -172,7 +172,7 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
             .addFormDataPart("content", UUID.randomUUID().toString(), file)
             .build()
         val request = Request.Builder().url("$server/files").post(body)
-        return retryIfNeeded(8) {
+        return retryIfNeeded(4) {
             upload(server, request) { json ->
                 val data = json["data"] as? Map<*, *>
                 if (data == null) {
