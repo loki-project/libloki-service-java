@@ -281,6 +281,9 @@ public object OnionRequestAPI {
             val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
             val finalEncryptionResult = result.finalEncryptionResult
             val onion = finalEncryptionResult.ciphertext
+            if (destination is Destination.Server) {
+                Log.d("Loki", "Onion request size: ~${onion.count()}")
+            }
             @Suppress("NAME_SHADOWING") val parameters = mapOf(
                 "ciphertext" to Base64.encodeBytes(onion),
                 "ephemeral_key" to finalEncryptionResult.ephemeralPublicKey.toHexString()
