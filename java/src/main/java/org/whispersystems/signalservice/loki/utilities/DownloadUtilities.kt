@@ -18,7 +18,19 @@ object DownloadUtilities {
      */
     fun downloadFile(destination: File, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
         val outputStream = FileOutputStream(destination) // Throws
-        downloadFile(outputStream, url, maxSize, listener)
+        var retryTimes = 3
+        var exception: Exception? = null
+        while (retryTimes > 0) {
+            retryTimes -= 1
+            try {
+                downloadFile(outputStream, url, maxSize, listener)
+                exception = null
+                break
+            } catch (e: Exception) {
+                exception = e
+            }
+        }
+        if (exception != null) { throw exception }
     }
 
     /**
