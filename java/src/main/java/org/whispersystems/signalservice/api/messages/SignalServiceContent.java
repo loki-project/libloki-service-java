@@ -9,7 +9,7 @@ package org.whispersystems.signalservice.api.messages;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.calls.SignalServiceCallMessage;
 import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage;
-import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
 
 public class SignalServiceContent {

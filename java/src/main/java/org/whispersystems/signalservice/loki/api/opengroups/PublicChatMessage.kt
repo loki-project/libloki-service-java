@@ -7,7 +7,7 @@ import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 
 public data class PublicChatMessage(
     public val serverID: Long?,
-    public val publicKey: String,
+    public val senderPublicKey: String,
     public val displayName: String,
     public val body: String,
     public val timestamp: Long,
@@ -103,7 +103,7 @@ public data class PublicChatMessage(
     internal fun hasValidSignature(): Boolean {
         if (signature == null) { return false }
         val data = getValidationData(signature.version) ?: return false
-        val publicKey = Hex.fromStringCondensed(publicKey.removing05PrefixIfNeeded())
+        val publicKey = Hex.fromStringCondensed(senderPublicKey.removing05PrefixIfNeeded())
         try {
             return curve.verifySignature(publicKey, data, signature.data)
         } catch (e: Exception) {
