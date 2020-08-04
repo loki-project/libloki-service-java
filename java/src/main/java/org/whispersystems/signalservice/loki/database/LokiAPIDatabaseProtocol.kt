@@ -1,7 +1,7 @@
 package org.whispersystems.signalservice.loki.database
 
 import org.whispersystems.signalservice.loki.api.Snode
-import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
+import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink
 
 interface LokiAPIDatabaseProtocol {
 
@@ -21,10 +21,6 @@ interface LokiAPIDatabaseProtocol {
     fun setLastMessageServerID(group: Long, server: String, newValue: Long)
     fun getLastDeletionServerID(group: Long, server: String): Long?
     fun setLastDeletionServerID(group: Long, server: String, newValue: Long)
-    fun getDeviceLinks(publicKey: String): Set<DeviceLink>
-    fun clearDeviceLinks(publicKey: String)
-    fun addDeviceLink(deviceLink: DeviceLink)
-    fun removeDeviceLink(deviceLink: DeviceLink)
     fun setUserCount(group: Long, server: String, newValue: Int)
     fun getSessionRequestSentTimestamp(publicKey: String): Long?
     fun setSessionRequestSentTimestamp(publicKey: String, newValue: Long)
@@ -32,4 +28,11 @@ interface LokiAPIDatabaseProtocol {
     fun setSessionRequestProcessedTimestamp(publicKey: String, newValue: Long)
     fun getOpenGroupPublicKey(server: String): String?
     fun setOpenGroupPublicKey(server: String, newValue: String)
+
+    // region Deprecated
+    fun getDeviceLinks(publicKey: String): Set<DeviceLink>
+    fun clearDeviceLinks(publicKey: String)
+    fun addDeviceLink(deviceLink: DeviceLink)
+    fun removeDeviceLink(deviceLink: DeviceLink)
+    // endregion
 }

@@ -12,7 +12,7 @@ import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
-import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink
+import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink
 import org.whispersystems.signalservice.loki.utilities.*
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
@@ -22,8 +22,17 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
 
     companion object {
         // region Settings
+        /**
+         * Deprecated.
+         */
         private val deviceLinkType = "network.loki.messenger.devicemapping"
+        /**
+         * Deprecated.
+         */
         private val deviceLinkRequestCache = ConcurrentHashMap<String, Promise<Set<DeviceLink>, Exception>>()
+        /**
+         * Deprecated.
+         */
         private val deviceLinkUpdateInterval = 60 * 1000
         private val lastDeviceLinkUpdate = ConcurrentHashMap<String, Long>()
 
@@ -67,6 +76,8 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
     }
 
     fun getDeviceLinks(publicKey: String, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
+        return Promise.of(setOf())
+        /*
         if (deviceLinkRequestCache.containsKey(publicKey) && !isForcedUpdate) {
             val result = deviceLinkRequestCache[publicKey]
             if (result != null) { return result } // A request was already pending
@@ -77,9 +88,12 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
             deviceLinkRequestCache.remove(publicKey)
         }
         return promise
+         */
     }
 
     fun getDeviceLinks(publicKeys: Set<String>, isForcedUpdate: Boolean = false): Promise<Set<DeviceLink>, Exception> {
+        return Promise.of(setOf())
+        /*
         val validPublicKeys = publicKeys.filter { PublicKeyValidation.isValid(it) }
         val now = System.currentTimeMillis()
         // IMPORTANT: Don't fetch device links for the current user (i.e. don't remove the it != userHexEncodedPublicKey) check below
@@ -169,9 +183,12 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
                 publicKeys.flatMap { database.getDeviceLinks(it) }.toSet()
             }
         }
+         */
     }
 
     fun setDeviceLinks(deviceLinks: Set<DeviceLink>): Promise<Unit, Exception> {
+        return Promise.of(Unit)
+        /*
         val isMaster = deviceLinks.find { it.masterPublicKey == userPublicKey } != null
         val deviceLinksAsJSON = deviceLinks.map { it.toJSON() }
         val value = if (deviceLinks.isNotEmpty()) mapOf( "isPrimary" to isMaster, "authorisations" to deviceLinksAsJSON ) else null
@@ -180,9 +197,12 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
         return retryIfNeeded(maxRetryCount) {
             execute(HTTPVerb.PATCH, server, "/users/me", parameters = parameters)
         }.map { Unit }
+         */
     }
 
     fun addDeviceLink(deviceLink: DeviceLink): Promise<Unit, Exception> {
+        return Promise.of(Unit)
+        /*
         Log.d("Loki", "Updating device links.")
         return getDeviceLinks(userPublicKey, true).bind { deviceLinks ->
             val mutableDeviceLinks = deviceLinks.toMutableSet()
@@ -191,9 +211,12 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
         }.success {
             database.addDeviceLink(deviceLink)
         }.map { Unit }
+         */
     }
 
     fun removeDeviceLink(deviceLink: DeviceLink): Promise<Unit, Exception> {
+        return Promise.of(Unit)
+        /*
         Log.d("Loki", "Updating device links.")
         return getDeviceLinks(userPublicKey, true).bind { deviceLinks ->
             val mutableDeviceLinks = deviceLinks.toMutableSet()
@@ -202,6 +225,7 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
         }.success {
             database.removeDeviceLink(deviceLink)
         }.map { Unit }
+         */
     }
     // endregion
 
