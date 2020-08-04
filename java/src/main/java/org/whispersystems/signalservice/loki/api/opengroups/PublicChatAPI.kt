@@ -114,18 +114,20 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                                 val size = attachmentAsJSON["size"] as? Int ?: (attachmentAsJSON["size"] as? Long)?.toInt() ?: (attachmentAsJSON["size"] as String).toInt()
                                 val fileName = attachmentAsJSON["fileName"] as String
                                 val flags = 0
-                                val width = attachmentAsJSON["width"] as? Int ?: (attachmentAsJSON["width"] as? Long)?.toInt() ?: (attachmentAsJSON["width"] as String).toInt()
-                                val height = attachmentAsJSON["height"] as? Int ?: (attachmentAsJSON["height"] as? Long)?.toInt() ?: (attachmentAsJSON["height"] as String).toInt()
+
                                 val url = attachmentAsJSON["url"] as String
                                 val caption = attachmentAsJSON["caption"] as? String
                                 val linkPreviewURL = attachmentAsJSON["linkPreviewUrl"] as? String
                                 val linkPreviewTitle = attachmentAsJSON["linkPreviewTitle"] as? String
                                 if (kind == PublicChatMessage.Attachment.Kind.LinkPreview && (linkPreviewURL == null || linkPreviewTitle == null)) {
+
                                     null
                                 } else {
-                                    PublicChatMessage.Attachment(kind, server, id, contentType, size, fileName, flags, width, height, caption, url, linkPreviewURL, linkPreviewTitle)
+                                    PublicChatMessage.Attachment(kind, server, id, contentType, size, fileName, flags, 0, 0, caption, url, linkPreviewURL, linkPreviewTitle)
                                 }
+
                             } catch (e: Exception) {
+                                Log.w("Loki","Exception: $e")
                                 null
                             }
                         }
