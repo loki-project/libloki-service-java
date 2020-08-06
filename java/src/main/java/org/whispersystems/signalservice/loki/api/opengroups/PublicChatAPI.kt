@@ -114,20 +114,17 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                                 val size = attachmentAsJSON["size"] as? Int ?: (attachmentAsJSON["size"] as? Long)?.toInt() ?: (attachmentAsJSON["size"] as String).toInt()
                                 val fileName = attachmentAsJSON["fileName"] as String
                                 val flags = 0
-
                                 val url = attachmentAsJSON["url"] as String
                                 val caption = attachmentAsJSON["caption"] as? String
                                 val linkPreviewURL = attachmentAsJSON["linkPreviewUrl"] as? String
                                 val linkPreviewTitle = attachmentAsJSON["linkPreviewTitle"] as? String
                                 if (kind == PublicChatMessage.Attachment.Kind.LinkPreview && (linkPreviewURL == null || linkPreviewTitle == null)) {
-
                                     null
                                 } else {
                                     PublicChatMessage.Attachment(kind, server, id, contentType, size, fileName, flags, 0, 0, caption, url, linkPreviewURL, linkPreviewTitle)
                                 }
-
                             } catch (e: Exception) {
-                                Log.w("Loki","Exception: $e")
+                                Log.d("Loki","Couldn't parse attachment due to error: $e.")
                                 null
                             }
                         }
