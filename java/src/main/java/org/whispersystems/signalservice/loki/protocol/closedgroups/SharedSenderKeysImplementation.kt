@@ -65,13 +65,6 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
     // endregion
 
     // region Private API
-    private fun generateRatchet(groupPublicKey: String, senderPublicKey: String): ClosedGroupRatchet {
-        val rootChainKey = Util.getSecretBytes(32).toHexString()
-        val ratchet = ClosedGroupRatchet(rootChainKey, 0, listOf())
-        database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, ratchet)
-        return ratchet
-    }
-
     private fun hmac(key: ByteArray, input: ByteArray): ByteArray {
         val mac = Mac.getInstance("HmacSHA256")
         mac.init(SecretKeySpec(key, "HmacSHA256"))
@@ -139,6 +132,13 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
     // endregion
 
     // region Public API
+    public fun generateRatchet(groupPublicKey: String, senderPublicKey: String): ClosedGroupRatchet {
+        val rootChainKey = Util.getSecretBytes(32).toHexString()
+        val ratchet = ClosedGroupRatchet(rootChainKey, 0, listOf())
+        database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, ratchet)
+        return ratchet
+    }
+
     public fun encrypt(plaintext: ByteArray, groupPublicKey: String, senderPublicKey: String): Pair<ByteArray, Int> {
         val ratchet = stepRatchetOnce(groupPublicKey, senderPublicKey)
         val iv = Util.getSecretBytes(ivSize)
