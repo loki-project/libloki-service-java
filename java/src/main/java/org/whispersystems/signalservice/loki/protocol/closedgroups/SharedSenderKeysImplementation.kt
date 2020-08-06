@@ -5,6 +5,7 @@ import org.whispersystems.libsignal.ecc.DjbECPublicKey
 import org.whispersystems.libsignal.ecc.ECKeyPair
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.libsignal.util.ByteUtil
+import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Util
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestEncryption
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
@@ -78,8 +79,8 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
     }
 
     private fun step(ratchet: ClosedGroupRatchet): ClosedGroupRatchet {
-        val nextMessageKey = hmac(ratchet.chainKey.toByteArray(), ByteArray(1) { 1.toByte() })
-        val nextChainKey = hmac(ratchet.chainKey.toByteArray(), ByteArray(1) { 2.toByte() })
+        val nextMessageKey = hmac(Hex.fromStringCondensed(ratchet.chainKey), ByteArray(1) { 1.toByte() })
+        val nextChainKey = hmac(Hex.fromStringCondensed(ratchet.chainKey), ByteArray(1) { 2.toByte() })
         val nextKeyIndex = ratchet.keyIndex + 1
         return ClosedGroupRatchet(nextChainKey.toHexString(), nextKeyIndex, ratchet.messageKeys + listOf( nextMessageKey.toHexString() ))
     }
@@ -143,7 +144,7 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
         val iv = Util.getSecretBytes(ivSize)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.last()
-        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(messageKey.toByteArray(), "AES"), GCMParameterSpec(gcmTagSize, iv))
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(gcmTagSize, iv))
         return Pair(ByteUtil.combine(iv, cipher.doFinal(plaintext)), ratchet.keyIndex)
     }
 
@@ -154,7 +155,7 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
         val ciphertext = ivAndCiphertext.sliceArray(ivSize until ivAndCiphertext.count())
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.lastOrNull() ?: throw MessageKeyMissing(keyIndex, groupPublicKey, senderPublicKey)
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(messageKey.toByteArray(), "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
+        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
         return cipher.doFinal(ciphertext)
     }
 
@@ -164,8 +165,8 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
 
     public fun getKeyPair(groupPublicKey: String): ECKeyPair? {
         val privateKey = database.getClosedGroupPrivateKey(groupPublicKey) ?: return null
-        return ECKeyPair(DjbECPublicKey(groupPublicKey.removing05PrefixIfNeeded().toByteArray()),
-            DjbECPrivateKey(privateKey.toByteArray()))
+        return ECKeyPair(DjbECPublicKey(Hex.fromStringCondensed(groupPublicKey.removing05PrefixIfNeeded())),
+            DjbECPrivateKey(Hex.fromStringCondensed(privateKey)))
     }
     // endregion
 }

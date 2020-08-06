@@ -1,10 +1,12 @@
 package org.whispersystems.signalservice.loki.protocol.closedgroups
 
-public class ClosedGroupSenderKey(public val chainKey: String, public val keyIndex: Int, public val publicKey: String) {
+import org.whispersystems.signalservice.loki.utilities.toHexString
+
+public class ClosedGroupSenderKey(public val chainKey: ByteArray, public val keyIndex: Int, public val publicKey: ByteArray) {
 
     override fun equals(other: Any?): Boolean {
         return if (other is ClosedGroupSenderKey) {
-            chainKey == other.chainKey && keyIndex == other.keyIndex && publicKey == other.publicKey
+            chainKey.contentEquals(other.chainKey) && keyIndex == other.keyIndex && publicKey.contentEquals(other.publicKey)
         } else {
             false
         }
@@ -15,6 +17,6 @@ public class ClosedGroupSenderKey(public val chainKey: String, public val keyInd
     }
 
     override fun toString(): String {
-        return "[ chainKey : $chainKey, keyIndex : $keyIndex, messageKeys : $publicKey ]"
+        return "[ chainKey : ${chainKey.toHexString()}, keyIndex : $keyIndex, messageKeys : ${publicKey.toHexString()} ]"
     }
 }
