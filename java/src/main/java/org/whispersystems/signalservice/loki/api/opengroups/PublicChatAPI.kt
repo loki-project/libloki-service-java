@@ -114,20 +114,17 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                                 val size = attachmentAsJSON["size"] as? Int ?: (attachmentAsJSON["size"] as? Long)?.toInt() ?: (attachmentAsJSON["size"] as String).toInt()
                                 val fileName = attachmentAsJSON["fileName"] as String
                                 val flags = 0
-
                                 val url = attachmentAsJSON["url"] as String
                                 val caption = attachmentAsJSON["caption"] as? String
                                 val linkPreviewURL = attachmentAsJSON["linkPreviewUrl"] as? String
                                 val linkPreviewTitle = attachmentAsJSON["linkPreviewTitle"] as? String
                                 if (kind == PublicChatMessage.Attachment.Kind.LinkPreview && (linkPreviewURL == null || linkPreviewTitle == null)) {
-
                                     null
                                 } else {
                                     PublicChatMessage.Attachment(kind, server, id, contentType, size, fileName, flags, 0, 0, caption, url, linkPreviewURL, linkPreviewTitle)
                                 }
-
                             } catch (e: Exception) {
-                                Log.w("Loki","Exception: $e")
+                                Log.d("Loki","Couldn't parse attachment due to error: $e.")
                                 null
                             }
                         }
@@ -225,7 +222,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
             val isModerationRequest = !isSentByUser
             Log.d("Loki", "Deleting message with ID: $messageServerID from open group with ID: $channel on server: $server (isModerationRequest = $isModerationRequest).")
             val endpoint = if (isSentByUser) "channels/$channel/messages/$messageServerID" else "loki/v1/moderation/message/$messageServerID"
-            execute(HTTPVerb.DELETE, server, endpoint).then {
+            execute(HTTPVerb.DELETE, server, endpoint, isJSONRequired = false).then {
                 Log.d("Loki", "Deleted message with ID: $messageServerID from open group with ID: $channel on server: $server.")
                 messageServerID
             }
@@ -238,7 +235,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
             val parameters = mapOf( "ids" to messageServerIDs.joinToString(",") )
             Log.d("Loki", "Deleting messages with IDs: ${messageServerIDs.joinToString()} from open group with ID: $channel on server: $server (isModerationRequest = $isModerationRequest).")
             val endpoint = if (isSentByUser) "loki/v1/messages" else "loki/v1/moderation/messages"
-            execute(HTTPVerb.DELETE, server, endpoint, parameters = parameters).then {
+            execute(HTTPVerb.DELETE, server, endpoint, parameters = parameters, isJSONRequired = false).then { json ->
                 Log.d("Loki", "Deleted messages with IDs: $messageServerIDs from open group with ID: $channel on server: $server.")
                 messageServerIDs
             }
@@ -302,9 +299,9 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
     }
 
     public fun getDisplayNames(publicKeys: Set<String>, server: String): Promise<Map<String, String>, Exception> {
-        return getUserProfiles(publicKeys, server, false).map(sharedContext) { data ->
+        return getUserProfiles(publicKeys, server, false).map(sharedContext) { json ->
             val mapping = mutableMapOf<String, String>()
-            for (user in data) {
+            for (user in json) {
                 if (user["username"] != null) {
                     val publicKey = user["username"] as String
                     val displayName = user["name"] as? String ?: "Anonymous"

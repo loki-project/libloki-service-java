@@ -10,6 +10,7 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.*
+import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
 import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.api.utilities.getBodyForOnionRequest
 import org.whispersystems.signalservice.loki.api.utilities.getHeadersForOnionRequest
@@ -265,7 +266,7 @@ public object OnionRequestAPI {
         )
         val destination = Destination.Server(host, x25519PublicKey)
         return sendOnionRequest(destination, payload, isJSONRequired).recover { exception ->
-            Log.d("Loki", "Couldn't reach server: $server due to error: $exception.")
+            Log.d("Loki", "Couldn't reach server: $urlAsString due to error: $exception.")
             throw exception
         }
     }
@@ -281,8 +282,9 @@ public object OnionRequestAPI {
             val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
             val finalEncryptionResult = result.finalEncryptionResult
             val onion = finalEncryptionResult.ciphertext
-            if (destination is Destination.Server) {
-                Log.d("Loki", "Onion request size: ~${onion.count()}")
+            if (destination is Destination.Server
+                && onion.count().toDouble() > 0.75 * (FileServerAPI.maxFileSize.toDouble() / FileServerAPI.fileSizeORMultiplier)) {
+                Log.d("Loki", "Approaching request size limit: ~${onion.count()} bytes.")
             }
             @Suppress("NAME_SHADOWING") val parameters = mapOf(
                 "ciphertext" to Base64.encodeBytes(onion),
@@ -308,12 +310,16 @@ public object OnionRequestAPI {
                                 val exception = HTTPRequestFailedAtDestinationException(statusCode, body)
                                 return@Thread deferred.reject(exception)
                             } else if (json["body"] != null) {
-                                val bodyAsString = json["body"] as String
                                 val body: Map<*, *>
-                                if (!isJSONRequired) {
-                                    body = mapOf( "result" to bodyAsString )
+                                if (json["body"] is Map<*, *>) {
+                                    body = json["body"] as Map<*, *>
                                 } else {
-                                    body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                                    val bodyAsString = json["body"] as String
+                                    if (!isJSONRequired) {
+                                        body = mapOf( "result" to bodyAsString )
+                                    } else {
+                                        body = JsonUtil.fromJson(bodyAsString, Map::class.java)
+                                    }
                                 }
                                 if (statusCode != 200) {
                                     val exception = HTTPRequestFailedAtDestinationException(statusCode, body)
@@ -328,7 +334,7 @@ public object OnionRequestAPI {
                                 deferred.resolve(json)
                             }
                         } catch (exception: Exception) {
-                            deferred.reject(Exception("Invalid JSON."))
+                            deferred.reject(Exception("Invalid JSON: $plaintext.toString(Charsets.UTF_8)."))
                         }
                     } catch (exception: Exception) {
                         deferred.reject(exception)

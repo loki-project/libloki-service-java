@@ -165,7 +165,7 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
         // This function mimics what Signal does in PushServiceSocket
         val contentType = "application/octet-stream"
         val file = DigestingRequestBody(attachment.data, attachment.outputStreamFactory, contentType, attachment.dataSize, attachment.listener)
-        Log.d("Loki", "File size: ${attachment.dataSize}")
+        Log.d("Loki", "File size: ${attachment.dataSize} bytes.")
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("type", "network.loki")
