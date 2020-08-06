@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.protocol.syncmessages
+package org.whispersystems.signalservice.loki.protocol.shelved.syncmessages
 
 import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage
 import org.whispersystems.signalservice.api.messages.SignalServiceGroup
@@ -12,7 +12,7 @@ public class SyncMessagesProtocol(private val apiDatabase: LokiAPIDatabaseProtoc
         public lateinit var shared: SyncMessagesProtocol
 
         public fun configureIfNeeded(apiDatabase: LokiAPIDatabaseProtocol, userPublicKey: String) {
-            if (::shared.isInitialized) { return; }
+            if (Companion::shared.isInitialized) { return; }
             shared = SyncMessagesProtocol(apiDatabase, userPublicKey)
         }
     }
@@ -23,11 +23,14 @@ public class SyncMessagesProtocol(private val apiDatabase: LokiAPIDatabaseProtoc
      * Note: This is called only if based on Signal's logic we'd want to send a sync message.
      */
     public fun shouldSyncMessage(message: SignalServiceDataMessage): Boolean {
+        return false
+        /*
         if (message.deviceLink.isPresent) { return false }
         val isOpenGroupMessage = message.group.isPresent && message.group.get().groupType == SignalServiceGroup.GroupType.PUBLIC_CHAT
         if (isOpenGroupMessage) { return false }
         val usesMultiDevice = apiDatabase.getDeviceLinks(userPublicKey).isNotEmpty()
         return usesMultiDevice
+         */
     }
     // endregion
 }

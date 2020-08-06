@@ -1,4 +1,4 @@
-package org.whispersystems.signalservice.loki.protocol.multidevice
+package org.whispersystems.signalservice.loki.protocol.shelved.multidevice
 
 import org.whispersystems.curve25519.Curve25519
 import org.whispersystems.libsignal.logging.Log
