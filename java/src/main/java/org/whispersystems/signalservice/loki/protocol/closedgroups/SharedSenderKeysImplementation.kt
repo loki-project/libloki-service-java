@@ -159,7 +159,7 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
     }
 
     public fun isClosedGroup(publicKey: String): Boolean {
-        return database.getClosedGroupPublicKeys().contains(publicKey)
+        return database.getAllClosedGroupPublicKeys().contains(publicKey)
     }
 
     public fun getKeyPair(groupPublicKey: String): ECKeyPair? {
