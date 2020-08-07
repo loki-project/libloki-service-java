@@ -3913,6 +3913,666 @@ public final class SignalProtos {
     // @@protoc_insertion_point(class_scope:textsecure.DeviceConsistencyCodeMessage)
   }
 
+  public interface ClosedGroupCiphertextMessageOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // optional bytes ciphertext = 1;
+    /**
+     * <code>optional bytes ciphertext = 1;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    boolean hasCiphertext();
+    /**
+     * <code>optional bytes ciphertext = 1;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    com.google.protobuf.ByteString getCiphertext();
+
+    // optional bytes senderPublicKey = 2;
+    /**
+     * <code>optional bytes senderPublicKey = 2;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    boolean hasSenderPublicKey();
+    /**
+     * <code>optional bytes senderPublicKey = 2;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    com.google.protobuf.ByteString getSenderPublicKey();
+
+    // optional uint32 keyIndex = 3;
+    /**
+     * <code>optional uint32 keyIndex = 3;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    boolean hasKeyIndex();
+    /**
+     * <code>optional uint32 keyIndex = 3;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    int getKeyIndex();
+  }
+  /**
+   * Protobuf type {@code textsecure.ClosedGroupCiphertextMessage}
+   */
+  public static final class ClosedGroupCiphertextMessage extends
+      com.google.protobuf.GeneratedMessage
+      implements ClosedGroupCiphertextMessageOrBuilder {
+    // Use ClosedGroupCiphertextMessage.newBuilder() to construct.
+    private ClosedGroupCiphertextMessage(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private ClosedGroupCiphertextMessage(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final ClosedGroupCiphertextMessage defaultInstance;
+    public static ClosedGroupCiphertextMessage getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public ClosedGroupCiphertextMessage getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private ClosedGroupCiphertextMessage(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              ciphertext_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              senderPublicKey_ = input.readBytes();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              keyIndex_ = input.readUInt32();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.whispersystems.libsignal.protocol.SignalProtos.internal_static_textsecure_ClosedGroupCiphertextMessage_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.whispersystems.libsignal.protocol.SignalProtos.internal_static_textsecure_ClosedGroupCiphertextMessage_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage.class, org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<ClosedGroupCiphertextMessage> PARSER =
+        new com.google.protobuf.AbstractParser<ClosedGroupCiphertextMessage>() {
+      public ClosedGroupCiphertextMessage parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new ClosedGroupCiphertextMessage(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<ClosedGroupCiphertextMessage> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // optional bytes ciphertext = 1;
+    public static final int CIPHERTEXT_FIELD_NUMBER = 1;
+    private com.google.protobuf.ByteString ciphertext_;
+    /**
+     * <code>optional bytes ciphertext = 1;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    public boolean hasCiphertext() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>optional bytes ciphertext = 1;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    public com.google.protobuf.ByteString getCiphertext() {
+      return ciphertext_;
+    }
+
+    // optional bytes senderPublicKey = 2;
+    public static final int SENDERPUBLICKEY_FIELD_NUMBER = 2;
+    private com.google.protobuf.ByteString senderPublicKey_;
+    /**
+     * <code>optional bytes senderPublicKey = 2;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    public boolean hasSenderPublicKey() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional bytes senderPublicKey = 2;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    public com.google.protobuf.ByteString getSenderPublicKey() {
+      return senderPublicKey_;
+    }
+
+    // optional uint32 keyIndex = 3;
+    public static final int KEYINDEX_FIELD_NUMBER = 3;
+    private int keyIndex_;
+    /**
+     * <code>optional uint32 keyIndex = 3;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    public boolean hasKeyIndex() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional uint32 keyIndex = 3;</code>
+     *
+     * <pre>
+     * @required
+     * </pre>
+     */
+    public int getKeyIndex() {
+      return keyIndex_;
+    }
+
+    private void initFields() {
+      ciphertext_ = com.google.protobuf.ByteString.EMPTY;
+      senderPublicKey_ = com.google.protobuf.ByteString.EMPTY;
+      keyIndex_ = 0;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, ciphertext_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, senderPublicKey_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeUInt32(3, keyIndex_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, ciphertext_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, senderPublicKey_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(3, keyIndex_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code textsecure.ClosedGroupCiphertextMessage}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessageOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.whispersystems.libsignal.protocol.SignalProtos.internal_static_textsecure_ClosedGroupCiphertextMessage_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.whispersystems.libsignal.protocol.SignalProtos.internal_static_textsecure_ClosedGroupCiphertextMessage_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage.class, org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage.Builder.class);
+      }
+
+      // Construct using org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        ciphertext_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        senderPublicKey_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        keyIndex_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.whispersystems.libsignal.protocol.SignalProtos.internal_static_textsecure_ClosedGroupCiphertextMessage_descriptor;
+      }
+
+      public org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage getDefaultInstanceForType() {
+        return org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage.getDefaultInstance();
+      }
+
+      public org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage build() {
+        org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage buildPartial() {
+        org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage result = new org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.ciphertext_ = ciphertext_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.senderPublicKey_ = senderPublicKey_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.keyIndex_ = keyIndex_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage) {
+          return mergeFrom((org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage other) {
+        if (other == org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage.getDefaultInstance()) return this;
+        if (other.hasCiphertext()) {
+          setCiphertext(other.getCiphertext());
+        }
+        if (other.hasSenderPublicKey()) {
+          setSenderPublicKey(other.getSenderPublicKey());
+        }
+        if (other.hasKeyIndex()) {
+          setKeyIndex(other.getKeyIndex());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.whispersystems.libsignal.protocol.SignalProtos.ClosedGroupCiphertextMessage) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // optional bytes ciphertext = 1;
+      private com.google.protobuf.ByteString ciphertext_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>optional bytes ciphertext = 1;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public boolean hasCiphertext() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>optional bytes ciphertext = 1;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public com.google.protobuf.ByteString getCiphertext() {
+        return ciphertext_;
+      }
+      /**
+       * <code>optional bytes ciphertext = 1;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public Builder setCiphertext(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        ciphertext_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bytes ciphertext = 1;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public Builder clearCiphertext() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        ciphertext_ = getDefaultInstance().getCiphertext();
+        onChanged();
+        return this;
+      }
+
+      // optional bytes senderPublicKey = 2;
+      private com.google.protobuf.ByteString senderPublicKey_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>optional bytes senderPublicKey = 2;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public boolean hasSenderPublicKey() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional bytes senderPublicKey = 2;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public com.google.protobuf.ByteString getSenderPublicKey() {
+        return senderPublicKey_;
+      }
+      /**
+       * <code>optional bytes senderPublicKey = 2;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public Builder setSenderPublicKey(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        senderPublicKey_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bytes senderPublicKey = 2;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public Builder clearSenderPublicKey() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        senderPublicKey_ = getDefaultInstance().getSenderPublicKey();
+        onChanged();
+        return this;
+      }
+
+      // optional uint32 keyIndex = 3;
+      private int keyIndex_ ;
+      /**
+       * <code>optional uint32 keyIndex = 3;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public boolean hasKeyIndex() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional uint32 keyIndex = 3;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public int getKeyIndex() {
+        return keyIndex_;
+      }
+      /**
+       * <code>optional uint32 keyIndex = 3;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public Builder setKeyIndex(int value) {
+        bitField0_ |= 0x00000004;
+        keyIndex_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 keyIndex = 3;</code>
+       *
+       * <pre>
+       * @required
+       * </pre>
+       */
+      public Builder clearKeyIndex() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        keyIndex_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:textsecure.ClosedGroupCiphertextMessage)
+    }
+
+    static {
+      defaultInstance = new ClosedGroupCiphertextMessage(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:textsecure.ClosedGroupCiphertextMessage)
+  }
+
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_textsecure_SignalMessage_descriptor;
   private static
@@ -3943,6 +4603,11 @@ public final class SignalProtos {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_textsecure_DeviceConsistencyCodeMessage_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_textsecure_ClosedGroupCiphertextMessage_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_textsecure_ClosedGroupCiphertextMessage_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -3968,8 +4633,10 @@ public final class SignalProtos {
       "iteration\030\002 \001(\r\022\020\n\010chainKey\030\003 \001(\014\022\022\n\nsig" +
       "ningKey\030\004 \001(\014\"E\n\034DeviceConsistencyCodeMe" +
       "ssage\022\022\n\ngeneration\030\001 \001(\r\022\021\n\tsignature\030\002" +
-      " \001(\014B5\n%org.whispersystems.libsignal.pro" +
-      "tocolB\014SignalProtos"
+      " \001(\014\"]\n\034ClosedGroupCiphertextMessage\022\022\n\n" +
+      "ciphertext\030\001 \001(\014\022\027\n\017senderPublicKey\030\002 \001(" +
+      "\014\022\020\n\010keyIndex\030\003 \001(\rB5\n%org.whispersystem" +
+      "s.libsignal.protocolB\014SignalProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4012,6 +4679,12 @@ public final class SignalProtos {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_textsecure_DeviceConsistencyCodeMessage_descriptor,
               new java.lang.String[] { "Generation", "Signature", });
+          internal_static_textsecure_ClosedGroupCiphertextMessage_descriptor =
+            getDescriptor().getMessageTypes().get(6);
+          internal_static_textsecure_ClosedGroupCiphertextMessage_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_textsecure_ClosedGroupCiphertextMessage_descriptor,
+              new java.lang.String[] { "Ciphertext", "SenderPublicKey", "KeyIndex", });
           return null;
         }
       };
