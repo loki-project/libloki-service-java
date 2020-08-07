@@ -1,7 +1,10 @@
 package org.whispersystems.signalservice.loki.protocol.closedgroups
 
+import com.google.protobuf.ByteString
 import org.whispersystems.libsignal.logging.Log
+import org.whispersystems.libsignal.protocol.SignalProtos
 import org.whispersystems.libsignal.util.Hex
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.utilities.toHexString
 
@@ -26,6 +29,14 @@ public class ClosedGroupSenderKey(public val chainKey: ByteArray, public val key
     public fun toJSON(): String {
         val json = mapOf( "chainKey" to chainKey.toHexString(), "keyIndex" to keyIndex, "publicKey" to publicKey.toHexString() )
         return JsonUtil.toJson(json)
+    }
+
+    public fun toProto(): SignalServiceProtos.ClosedGroupUpdate.SenderKey {
+        val builder = SignalServiceProtos.ClosedGroupUpdate.SenderKey.newBuilder()
+        builder.chainKey = ByteString.copyFrom(chainKey)
+        builder.keyIndex = keyIndex
+        builder.publicKey = ByteString.copyFrom(publicKey)
+        return builder.build()
     }
 
     override fun equals(other: Any?): Boolean {
