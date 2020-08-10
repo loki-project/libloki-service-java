@@ -25,6 +25,7 @@ import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPrivateKey;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
 import org.whispersystems.libsignal.kdf.HKDFv3;
+import org.whispersystems.libsignal.loki.ClosedGroupCiphertextMessage;
 import org.whispersystems.libsignal.loki.FallbackSessionCipher;
 import org.whispersystems.libsignal.loki.LokiSessionCipher;
 import org.whispersystems.libsignal.loki.SessionResetProtocol;
@@ -36,6 +37,8 @@ import org.whispersystems.libsignal.util.ByteUtil;
 import org.whispersystems.libsignal.util.Hex;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
+import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysImplementation;
+import org.whispersystems.signalservice.loki.utilities.HexEncodingKt;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
@@ -115,27 +118,37 @@ public class SealedSessionCipher {
      * Decrypt a sealed session message.
      * This will return a Pair<Integer, byte[]> which is the CipherTextMessage type and the decrypted message content
      */
-    public Pair<SignalProtocolAddress, Pair<Integer, byte[]>> decrypt(CertificateValidator validator, byte[] ciphertext, long timestamp)
+    public Pair<SignalProtocolAddress, Pair<Integer, byte[]>> decrypt(CertificateValidator validator, byte[] ciphertext, long timestamp, String senderPublicKey)
       throws
       InvalidMetadataMessageException, InvalidMetadataVersionException,
       ProtocolInvalidMessageException, ProtocolInvalidKeyException,
       ProtocolNoSessionException, ProtocolLegacyMessageException,
       ProtocolInvalidVersionException, ProtocolDuplicateMessageException,
       ProtocolInvalidKeyIdException, ProtocolUntrustedIdentityException,
-      SelfSendException
+      SelfSendException, IOException
   {
     UnidentifiedSenderMessageContent content;
 
     try {
-      IdentityKeyPair           ourIdentity    = signalProtocolStore.getIdentityKeyPair();
+      ECKeyPair keyPair;
+      if (sskDatabase.isSSKBasedClosedGroup(senderPublicKey)) {
+        String privateKey = sskDatabase.getClosedGroupPrivateKey(senderPublicKey);
+        if (privateKey == null) {
+          throw new InvalidKeyException();
+        }
+        keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(senderPublicKey)), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
+      } else {
+        IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
+        keyPair = new ECKeyPair(ourIdentity.getPublicKey().getPublicKey(), ourIdentity.getPrivateKey());
+      }
       UnidentifiedSenderMessage wrapper        = new UnidentifiedSenderMessage(ciphertext);
-      byte[]                    ephemeralSalt  = ByteUtil.combine("UnidentifiedDelivery".getBytes(), ourIdentity.getPublicKey().getPublicKey().serialize(), wrapper.getEphemeral().serialize());
-      EphemeralKeys             ephemeralKeys  = calculateEphemeralKeys(wrapper.getEphemeral(), ourIdentity.getPrivateKey(), ephemeralSalt);
+      byte[]                    ephemeralSalt  = ByteUtil.combine("UnidentifiedDelivery".getBytes(), keyPair.getPublicKey().serialize(), wrapper.getEphemeral().serialize());
+      EphemeralKeys             ephemeralKeys  = calculateEphemeralKeys(wrapper.getEphemeral(), keyPair.getPrivateKey(), ephemeralSalt);
       byte[]                    staticKeyBytes = decrypt(ephemeralKeys.cipherKey, ephemeralKeys.macKey, wrapper.getEncryptedStatic());
 
       ECPublicKey staticKey    = Curve.decodePoint(staticKeyBytes, 0);
       byte[]      staticSalt   = ByteUtil.combine(ephemeralKeys.chainKey, wrapper.getEncryptedStatic());
-      StaticKeys  staticKeys   = calculateStaticKeys(staticKey, ourIdentity.getPrivateKey(), staticSalt);
+      StaticKeys  staticKeys   = calculateStaticKeys(staticKey, keyPair.getPrivateKey(), staticSalt);
       byte[]      messageBytes = decrypt(staticKeys.cipherKey, staticKeys.macKey, wrapper.getEncryptedMessage());
 
       content = new UnidentifiedSenderMessageContent(messageBytes);
@@ -227,6 +240,11 @@ public class SealedSessionCipher {
           } catch (Exception e) {
               throw new InvalidMessageException("Failed to decrypt fallback message.");
           }
+      }
+      case CiphertextMessage.CLOSED_GROUP_CIPHERTEXT: {
+          ClosedGroupCiphertextMessage closedGroupCiphertextMessage = ClosedGroupCiphertextMessage.Companion.from(message.getContent());
+          return SharedSenderKeysImplementation.shared.decrypt(closedGroupCiphertextMessage.getIvAndCiphertext(), sender.toString(),
+              HexEncodingKt.toHexString(closedGroupCiphertextMessage.getSenderPublicKey()), closedGroupCiphertextMessage.getKeyIndex());
       }
       default: throw new InvalidMessageException("Unknown type: " + message.getType());
     }

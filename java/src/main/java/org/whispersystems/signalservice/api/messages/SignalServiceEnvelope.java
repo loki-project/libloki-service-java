@@ -266,6 +266,10 @@ public class SignalServiceEnvelope {
     return envelope.getType().getNumber() == Envelope.Type.FALLBACK_MESSAGE_VALUE;
   }
 
+  public boolean isClosedGroupCiphertext() {
+      return envelope.getType().getNumber() == Envelope.Type.CLOSED_GROUP_CIPHERTEXT_VALUE;
+  }
+
   private byte[] getPlaintext(byte[] ciphertext, SecretKeySpec cipherKey) throws IOException {
     try {
       byte[] ivBytes = new byte[IV_LENGTH];

@@ -36,7 +36,7 @@ import org.whispersystems.libsignal.UntrustedIdentityException;
 import org.whispersystems.libsignal.loki.LokiSessionCipher;
 import org.whispersystems.libsignal.loki.SessionResetProtocol;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
-import org.whispersystems.libsignal.protocol.ClosedGroupCiphertextMessage;
+import org.whispersystems.libsignal.loki.ClosedGroupCiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
@@ -192,7 +192,7 @@ public class SignalServiceCipher {
       ProtocolUntrustedIdentityException, ProtocolNoSessionException,
       ProtocolInvalidVersionException, ProtocolInvalidMessageException,
       ProtocolInvalidKeyException, ProtocolDuplicateMessageException,
-      SelfSendException
+      SelfSendException, IOException
 
   {
     try {
@@ -313,7 +313,7 @@ public class SignalServiceCipher {
       ProtocolLegacyMessageException, ProtocolInvalidKeyException,
       ProtocolInvalidVersionException, ProtocolInvalidMessageException,
       ProtocolInvalidKeyIdException, ProtocolNoSessionException,
-      SelfSendException
+      SelfSendException, IOException
   {
     try {
       SignalProtocolAddress sourceAddress       = new SignalProtocolAddress(envelope.getSource(), envelope.getSourceDevice());
@@ -324,7 +324,13 @@ public class SignalServiceCipher {
       Metadata metadata;
       int sessionVersion;
 
-      if (envelope.isPreKeySignalMessage()) {
+      if (envelope.isClosedGroupCiphertext()) {
+        Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp(), envelope.getSource());
+        Pair<Integer, byte[]> data = results.second();
+        paddedMessage = data.second();
+        metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false);
+        sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
+      } else if (envelope.isPreKeySignalMessage()) {
         paddedMessage  = sessionCipher.decrypt(new PreKeySignalMessage(ciphertext));
         metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
         sessionVersion = sessionCipher.getSessionVersion();
@@ -333,7 +339,7 @@ public class SignalServiceCipher {
         metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
         sessionVersion = sessionCipher.getSessionVersion();
       } else if (envelope.isUnidentifiedSender()) {
-        Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp());
+        Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp(), envelope.getSource());
         Pair<Integer, byte[]> data = results.second();
         paddedMessage = data.second();
         metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false);

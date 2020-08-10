@@ -1,7 +1,9 @@
-package org.whispersystems.libsignal.protocol
+package org.whispersystems.libsignal.loki
 
 import com.google.protobuf.ByteString
 import org.whispersystems.libsignal.logging.Log
+import org.whispersystems.libsignal.protocol.CiphertextMessage
+import org.whispersystems.libsignal.protocol.SignalProtos
 
 class ClosedGroupCiphertextMessage(val ivAndCiphertext: ByteArray, val senderPublicKey: ByteArray, val keyIndex: Int) : CiphertextMessage {
     private val serialized: ByteArray
