@@ -15,4 +15,8 @@ interface SharedSenderKeysDatabaseProtocol {
     fun removeClosedGroupPrivateKey(groupPublicKey: String)
     fun getAllClosedGroupPublicKeys(): Set<String>
     // endregion
+
+    // region Convenience
+    fun isSSKBasedClosedGroup(groupPublicKey: String): Boolean
+    // endregion
 }

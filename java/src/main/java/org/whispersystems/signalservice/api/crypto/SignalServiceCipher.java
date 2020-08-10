@@ -36,9 +36,11 @@ import org.whispersystems.libsignal.UntrustedIdentityException;
 import org.whispersystems.libsignal.loki.LokiSessionCipher;
 import org.whispersystems.libsignal.loki.SessionResetProtocol;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
+import org.whispersystems.libsignal.protocol.ClosedGroupCiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
+import org.whispersystems.libsignal.util.Hex;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
@@ -83,10 +85,14 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Typing
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
 import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.loki.api.opengroups.PublicChat;
-import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
+import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysImplementation;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
+import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.utilities.HexEncodingKt;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -106,18 +112,21 @@ public class SignalServiceCipher {
   @SuppressWarnings("unused")
   private static final String TAG = SignalServiceCipher.class.getSimpleName();
 
-  private final SignalProtocolStore  signalProtocolStore;
-  private final SessionResetProtocol sessionResetProtocol;
-  private final SignalServiceAddress localAddress;
-  private final CertificateValidator certificateValidator;
+  private final SignalProtocolStore              signalProtocolStore;
+  private final SessionResetProtocol             sessionResetProtocol;
+  private final SharedSenderKeysDatabaseProtocol sskDatabase;
+  private final SignalServiceAddress             localAddress;
+  private final CertificateValidator             certificateValidator;
 
   public SignalServiceCipher(SignalServiceAddress localAddress,
                              SignalProtocolStore signalProtocolStore,
+                             SharedSenderKeysDatabaseProtocol sskDatabase,
                              SessionResetProtocol sessionResetProtocol,
                              CertificateValidator certificateValidator)
   {
     this.signalProtocolStore  = signalProtocolStore;
     this.sessionResetProtocol = sessionResetProtocol;
+    this.sskDatabase          = sskDatabase;
     this.localAddress         = localAddress;
     this.certificateValidator = certificateValidator;
   }
@@ -125,10 +134,24 @@ public class SignalServiceCipher {
   public OutgoingPushMessage encrypt(SignalProtocolAddress        destination,
                                      Optional<UnidentifiedAccess> unidentifiedAccess,
                                      byte[]                       unpaddedMessage)
-      throws UntrustedIdentityException, InvalidKeyException
+      throws UntrustedIdentityException, InvalidKeyException, IOException
   {
-    if (unidentifiedAccess.isPresent()) {
-      SealedSessionCipher  sessionCipher        = new SealedSessionCipher(signalProtocolStore, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
+    if (unidentifiedAccess.isPresent() && sskDatabase.isSSKBasedClosedGroup(destination.toString())) {
+        String senderPublicKey = "05" + HexEncodingKt.toHexString(signalProtocolStore.getIdentityKeyPair().getPublicKey().serialize());
+        SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(localAddress.getNumber(), 1);
+        SealedSessionCipher  sessionCipher = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, signalProtocolAddress);
+        PushTransportDetails transportDetails = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
+        byte[] plaintext = transportDetails.getPaddedMessageBody(unpaddedMessage);
+        List<Object> ciphertextAndKeyIndex = SharedSenderKeysImplementation.Companion.getShared().encrypt(plaintext, destination.toString(), senderPublicKey);
+        byte[] ivAndCiphertext = (byte[])ciphertextAndKeyIndex.get(0);
+        int keyIndex = (int)ciphertextAndKeyIndex.get(1);
+        ClosedGroupCiphertextMessage closedGroupCiphertextMessage = new ClosedGroupCiphertextMessage(ivAndCiphertext, Hex.fromStringCondensed(senderPublicKey), keyIndex);
+        byte[] x = sessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), closedGroupCiphertextMessage);
+        String body = Base64.encodeBytes(x);
+        int remoteRegistrationId = sessionCipher.getRemoteRegistrationId(destination);
+        return new OutgoingPushMessage(Type.CLOSED_GROUP_CIPHERTEXT_VALUE, destination.getDeviceId(), remoteRegistrationId, body);
+    } else if (unidentifiedAccess.isPresent()) {
+      SealedSessionCipher  sessionCipher        = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
       PushTransportDetails transportDetails     = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
       byte[]               ciphertext           = sessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), transportDetails.getPaddedMessageBody(unpaddedMessage));
       String               body                 = Base64.encodeBytes(ciphertext);
@@ -145,9 +168,10 @@ public class SignalServiceCipher {
       int type;
 
       switch (message.getType()) {
-        case CiphertextMessage.PREKEY_TYPE:           type = Type.PREKEY_BUNDLE_VALUE;    break;
-        case CiphertextMessage.WHISPER_TYPE:          type = Type.CIPHERTEXT_VALUE;       break;
-        case CiphertextMessage.FALLBACK_MESSAGE_TYPE: type = Type.FALLBACK_MESSAGE_VALUE; break;
+        case CiphertextMessage.PREKEY_TYPE:             type = Type.PREKEY_BUNDLE_VALUE;    break;
+        case CiphertextMessage.WHISPER_TYPE:            type = Type.CIPHERTEXT_VALUE;       break;
+        case CiphertextMessage.FALLBACK_MESSAGE_TYPE:   type = Type.FALLBACK_MESSAGE_VALUE; break;
+        case CiphertextMessage.CLOSED_GROUP_CIPHERTEXT: type = Type.CLOSED_GROUP_CIPHERTEXT_VALUE; break;
         default: throw new AssertionError("Bad type: " + message.getType());
       }
 
@@ -294,7 +318,7 @@ public class SignalServiceCipher {
     try {
       SignalProtocolAddress sourceAddress       = new SignalProtocolAddress(envelope.getSource(), envelope.getSourceDevice());
       SessionCipher         sessionCipher       = new LokiSessionCipher(signalProtocolStore, sessionResetProtocol, sourceAddress);
-      SealedSessionCipher   sealedSessionCipher = new SealedSessionCipher(signalProtocolStore, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
+      SealedSessionCipher   sealedSessionCipher = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
 
       byte[] paddedMessage;
       Metadata metadata;

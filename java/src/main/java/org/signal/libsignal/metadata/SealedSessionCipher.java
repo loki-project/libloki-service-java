@@ -19,6 +19,8 @@ import org.whispersystems.libsignal.SessionCipher;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.UntrustedIdentityException;
 import org.whispersystems.libsignal.ecc.Curve;
+import org.whispersystems.libsignal.ecc.DjbECPrivateKey;
+import org.whispersystems.libsignal.ecc.DjbECPublicKey;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.ecc.ECPrivateKey;
 import org.whispersystems.libsignal.ecc.ECPublicKey;
@@ -33,6 +35,7 @@ import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.util.ByteUtil;
 import org.whispersystems.libsignal.util.Hex;
 import org.whispersystems.libsignal.util.Pair;
+import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
@@ -50,15 +53,18 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class SealedSessionCipher {
 
-  private final SignalProtocolStore   signalProtocolStore;
-  private final SessionResetProtocol  sessionResetProtocol;
+  private final SignalProtocolStore signalProtocolStore;
+  private final SharedSenderKeysDatabaseProtocol sskDatabase;
+  private final SessionResetProtocol sessionResetProtocol;
   private final SignalProtocolAddress localAddress;
 
   public SealedSessionCipher(SignalProtocolStore signalProtocolStore,
+                             SharedSenderKeysDatabaseProtocol sskDatabase,
                              SessionResetProtocol sessionResetProtocol,
                              SignalProtocolAddress localAddress)
   {
     this.signalProtocolStore  = signalProtocolStore;
+    this.sskDatabase          = sskDatabase;
     this.sessionResetProtocol = sessionResetProtocol;
     this.localAddress         = localAddress;
   }
@@ -74,7 +80,17 @@ public class SealedSessionCipher {
       throws InvalidKeyException
   {
       try {
-          IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
+          ECKeyPair keyPair;
+          if (sskDatabase.isSSKBasedClosedGroup(destinationAddress.toString())) {
+              String privateKey = sskDatabase.getClosedGroupPrivateKey(destinationAddress.toString());
+              if (privateKey == null) {
+                  throw new InvalidKeyException();
+              }
+              keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(destinationAddress.toString())), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
+          } else {
+              IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
+              keyPair = new ECKeyPair(ourIdentity.getPublicKey().getPublicKey(), ourIdentity.getPrivateKey());
+          }
 
           byte[]      theirPublicKey = Hex.fromStringCondensed(destinationAddress.getName());
           ECPublicKey theirIdentity  = new IdentityKey(theirPublicKey, 0).getPublicKey();
@@ -82,10 +98,10 @@ public class SealedSessionCipher {
           ECKeyPair     ephemeral           = Curve.generateKeyPair();
           byte[]        ephemeralSalt       = ByteUtil.combine("UnidentifiedDelivery".getBytes(), theirIdentity.serialize(), ephemeral.getPublicKey().serialize());
           EphemeralKeys ephemeralKeys       = calculateEphemeralKeys(theirIdentity, ephemeral.getPrivateKey(), ephemeralSalt);
-          byte[]        staticKeyCiphertext = encrypt(ephemeralKeys.cipherKey, ephemeralKeys.macKey, ourIdentity.getPublicKey().getPublicKey().serialize());
+          byte[]        staticKeyCiphertext = encrypt(ephemeralKeys.cipherKey, ephemeralKeys.macKey, keyPair.getPublicKey().serialize());
 
           byte[]                           staticSalt   = ByteUtil.combine(ephemeralKeys.chainKey, staticKeyCiphertext);
-          StaticKeys                       staticKeys   = calculateStaticKeys(theirIdentity, ourIdentity.getPrivateKey(), staticSalt);
+          StaticKeys                       staticKeys   = calculateStaticKeys(theirIdentity, keyPair.getPrivateKey(), staticSalt);
           UnidentifiedSenderMessageContent content      = new UnidentifiedSenderMessageContent(message.getType(), senderCertificate, message.serialize());
           byte[]                           messageBytes = encrypt(staticKeys.cipherKey, staticKeys.macKey, content.getSerialized());
 

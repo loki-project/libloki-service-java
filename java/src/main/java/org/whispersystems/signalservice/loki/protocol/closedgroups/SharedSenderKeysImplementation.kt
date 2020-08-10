@@ -139,13 +139,13 @@ public final class SharedSenderKeysImplementation(public val database: SharedSen
         return ratchet
     }
 
-    public fun encrypt(plaintext: ByteArray, groupPublicKey: String, senderPublicKey: String): Pair<ByteArray, Int> {
+    public fun encrypt(plaintext: ByteArray, groupPublicKey: String, senderPublicKey: String): List<Any> {
         val ratchet = stepRatchetOnce(groupPublicKey, senderPublicKey)
         val iv = Util.getSecretBytes(ivSize)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.last()
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(gcmTagSize, iv))
-        return Pair(ByteUtil.combine(iv, cipher.doFinal(plaintext)), ratchet.keyIndex)
+        return listOf( ByteUtil.combine(iv, cipher.doFinal(plaintext)), ratchet.keyIndex )
     }
 
     public fun decrypt(ivAndCiphertext: ByteArray, groupPublicKey: String, senderPublicKey: String, keyIndex: Int): ByteArray {
