@@ -84,12 +84,12 @@ public class SealedSessionCipher {
   {
       try {
           ECKeyPair keyPair;
-          if (sskDatabase.isSSKBasedClosedGroup(destinationAddress.toString())) {
-              String privateKey = sskDatabase.getClosedGroupPrivateKey(destinationAddress.toString());
+          if (sskDatabase.isSSKBasedClosedGroup(destinationAddress.getName())) {
+              String privateKey = sskDatabase.getClosedGroupPrivateKey(destinationAddress.getName());
               if (privateKey == null) {
                   throw new InvalidKeyException();
               }
-              keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(destinationAddress.toString())), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
+              keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(destinationAddress.getName())), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
           } else {
               IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
               keyPair = new ECKeyPair(ourIdentity.getPublicKey().getPublicKey(), ourIdentity.getPrivateKey());

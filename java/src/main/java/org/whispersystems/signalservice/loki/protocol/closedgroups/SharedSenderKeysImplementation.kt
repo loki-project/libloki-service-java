@@ -15,7 +15,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-public final class SharedSenderKeysImplementation(public val database: SharedSenderKeysDatabaseProtocol) {
+public final class SharedSenderKeysImplementation(private val database: SharedSenderKeysDatabaseProtocol) {
     private val gcmTagSize = 128
     private val ivSize = 12
 

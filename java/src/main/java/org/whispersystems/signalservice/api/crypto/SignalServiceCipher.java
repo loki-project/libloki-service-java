@@ -136,13 +136,13 @@ public class SignalServiceCipher {
                                      byte[]                       unpaddedMessage)
       throws UntrustedIdentityException, InvalidKeyException, IOException
   {
-    if (unidentifiedAccess.isPresent() && sskDatabase.isSSKBasedClosedGroup(destination.toString())) {
-        String senderPublicKey = "05" + HexEncodingKt.toHexString(signalProtocolStore.getIdentityKeyPair().getPublicKey().serialize());
+    if (unidentifiedAccess.isPresent() && sskDatabase.isSSKBasedClosedGroup(destination.getName())) {
+        String senderPublicKey = HexEncodingKt.toHexString(signalProtocolStore.getIdentityKeyPair().getPublicKey().serialize());
         SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(localAddress.getNumber(), 1);
         SealedSessionCipher  sessionCipher = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, signalProtocolAddress);
         PushTransportDetails transportDetails = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
         byte[] plaintext = transportDetails.getPaddedMessageBody(unpaddedMessage);
-        List<Object> ciphertextAndKeyIndex = SharedSenderKeysImplementation.Companion.getShared().encrypt(plaintext, destination.toString(), senderPublicKey);
+        List<Object> ciphertextAndKeyIndex = SharedSenderKeysImplementation.Companion.getShared().encrypt(plaintext, destination.getName(), senderPublicKey);
         byte[] ivAndCiphertext = (byte[])ciphertextAndKeyIndex.get(0);
         int keyIndex = (int)ciphertextAndKeyIndex.get(1);
         ClosedGroupCiphertextMessage closedGroupCiphertextMessage = new ClosedGroupCiphertextMessage(ivAndCiphertext, Hex.fromStringCondensed(senderPublicKey), keyIndex);
