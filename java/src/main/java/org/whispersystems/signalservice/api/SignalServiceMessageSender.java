@@ -1172,8 +1172,15 @@ public class SignalServiceMessageSender {
       }
       OutgoingPushMessage message = messages.getMessages().get(0);
       final SignalServiceProtos.Envelope.Type type = SignalServiceProtos.Envelope.Type.valueOf(message.type);
-      final String senderID = type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER ? "" : userPublicKey;
-      final int senderDeviceID = type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER ? 0 : SignalServiceAddress.DEFAULT_DEVICE_ID;
+      final String senderID;
+      if (type == SignalServiceProtos.Envelope.Type.CLOSED_GROUP_CIPHERTEXT) {
+          senderID = recipient.getNumber();
+      } else if (type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER) {
+          senderID = "";
+      } else {
+          senderID = userPublicKey;
+      }
+      final int senderDeviceID = (type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER) ? 0 : SignalServiceAddress.DEFAULT_DEVICE_ID;
       // Make sure we have a valid ttl; otherwise default to 2 days
       if (ttl <= 0) { ttl = TTLUtilities.INSTANCE.getFallbackMessageTTL(); }
       final int regularMessageTTL = TTLUtilities.getTTL(TTLUtilities.MessageType.Regular);
