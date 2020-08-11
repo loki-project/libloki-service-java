@@ -143,12 +143,12 @@ public class SignalServiceCipher {
         SealedSessionCipher  sessionCipher = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, signalProtocolAddress);
         PushTransportDetails transportDetails = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
         byte[] plaintext = transportDetails.getPaddedMessageBody(unpaddedMessage);
-        List<Object> ciphertextAndKeyIndex = SharedSenderKeysImplementation.Companion.getShared().encrypt(plaintext, destination.getName(), senderPublicKey);
-        byte[] ivAndCiphertext = (byte[])ciphertextAndKeyIndex.get(0);
-        int keyIndex = (int)ciphertextAndKeyIndex.get(1);
-        ClosedGroupCiphertextMessage closedGroupCiphertextMessage = new ClosedGroupCiphertextMessage(ivAndCiphertext, Hex.fromStringCondensed(senderPublicKey), keyIndex);
-        byte[] x = sessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), closedGroupCiphertextMessage);
-        String body = Base64.encodeBytes(x);
+        List<Object> ciphertextAndKeyIndex0 = SharedSenderKeysImplementation.Companion.getShared().encrypt(plaintext, destination.getName(), senderPublicKey);
+        byte[] ivAndCiphertext0 = (byte[])ciphertextAndKeyIndex0.get(0);
+        int keyIndex = (int)ciphertextAndKeyIndex0.get(1);
+        ClosedGroupCiphertextMessage closedGroupCiphertextMessage = new ClosedGroupCiphertextMessage(ivAndCiphertext0, Hex.fromStringCondensed(senderPublicKey), keyIndex);
+        byte[] ciphertext1 = sessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), closedGroupCiphertextMessage);
+        String body = Base64.encodeBytes(ciphertext1);
         int remoteRegistrationId = sessionCipher.getRemoteRegistrationId(destination);
         return new OutgoingPushMessage(Type.CLOSED_GROUP_CIPHERTEXT_VALUE, destination.getDeviceId(), remoteRegistrationId, body);
     } else if (unidentifiedAccess.isPresent()) {

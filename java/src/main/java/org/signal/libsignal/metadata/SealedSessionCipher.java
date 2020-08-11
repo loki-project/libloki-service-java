@@ -121,7 +121,7 @@ public class SealedSessionCipher {
      * Decrypt a sealed session message.
      * This will return a Pair<Integer, byte[]> which is the CipherTextMessage type and the decrypted message content
      */
-    public Pair<SignalProtocolAddress, Pair<Integer, byte[]>> decrypt(CertificateValidator validator, byte[] ciphertext, long timestamp, String prefixedSenderPublicKey)
+    public Pair<SignalProtocolAddress, Pair<Integer, byte[]>> decrypt(CertificateValidator validator, byte[] ciphertext, long timestamp, String prefixedPublicKey)
       throws
       InvalidMetadataMessageException, InvalidMetadataVersionException,
       ProtocolInvalidMessageException, ProtocolInvalidKeyException,
@@ -134,13 +134,13 @@ public class SealedSessionCipher {
 
     try {
       ECKeyPair keyPair;
-      if (sskDatabase.isSSKBasedClosedGroup(prefixedSenderPublicKey)) {
-        String privateKey = sskDatabase.getClosedGroupPrivateKey(prefixedSenderPublicKey);
+      if (sskDatabase.isSSKBasedClosedGroup(prefixedPublicKey)) {
+        String privateKey = sskDatabase.getClosedGroupPrivateKey(prefixedPublicKey);
         if (privateKey == null) {
           throw new InvalidKeyException();
         }
-        String senderPublicKey = TrimmingKt.removing05PrefixIfNeeded(prefixedSenderPublicKey);
-        keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(senderPublicKey)), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
+        String publicKey = TrimmingKt.removing05PrefixIfNeeded(prefixedPublicKey);
+        keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(publicKey)), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
       } else {
         IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
         keyPair = new ECKeyPair(ourIdentity.getPublicKey().getPublicKey(), ourIdentity.getPrivateKey());
@@ -172,8 +172,8 @@ public class SealedSessionCipher {
     }
 
     try {
-        // In the context of shared sender keys `prefixedSenderPublicKey` will be the group public key
-        Pair<Integer, byte[]> dataPair = new Pair<>(content.getType(), decrypt(content, prefixedSenderPublicKey));
+        // In the context of shared sender keys `prefixedPublicKey` will be the group public key
+        Pair<Integer, byte[]> dataPair = new Pair<>(content.getType(), decrypt(content, prefixedPublicKey));
         return new Pair<>(
             new SignalProtocolAddress(content.getSenderCertificate().getSender(), content.getSenderCertificate().getSenderDeviceId()),
             dataPair

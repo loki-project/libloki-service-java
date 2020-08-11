@@ -400,7 +400,7 @@ public class SignalServiceDataMessage {
 
     public SignalServiceDataMessage build() {
       if (timestamp == 0) timestamp = System.currentTimeMillis();
-        // closedGroupUpdate is always null because we don't use DataMessages to send them (we use ClosedGroupUpdateMessageSendJob)
+        // closedGroupUpdate is always null because we don't use SignalServiceDataMessage to send them (we use ClosedGroupUpdateMessageSendJob)
       return new SignalServiceDataMessage(timestamp, group, attachments, body, endSession,
                                           expiresInSeconds, expirationUpdate, profileKey,
                                           profileKeyUpdate, quote, sharedContacts, previews,
