@@ -33,10 +33,10 @@ import org.whispersystems.libsignal.NoSessionException;
 import org.whispersystems.libsignal.SessionCipher;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.UntrustedIdentityException;
+import org.whispersystems.libsignal.loki.ClosedGroupCiphertextMessage;
 import org.whispersystems.libsignal.loki.LokiSessionCipher;
 import org.whispersystems.libsignal.loki.SessionResetProtocol;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
-import org.whispersystems.libsignal.loki.ClosedGroupCiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
@@ -77,6 +77,7 @@ import org.whispersystems.signalservice.internal.push.PushTransportDetails;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.AttachmentPointer;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Content;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ClosedGroupUpdate;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope.Type;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ReceiptMessage;
@@ -381,6 +382,7 @@ public class SignalServiceCipher {
     List<SharedContact>            sharedContacts              = createSharedContacts(content);
     List<Preview>                  previews                    = createPreviews(content);
     Sticker                        sticker                     = createSticker(content);
+    ClosedGroupUpdate              closedGroupUpdate           = content.getClosedGroupUpdate();
     boolean                        isDeviceUnlinkingRequest    = ((content.getFlags() & DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE) != 0);
 
     for (AttachmentPointer pointer : content.getAttachmentsList()) {
@@ -408,6 +410,7 @@ public class SignalServiceCipher {
                                         sticker,
                                         null,
                                         null,
+                                        closedGroupUpdate,
                                         isDeviceUnlinkingRequest);
   }
 

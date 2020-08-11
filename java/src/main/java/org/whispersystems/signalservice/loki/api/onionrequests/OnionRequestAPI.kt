@@ -334,7 +334,7 @@ public object OnionRequestAPI {
                                 deferred.resolve(json)
                             }
                         } catch (exception: Exception) {
-                            deferred.reject(Exception("Invalid JSON: $plaintext.toString(Charsets.UTF_8)."))
+                            deferred.reject(Exception("Invalid JSON: ${plaintext.toString(Charsets.UTF_8)}."))
                         }
                     } catch (exception: Exception) {
                         deferred.reject(exception)
