@@ -172,7 +172,8 @@ public class SealedSessionCipher {
     }
 
     try {
-        Pair<Integer, byte[]> dataPair = new Pair<>(content.getType(), decrypt(content));
+        // In the context of shared sender keys `prefixedSenderPublicKey` will be the group public key
+        Pair<Integer, byte[]> dataPair = new Pair<>(content.getType(), decrypt(content, prefixedSenderPublicKey));
         return new Pair<>(
             new SignalProtocolAddress(content.getSenderCertificate().getSender(), content.getSenderCertificate().getSenderDeviceId()),
             dataPair
@@ -228,7 +229,10 @@ public class SealedSessionCipher {
     }
   }
 
-  private byte[] decrypt(UnidentifiedSenderMessageContent message)
+    /**
+     * `groupPublicKey` is only relevant in the context of shared sender keys.
+     */
+  private byte[] decrypt(UnidentifiedSenderMessageContent message, String groupPublicKey)
       throws InvalidVersionException, InvalidMessageException, InvalidKeyException, DuplicateMessageException, InvalidKeyIdException, UntrustedIdentityException, LegacyMessageException, NoSessionException
   {
 
@@ -247,7 +251,7 @@ public class SealedSessionCipher {
       }
       case CiphertextMessage.CLOSED_GROUP_CIPHERTEXT: {
           ClosedGroupCiphertextMessage closedGroupCiphertextMessage = ClosedGroupCiphertextMessage.Companion.from(message.getContent());
-          return SharedSenderKeysImplementation.shared.decrypt(closedGroupCiphertextMessage.getIvAndCiphertext(), sender.toString(),
+          return SharedSenderKeysImplementation.shared.decrypt(closedGroupCiphertextMessage.getIvAndCiphertext(), groupPublicKey,
               HexEncodingKt.toHexString(closedGroupCiphertextMessage.getSenderPublicKey()), closedGroupCiphertextMessage.getKeyIndex());
       }
       default: throw new InvalidMessageException("Unknown type: " + message.getType());

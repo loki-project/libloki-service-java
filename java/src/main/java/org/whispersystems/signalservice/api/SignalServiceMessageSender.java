@@ -1163,12 +1163,14 @@ public class SignalServiceMessageSender {
       }
       // ========
       Set<String> userLinkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey);
-      if (recipient.getNumber().equals(userPublicKey)) {
-        Log.d("Loki", "Sending message to self (id: " + messageID + ", ttl: " + ttl + ").");
+      if (sskDatabase.isSSKBasedClosedGroup(recipient.getNumber())) {
+        Log.d("Loki", "Sending message to closed group.")  ;
+      } else if (recipient.getNumber().equals(userPublicKey)) {
+        Log.d("Loki", "Sending message to self.");
       } else if (userLinkedDevices.contains(recipient.getNumber())) {
-        Log.d("Loki", "Sending message to linked device (id: " + messageID + ", ttl: " + ttl + ").");
+        Log.d("Loki", "Sending message to linked device.");
       } else {
-        Log.d("Loki", "Sending message to " + recipient.getNumber() + " (id: " + messageID + ", ttl: " + ttl + ").");
+        Log.d("Loki", "Sending message to " + recipient.getNumber() + ".");
       }
       OutgoingPushMessage message = messages.getMessages().get(0);
       final SignalServiceProtos.Envelope.Type type = SignalServiceProtos.Envelope.Type.valueOf(message.type);
