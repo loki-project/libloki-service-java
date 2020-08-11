@@ -39,6 +39,7 @@ import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
 import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysImplementation;
 import org.whispersystems.signalservice.loki.utilities.HexEncodingKt;
+import org.whispersystems.signalservice.loki.utilities.TrimmingKt;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
@@ -85,11 +86,13 @@ public class SealedSessionCipher {
       try {
           ECKeyPair keyPair;
           if (sskDatabase.isSSKBasedClosedGroup(destinationAddress.getName())) {
-              String privateKey = sskDatabase.getClosedGroupPrivateKey(destinationAddress.getName());
+              String prefixedPublicKey = destinationAddress.getName();
+              String privateKey = sskDatabase.getClosedGroupPrivateKey(prefixedPublicKey);
               if (privateKey == null) {
                   throw new InvalidKeyException();
               }
-              keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(destinationAddress.getName())), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
+              String publicKey = TrimmingKt.removing05PrefixIfNeeded(prefixedPublicKey);
+              keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(publicKey)), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
           } else {
               IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
               keyPair = new ECKeyPair(ourIdentity.getPublicKey().getPublicKey(), ourIdentity.getPrivateKey());
@@ -118,7 +121,7 @@ public class SealedSessionCipher {
      * Decrypt a sealed session message.
      * This will return a Pair<Integer, byte[]> which is the CipherTextMessage type and the decrypted message content
      */
-    public Pair<SignalProtocolAddress, Pair<Integer, byte[]>> decrypt(CertificateValidator validator, byte[] ciphertext, long timestamp, String senderPublicKey)
+    public Pair<SignalProtocolAddress, Pair<Integer, byte[]>> decrypt(CertificateValidator validator, byte[] ciphertext, long timestamp, String prefixedSenderPublicKey)
       throws
       InvalidMetadataMessageException, InvalidMetadataVersionException,
       ProtocolInvalidMessageException, ProtocolInvalidKeyException,
@@ -131,11 +134,12 @@ public class SealedSessionCipher {
 
     try {
       ECKeyPair keyPair;
-      if (sskDatabase.isSSKBasedClosedGroup(senderPublicKey)) {
-        String privateKey = sskDatabase.getClosedGroupPrivateKey(senderPublicKey);
+      if (sskDatabase.isSSKBasedClosedGroup(prefixedSenderPublicKey)) {
+        String privateKey = sskDatabase.getClosedGroupPrivateKey(prefixedSenderPublicKey);
         if (privateKey == null) {
           throw new InvalidKeyException();
         }
+        String senderPublicKey = TrimmingKt.removing05PrefixIfNeeded(prefixedSenderPublicKey);
         keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(senderPublicKey)), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
       } else {
         IdentityKeyPair ourIdentity = signalProtocolStore.getIdentityKeyPair();
