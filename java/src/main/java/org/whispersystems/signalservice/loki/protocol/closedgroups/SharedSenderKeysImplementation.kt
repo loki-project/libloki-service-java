@@ -15,7 +15,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-public final class SharedSenderKeysImplementation(private val database: SharedSenderKeysDatabaseProtocol) {
+public final class SharedSenderKeysImplementation(private val database: SharedSenderKeysDatabaseProtocol, private val delegate: SharedSenderKeysImplementationDelegate) {
     private val gcmTagSize = 128
     private val ivSize = 12
 
@@ -50,9 +50,9 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
 
         public lateinit var shared: SharedSenderKeysImplementation
 
-        public fun configureIfNeeded(database: SharedSenderKeysDatabaseProtocol) {
+        public fun configureIfNeeded(database: SharedSenderKeysDatabaseProtocol, delegate: SharedSenderKeysImplementationDelegate) {
             if (::shared.isInitialized) { return; }
-            shared = SharedSenderKeysImplementation(database)
+            shared = SharedSenderKeysImplementation(database, delegate)
         }
     }
     // endregion
@@ -149,8 +149,15 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
     }
 
     public fun decrypt(ivAndCiphertext: ByteArray, groupPublicKey: String, senderPublicKey: String, keyIndex: Int): ByteArray {
-        val ratchet = stepRatchet(groupPublicKey, senderPublicKey, keyIndex)
-        // TODO: Request sender key if needed from here?
+        val ratchet: ClosedGroupRatchet
+        try {
+            ratchet = stepRatchet(groupPublicKey, senderPublicKey, keyIndex)
+        } catch (exception: Exception) {
+            if (exception is LoadingFailed) {
+                delegate.requestSenderKey(groupPublicKey, senderPublicKey)
+            }
+            throw exception
+        }
         val iv = ivAndCiphertext.sliceArray(0 until ivSize)
         val ciphertext = ivAndCiphertext.sliceArray(ivSize until ivAndCiphertext.count())
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
