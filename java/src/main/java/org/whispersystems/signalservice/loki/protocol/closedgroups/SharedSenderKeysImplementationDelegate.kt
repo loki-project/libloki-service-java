@@ -1,6 +1,6 @@
 package org.whispersystems.signalservice.loki.protocol.closedgroups
 
-interface SharedSenderKeysImplementationDelegate {
+public interface SharedSenderKeysImplementationDelegate {
 
-    fun requestSenderKey(groupPublicKey: String, senderPublicKey: String)
+    public fun requestSenderKey(groupPublicKey: String, senderPublicKey: String)
 }
