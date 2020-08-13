@@ -10,6 +10,7 @@ import org.whispersystems.libsignal.state.PreKeyBundle;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ClosedGroupUpdate;
 import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
 import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
 
@@ -36,6 +37,7 @@ public class SignalServiceDataMessage {
   // Loki
   private final Optional<PreKeyBundle>                  preKeyBundle;
   private final Optional<DeviceLink>                    deviceLink;
+  private final Optional<ClosedGroupUpdate>             closedGroupUpdate;
   private final boolean                                 isDeviceUnlinkingRequest;
 
   /**
@@ -130,7 +132,7 @@ public class SignalServiceDataMessage {
                                   Quote quote, List<SharedContact> sharedContacts, List<Preview> previews,
                                   Sticker sticker)
   {
-    this(timestamp, group, attachments, body, endSession, expiresInSeconds, expirationUpdate, profileKey, profileKeyUpdate, quote, sharedContacts, previews, sticker, null, null, false);
+    this(timestamp, group, attachments, body, endSession, expiresInSeconds, expirationUpdate, profileKey, profileKeyUpdate, quote, sharedContacts, previews, sticker, null, null, null, false);
   }
 
   /**
@@ -150,7 +152,7 @@ public class SignalServiceDataMessage {
                                   boolean expirationUpdate, byte[] profileKey, boolean profileKeyUpdate,
                                   Quote quote, List<SharedContact> sharedContacts, List<Preview> previews,
                                   Sticker sticker, PreKeyBundle preKeyBundle, DeviceLink deviceLink,
-                                  boolean isDeviceUnlinkingRequest)
+                                  ClosedGroupUpdate closedGroupUpdate, boolean isDeviceUnlinkingRequest)
   {
     this.timestamp                   = timestamp;
     this.body                        = Optional.fromNullable(body);
@@ -164,6 +166,7 @@ public class SignalServiceDataMessage {
     this.sticker                     = Optional.fromNullable(sticker);
     this.preKeyBundle                = Optional.fromNullable(preKeyBundle);
     this.deviceLink                  = Optional.fromNullable(deviceLink);
+    this.closedGroupUpdate           = Optional.fromNullable(closedGroupUpdate);
     this.isDeviceUnlinkingRequest    = isDeviceUnlinkingRequest;
 
     if (attachments != null && !attachments.isEmpty()) {
@@ -263,6 +266,8 @@ public class SignalServiceDataMessage {
   public boolean isDeviceUnlinkingRequest() {
     return isDeviceUnlinkingRequest;
   }
+
+  public Optional<ClosedGroupUpdate> getClosedGroupUpdate() { return closedGroupUpdate; }
 
   public Optional<PreKeyBundle> getPreKeyBundle() { return preKeyBundle; }
 
@@ -395,11 +400,12 @@ public class SignalServiceDataMessage {
 
     public SignalServiceDataMessage build() {
       if (timestamp == 0) timestamp = System.currentTimeMillis();
+        // closedGroupUpdate is always null because we don't use SignalServiceDataMessage to send them (we use ClosedGroupUpdateMessageSendJob)
       return new SignalServiceDataMessage(timestamp, group, attachments, body, endSession,
                                           expiresInSeconds, expirationUpdate, profileKey,
                                           profileKeyUpdate, quote, sharedContacts, previews,
                                           sticker, preKeyBundle, deviceLink,
-                                          isDeviceUnlinkingRequest);
+                                          null, isDeviceUnlinkingRequest);
     }
   }
 

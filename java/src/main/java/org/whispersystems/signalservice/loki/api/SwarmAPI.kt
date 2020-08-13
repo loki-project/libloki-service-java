@@ -99,7 +99,7 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
         }
     }
 
-    internal fun getSwarm(publicKey: String): Promise<Set<Snode>, Exception> {
+    public fun getSwarm(publicKey: String): Promise<Set<Snode>, Exception> {
         val cachedSwarm = database.getSwarm(publicKey)
         if (cachedSwarm != null && cachedSwarm.size >= minimumSwarmSnodeCount) {
             val cachedSwarmCopy = mutableSetOf<Snode>() // Workaround for a Kotlin compiler issue

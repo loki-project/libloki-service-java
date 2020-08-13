@@ -46,3 +46,12 @@ message DeviceConsistencyCodeMessage {
   optional uint32 generation = 1;
   optional bytes  signature  = 2;
 }
+
+message ClosedGroupCiphertextMessage {
+  // @required
+  optional bytes  ciphertext      = 1;
+  // @required
+  optional bytes  senderPublicKey = 2;
+  // @required
+  optional uint32 keyIndex        = 3;
+}

@@ -26,10 +26,11 @@ public class UnidentifiedSenderMessageContent {
       }
 
       switch (message.getType()) {
-        case MESSAGE:          this.type = CiphertextMessage.WHISPER_TYPE;        break;
-        case PREKEY_MESSAGE:   this.type = CiphertextMessage.PREKEY_TYPE;         break;
-        case FALLBACK_MESSAGE: this.type = CiphertextMessage.FALLBACK_MESSAGE_TYPE; break;
-        default:               throw new InvalidMetadataMessageException("Unknown type: " + message.getType().getNumber());
+        case MESSAGE:                 this.type = CiphertextMessage.WHISPER_TYPE;            break;
+        case PREKEY_MESSAGE:          this.type = CiphertextMessage.PREKEY_TYPE;             break;
+        case FALLBACK_MESSAGE:        this.type = CiphertextMessage.FALLBACK_MESSAGE_TYPE;   break;
+        case CLOSED_GROUP_CIPHERTEXT: this.type = CiphertextMessage.CLOSED_GROUP_CIPHERTEXT; break;
+        default:                      throw new InvalidMetadataMessageException("Unknown type: " + message.getType().getNumber());
       }
 
       this.senderCertificate = new SenderCertificate(message.getSenderCertificate().toByteArray());
@@ -75,10 +76,11 @@ public class UnidentifiedSenderMessageContent {
 
   private int getProtoType(int type) {
     switch (type) {
-      case CiphertextMessage.WHISPER_TYPE:          return SignalProtos.UnidentifiedSenderMessage.Message.Type.MESSAGE_VALUE;
-      case CiphertextMessage.PREKEY_TYPE:           return SignalProtos.UnidentifiedSenderMessage.Message.Type.PREKEY_MESSAGE_VALUE;
-      case CiphertextMessage.FALLBACK_MESSAGE_TYPE: return SignalProtos.UnidentifiedSenderMessage.Message.Type.FALLBACK_MESSAGE_VALUE;
-      default:                                      throw new AssertionError(type);
+      case CiphertextMessage.WHISPER_TYPE:            return SignalProtos.UnidentifiedSenderMessage.Message.Type.MESSAGE_VALUE;
+      case CiphertextMessage.PREKEY_TYPE:             return SignalProtos.UnidentifiedSenderMessage.Message.Type.PREKEY_MESSAGE_VALUE;
+      case CiphertextMessage.FALLBACK_MESSAGE_TYPE:   return SignalProtos.UnidentifiedSenderMessage.Message.Type.FALLBACK_MESSAGE_VALUE;
+      case CiphertextMessage.CLOSED_GROUP_CIPHERTEXT: return SignalProtos.UnidentifiedSenderMessage.Message.Type.CLOSED_GROUP_CIPHERTEXT_VALUE;
+      default:                                        throw new AssertionError(type);
     }
   }
 

@@ -44,10 +44,6 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
 
         internal var powDifficulty = 1
         // endregion
-
-        // region User ID Caching
-
-        // endregion
     }
 
     // region Error
@@ -102,18 +98,18 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
         }
     }
 
-    internal fun getRawMessages(snode: Snode): RawResponsePromise {
-        val lastHashValue = database.getLastMessageHashValue(snode) ?: ""
-        val parameters = mapOf( "pubKey" to userPublicKey, "lastHash" to lastHashValue )
-        return invoke(Snode.Method.GetMessages, snode, userPublicKey, parameters)
+    public fun getRawMessages(snode: Snode, publicKey: String): RawResponsePromise {
+        val lastHashValue = database.getLastMessageHashValue(snode, publicKey) ?: ""
+        val parameters = mapOf( "pubKey" to publicKey, "lastHash" to lastHashValue )
+        return invoke(Snode.Method.GetMessages, snode, publicKey, parameters)
     }
     // endregion
 
     // region Public API
-    fun getMessages(): MessageListPromise {
+    fun getMessages(publicKey: String): MessageListPromise {
         return retryIfNeeded(maxRetryCount) {
-            SwarmAPI.shared.getSingleTargetSnode(userPublicKey).bind(messagePollingContext) { snode ->
-                getRawMessages(snode).map(messagePollingContext) { parseRawMessagesResponse(it, snode) }
+            SwarmAPI.shared.getSingleTargetSnode(publicKey).bind(messagePollingContext) { snode ->
+                getRawMessages(snode, publicKey).map(messagePollingContext) { parseRawMessagesResponse(it, snode, publicKey) }
             }
         }
     }
@@ -161,23 +157,23 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
 
     // The parsing utilities below use a best attempt approach to parsing; they warn for parsing failures but don't throw exceptions.
 
-    internal fun parseRawMessagesResponse(rawResponse: RawResponse, snode: Snode): List<Envelope> {
+    public fun parseRawMessagesResponse(rawResponse: RawResponse, snode: Snode, publicKey: String): List<Envelope> {
         val messages = rawResponse["messages"] as? List<*>
         if (messages != null) {
-            updateLastMessageHashValueIfPossible(snode, messages)
-            val newRawMessages = removeDuplicates(messages)
+            updateLastMessageHashValueIfPossible(snode, publicKey, messages)
+            val newRawMessages = removeDuplicates(publicKey, messages)
             return parseEnvelopes(newRawMessages)
         } else {
             return listOf()
         }
     }
 
-    private fun updateLastMessageHashValueIfPossible(snode: Snode, rawMessages: List<*>) {
+    private fun updateLastMessageHashValueIfPossible(snode: Snode, publicKey: String, rawMessages: List<*>) {
         val lastMessageAsJSON = rawMessages.lastOrNull() as? Map<*, *>
         val hashValue = lastMessageAsJSON?.get("hash") as? String
         val expiration = lastMessageAsJSON?.get("expiration") as? Int
         if (hashValue != null) {
-            database.setLastMessageHashValue(snode, hashValue)
+            database.setLastMessageHashValue(snode, publicKey, hashValue)
             if (expiration != null) {
                 PushNotificationAcknowledgement.shared.acknowledgeDeliveryForMessageWith(hashValue, expiration, userPublicKey)
             }
@@ -186,15 +182,15 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
         }
     }
 
-    private fun removeDuplicates(rawMessages: List<*>): List<*> {
-        val receivedMessageHashValues = database.getReceivedMessageHashValues()?.toMutableSet() ?: mutableSetOf()
+    private fun removeDuplicates(publicKey: String, rawMessages: List<*>): List<*> {
+        val receivedMessageHashValues = database.getReceivedMessageHashValues(publicKey)?.toMutableSet() ?: mutableSetOf()
         return rawMessages.filter { rawMessage ->
             val rawMessageAsJSON = rawMessage as? Map<*, *>
             val hashValue = rawMessageAsJSON?.get("hash") as? String
             if (hashValue != null) {
                 val isDuplicate = receivedMessageHashValues.contains(hashValue)
                 receivedMessageHashValues.add(hashValue)
-                database.setReceivedMessageHashValues(receivedMessageHashValues)
+                database.setReceivedMessageHashValues(publicKey, receivedMessageHashValues)
                 !isDuplicate
             } else {
                 Log.d("Loki", "Missing hash value for message: ${rawMessage?.prettifiedDescription()}.")
