@@ -262,6 +262,7 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
                 return Error.InsufficientProofOfWork
             }
             else -> {
+                dropSnodeIfNeeded(snode, hexEncodedPublicKey)
                 Log.d("Loki", "Unhandled response code: ${statusCode}.")
                 return Error.Generic
             }
