@@ -6,9 +6,9 @@ import java.util.zip.CRC32
 /**
  * Based on [mnemonic.js](https://github.com/loki-project/loki-messenger/blob/development/libloki/modules/mnemonic.js) .
  */
-class MnemonicCodec(private val languageFileDirectory: File) {
+class MnemonicCodec(private val loadFileContents: (String) -> String) {
 
-    class Language(private val languageFileDirectory: File, private val configuration: Configuration) {
+    class Language(private val loadFileContents: (String) -> String, private val configuration: Configuration) {
 
         data class Configuration(val filename: String, val prefixLength: Int) {
 
@@ -30,8 +30,7 @@ class MnemonicCodec(private val languageFileDirectory: File) {
             if (cachedResult != null) {
                 return cachedResult
             } else {
-                val file = File(languageFileDirectory.absolutePath, configuration.filename + ".txt")
-                val contents = file.readText()
+                val contents = loadFileContents(configuration.filename)
                 val result = contents.split(",")
                 wordSetCache[this] = result
                 return result
@@ -61,7 +60,7 @@ class MnemonicCodec(private val languageFileDirectory: File) {
 
     fun encode(hexEncodedString: String, languageConfiguration: Language.Configuration = Language.Configuration.english): String {
         var string = hexEncodedString
-        val language = Language(languageFileDirectory, languageConfiguration)
+        val language = Language(loadFileContents, languageConfiguration)
         val wordSet = language.loadWordSet()
         val prefixLength = languageConfiguration.prefixLength
         val result = mutableListOf<String>()
@@ -90,7 +89,7 @@ class MnemonicCodec(private val languageFileDirectory: File) {
 
     fun decode(mnemonic: String, languageConfiguration: Language.Configuration = Language.Configuration.english): String {
         val words = mnemonic.split(" ").toMutableList()
-        val language = Language(languageFileDirectory, languageConfiguration)
+        val language = Language(loadFileContents, languageConfiguration)
         val truncatedWordSet = language.loadTruncatedWordSet()
         val prefixLength = languageConfiguration.prefixLength
         var result = ""
