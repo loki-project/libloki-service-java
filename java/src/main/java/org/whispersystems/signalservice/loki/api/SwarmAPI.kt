@@ -45,6 +45,7 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
 
     // region Swarm API
     internal fun getRandomSnode(): Promise<Snode, Exception> {
+        val snodePool = this.snodePool
         if (snodePool.count() < minimumSnodePoolCount) {
             val target = seedNodePool.random()
             val url = "$target/json_rpc"
@@ -64,7 +65,7 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
                     val intermediate = json["result"] as? Map<*, *>
                     val rawSnodes = intermediate?.get("service_node_states") as? List<*>
                     if (rawSnodes != null) {
-                        val snodePool = rawSnodes.mapNotNull { rawSnode ->
+                        @Suppress("NAME_SHADOWING") val snodePool = rawSnodes.mapNotNull { rawSnode ->
                             val rawSnodeAsJSON = rawSnode as? Map<*, *>
                             val address = rawSnodeAsJSON?.get("public_ip") as? String
                             val port = rawSnodeAsJSON?.get("storage_port") as? Int
