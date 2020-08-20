@@ -11,8 +11,9 @@ import org.whispersystems.signalservice.api.messages.SignalServiceDataMessage
 import org.whispersystems.signalservice.api.push.SignalServiceAddress
 import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol
+import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol
 
-public class SessionManagementProtocol(private val sessionResetImpl: SessionResetProtocol, private val threadDatabase: LokiThreadDatabaseProtocol,
+public class SessionManagementProtocol(private val sessionResetImpl: SessionResetProtocol, private val sskDatabase: SharedSenderKeysDatabaseProtocol,
     private val delegate: SessionManagementProtocolDelegate) {
 
     // region Initialization
@@ -20,15 +21,16 @@ public class SessionManagementProtocol(private val sessionResetImpl: SessionRese
 
         public lateinit var shared: SessionManagementProtocol
 
-        public fun configureIfNeeded(sessionResetImpl: SessionResetProtocol, threadDatabase: LokiThreadDatabaseProtocol, delegate: SessionManagementProtocolDelegate) {
+        public fun configureIfNeeded(sessionResetImpl: SessionResetProtocol, sskDatabase: SharedSenderKeysDatabaseProtocol, delegate: SessionManagementProtocolDelegate) {
             if (::shared.isInitialized) { return; }
-            shared = SessionManagementProtocol(sessionResetImpl, threadDatabase, delegate)
+            shared = SessionManagementProtocol(sessionResetImpl, sskDatabase, delegate)
         }
     }
     // endregion
 
     // region Sending
     public fun shouldMessageUseFallbackEncryption(message: Any, publicKey: String, store: SignalProtocolStore): Boolean {
+        if (sskDatabase.isSSKBasedClosedGroup(publicKey)) { return true } // We don't actually use fallback encryption but this indicates that we don't need a session
         if (message is SignalServiceDataMessage && message.preKeyBundle.isPresent) { return true; }
         val recipient = SignalProtocolAddress(publicKey, SignalServiceAddress.DEFAULT_DEVICE_ID)
         return !store.containsSession(recipient)

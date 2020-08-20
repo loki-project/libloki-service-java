@@ -9,8 +9,9 @@ import org.whispersystems.signalservice.api.crypto.SignalServiceCipher
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope
 import org.whispersystems.signalservice.api.push.SignalServiceAddress
 import org.whispersystems.signalservice.internal.push.PushTransportDetails
+import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol
 
-class LokiServiceCipher(localAddress: SignalServiceAddress, private val signalProtocolStore: SignalProtocolStore, sessionResetProtocol: SessionResetProtocol, certificateValidator: CertificateValidator?) : SignalServiceCipher(localAddress, signalProtocolStore, sessionResetProtocol, certificateValidator) {
+class LokiServiceCipher(localAddress: SignalServiceAddress, private val signalProtocolStore: SignalProtocolStore, private val sskDatabase: SharedSenderKeysDatabaseProtocol, sessionResetProtocol: SessionResetProtocol, certificateValidator: CertificateValidator?) : SignalServiceCipher(localAddress, signalProtocolStore, sskDatabase, sessionResetProtocol, certificateValidator) {
 
     private val userPrivateKey get() = signalProtocolStore.identityKeyPair.privateKey.serialize()
 

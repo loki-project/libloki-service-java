@@ -13,7 +13,7 @@ public object TTLUtilities {
         // Somewhat important control messages
         DeviceLink,
         // Important control messages
-        Ephemeral, SessionRequest, Receipt, Sync, DeviceUnlinkingRequest,
+        ClosedGroupUpdate, Ephemeral, SessionRequest, Receipt, Sync, DeviceUnlinkingRequest,
         // Visible messages
         Regular
     }
@@ -29,7 +29,7 @@ public object TTLUtilities {
             // Somewhat important control messages
             MessageType.DeviceLink -> 1 * hourInMs
             // Important control messages
-            MessageType.Ephemeral, MessageType.SessionRequest, MessageType.Receipt,
+            MessageType.ClosedGroupUpdate, MessageType.Ephemeral, MessageType.SessionRequest, MessageType.Receipt,
             MessageType.Sync, MessageType.DeviceUnlinkingRequest -> 2 * dayInMs - 1 * hourInMs
             // Visible messages
             MessageType.Regular -> 2 * dayInMs

@@ -13,13 +13,14 @@ option java_outer_classname = "SignalServiceProtos";
 
 message Envelope {
   enum Type {
-    UNKNOWN             = 0;
-    CIPHERTEXT          = 1;
-    KEY_EXCHANGE        = 2;
-    PREKEY_BUNDLE       = 3;
-    RECEIPT             = 5;
-    UNIDENTIFIED_SENDER = 6;
-    FALLBACK_MESSAGE    = 101; // Loki - Encrypted using the fallback session cipher. Contains a pre key bundle if it's a session request.
+    UNKNOWN                 = 0;
+    CIPHERTEXT              = 1;
+    KEY_EXCHANGE            = 2;
+    PREKEY_BUNDLE           = 3;
+    RECEIPT                 = 5;
+    UNIDENTIFIED_SENDER     = 6;
+    CLOSED_GROUP_CIPHERTEXT = 7; // Loki
+    FALLBACK_MESSAGE        = 101; // Loki - Encrypted using the fallback session cipher. Contains a pre key bundle if it's a session request.
   }
 
   optional Type   type            = 1;
@@ -40,8 +41,8 @@ message Content {
   optional NullMessage         nullMessage         = 4;
   optional ReceiptMessage      receiptMessage      = 5;
   optional TypingMessage       typingMessage       = 6;
-  optional PreKeyBundleMessage preKeyBundleMessage = 101;
-  optional DeviceLinkMessage   deviceLinkMessage   = 103;
+  optional PreKeyBundleMessage preKeyBundleMessage = 101; // Loki
+  optional DeviceLinkMessage   deviceLinkMessage   = 103; // Loki
 }
 
 message DeviceLinkMessage {
@@ -99,9 +100,7 @@ message DataMessage {
     END_SESSION                 = 1;
     EXPIRATION_TIMER_UPDATE     = 2;
     PROFILE_KEY_UPDATE          = 4;
-    SESSION_RESTORATION_REQUEST = 64;
     DEVICE_UNLINKING_REQUEST    = 128;
-    SESSION_REQUEST             = 256;
   }
 
   message Quote {
@@ -197,23 +196,53 @@ message DataMessage {
     optional AttachmentPointer data      = 4;
   }
 
-  optional string             body        = 1;
-  repeated AttachmentPointer  attachments = 2;
-  optional GroupContext       group       = 3;
-  optional uint32             flags       = 4;
-  optional uint32             expireTimer = 5;
-  optional bytes              profileKey  = 6;
-  optional uint64             timestamp   = 7;
-  optional Quote              quote       = 8;
-  repeated Contact            contact     = 9;
-  repeated Preview            preview     = 10;
-  optional Sticker            sticker     = 11;
-  optional LokiUserProfile    profile     = 101; // Loki - The profile of the current user
+  optional string            body              = 1;
+  repeated AttachmentPointer attachments       = 2;
+  optional GroupContext      group             = 3;
+  optional uint32            flags             = 4;
+  optional uint32            expireTimer       = 5;
+  optional bytes             profileKey        = 6;
+  optional uint64            timestamp         = 7;
+  optional Quote             quote             = 8;
+  repeated Contact           contact           = 9;
+  repeated Preview           preview           = 10;
+  optional Sticker           sticker           = 11;
+  optional LokiUserProfile   profile           = 101; // Loki - The profile of the current user
+  optional ClosedGroupUpdate closedGroupUpdate = 103; // Loki
 }
 
 message LokiUserProfile {
   optional string displayName       = 1;
   optional string profilePictureURL = 2;
+}
+
+message ClosedGroupUpdate { // Loki
+  enum Type {
+    NEW                = 0; // groupPublicKey, name, groupPrivateKey, senderKeys, members, admins
+    INFO               = 1; // groupPublicKey, name, senderKeys, members, admins
+    SENDER_KEY_REQUEST = 2; // groupPublicKey
+    SENDER_KEY         = 3; // groupPublicKey, senderKeys
+
+  }
+
+  message SenderKey {
+    // @required
+    optional bytes  chainKey  = 1;
+    // @required
+    optional uint32 keyIndex  = 2;
+    // @required
+    optional bytes  publicKey = 3;
+  }
+
+  optional string    name            = 1;
+  // @required
+  optional bytes     groupPublicKey  = 2;
+  optional bytes     groupPrivateKey = 3;
+  repeated SenderKey senderKeys      = 4;
+  repeated bytes     members         = 5;
+  repeated bytes     admins          = 6;
+  // @required
+  optional Type      type            = 7;
 }
 
 message NullMessage {

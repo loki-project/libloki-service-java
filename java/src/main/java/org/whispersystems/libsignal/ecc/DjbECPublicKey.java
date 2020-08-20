@@ -15,7 +15,7 @@ public class DjbECPublicKey implements ECPublicKey {
 
   private final byte[] publicKey;
 
-  DjbECPublicKey(byte[] publicKey) {
+  public DjbECPublicKey(byte[] publicKey) {
     this.publicKey = publicKey;
   }
 
