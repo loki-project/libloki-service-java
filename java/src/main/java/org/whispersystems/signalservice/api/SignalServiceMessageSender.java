@@ -1414,34 +1414,39 @@ public class SignalServiceMessageSender {
     SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(recipient.getNumber(), deviceID);
     SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, null);
 
-    if (!store.containsSession(signalProtocolAddress)) {
       try {
-        String contactPublicKey = recipient.getNumber();
-        PreKeyBundle preKeyBundle = preKeyBundleDatabase.getPreKeyBundle(contactPublicKey);
-        if (preKeyBundle == null) {
-          SessionManagementProtocol.shared.repairSessionIfNeeded(recipient, isClosedGroup);
-          // Loki - Remove this when we have shared sender keys
-          // ========
-          if (SessionManagementProtocol.shared.shouldIgnoreMissingPreKeyBundleException(isClosedGroup)) { return null; }
-          // ========
-          throw new InvalidKeyException("Pre key bundle not found for: " + recipient.getNumber() + ".");
-        }
-        try {
-          SignalProtocolAddress address = new SignalProtocolAddress(contactPublicKey, preKeyBundle.getDeviceId());
-          SessionBuilder sessionBuilder = new SessionBuilder(store, address);
-          sessionBuilder.process(preKeyBundle);
-          // Loki - Discard the pre key bundle once the session has been established
-          preKeyBundleDatabase.removePreKeyBundle(contactPublicKey);
-        } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
-          throw new UntrustedIdentityException("Untrusted identity key", recipient.getNumber(), preKeyBundle.getIdentityKey());
-        }
-        if (eventListener.isPresent()) {
-          eventListener.get().onSecurityEvent(recipient);
-        }
+          String contactPublicKey = recipient.getNumber();
+          PreKeyBundle preKeyBundle = preKeyBundleDatabase.getPreKeyBundle(contactPublicKey);
+          if (preKeyBundle == null) {
+              if (!store.containsSession(signalProtocolAddress)) {
+                  SessionManagementProtocol.shared.repairSessionIfNeeded(recipient, isClosedGroup);
+                  // Loki - Remove this when we have shared sender keys
+                  // ========
+                  if (SessionManagementProtocol.shared.shouldIgnoreMissingPreKeyBundleException(isClosedGroup)) {
+                      return null;
+                  }
+                  // ========
+                  throw new InvalidKeyException("Pre key bundle not found for: " + recipient.getNumber() + ".");
+              }
+          } else {
+              try {
+                  SignalProtocolAddress address = new SignalProtocolAddress(contactPublicKey, preKeyBundle.getDeviceId());
+                  SessionBuilder sessionBuilder = new SessionBuilder(store, address);
+                  sessionBuilder.process(preKeyBundle);
+                  // Loki - Discard the pre key bundle once the session has been established
+                  preKeyBundleDatabase.removePreKeyBundle(contactPublicKey);
+              } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
+                  throw new UntrustedIdentityException("Untrusted identity key", recipient.getNumber(), preKeyBundle.getIdentityKey());
+              }
+              if (eventListener.isPresent()) {
+                  eventListener.get().onSecurityEvent(recipient);
+              }
+          }
       } catch (InvalidKeyException e) {
-        throw new IOException(e);
+          throw new IOException(e);
       }
-    }
+
+
 
     // Loki - Ensure all session processing has finished
     synchronized (SESSION_LOCK) {
