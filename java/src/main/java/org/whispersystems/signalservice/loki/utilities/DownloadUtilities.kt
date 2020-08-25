@@ -18,7 +18,7 @@ object DownloadUtilities {
      */
     fun downloadFile(destination: File, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
         val outputStream = FileOutputStream(destination) // Throws
-        var remainingAttempts = 3
+        var remainingAttempts = 4
         var exception: Exception? = null
         while (remainingAttempts > 0) {
             remainingAttempts -= 1
@@ -72,8 +72,11 @@ object DownloadUtilities {
                     bytes = input.read(buffer)
                 }
             } else {
-                Log.d("Loki", "Couldn't download attachment due to error: ${response.code()}.")
-                throw NonSuccessfulResponseCodeException("Response: $response")
+                Log.d("Loki", "Couldn't download attachment due to error: ${response.code() }.")
+                // The line below used to be: throw NonSuccessfulResponseCodeException("Response: $response"), but the file server
+                // returns an unsuccessful HTTP status code too often for us to do that (AttachmentDownloadJob wants a
+                // PushNetworkException or it won't retry).
+                throw PushNetworkException(NonSuccessfulResponseCodeException("Response: $response"))
             }
         } catch (e: Exception) {
             Log.d("Loki", "Couldn't download attachment.")
