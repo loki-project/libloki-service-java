@@ -1414,18 +1414,21 @@ public class SignalServiceMessageSender {
     SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(recipient.getNumber(), deviceID);
     SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, null);
 
-    if (!store.containsSession(signalProtocolAddress)) {
-      try {
-        String contactPublicKey = recipient.getNumber();
-        PreKeyBundle preKeyBundle = preKeyBundleDatabase.getPreKeyBundle(contactPublicKey);
-        if (preKeyBundle == null) {
+    try {
+      String contactPublicKey = recipient.getNumber();
+      PreKeyBundle preKeyBundle = preKeyBundleDatabase.getPreKeyBundle(contactPublicKey);
+      if (preKeyBundle == null) {
+        if (!store.containsSession(signalProtocolAddress)) {
           SessionManagementProtocol.shared.repairSessionIfNeeded(recipient, isClosedGroup);
           // Loki - Remove this when we have shared sender keys
           // ========
-          if (SessionManagementProtocol.shared.shouldIgnoreMissingPreKeyBundleException(isClosedGroup)) { return null; }
+          if (SessionManagementProtocol.shared.shouldIgnoreMissingPreKeyBundleException(isClosedGroup)) {
+            return null;
+          }
           // ========
           throw new InvalidKeyException("Pre key bundle not found for: " + recipient.getNumber() + ".");
         }
+      } else {
         try {
           SignalProtocolAddress address = new SignalProtocolAddress(contactPublicKey, preKeyBundle.getDeviceId());
           SessionBuilder sessionBuilder = new SessionBuilder(store, address);
@@ -1438,11 +1441,11 @@ public class SignalServiceMessageSender {
         if (eventListener.isPresent()) {
           eventListener.get().onSecurityEvent(recipient);
         }
-      } catch (InvalidKeyException e) {
-        throw new IOException(e);
       }
+    } catch (InvalidKeyException e) {
+      throw new IOException(e);
     }
-
+    
     // Loki - Ensure all session processing has finished
     synchronized (SESSION_LOCK) {
       try {
