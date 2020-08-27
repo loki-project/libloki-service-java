@@ -15,7 +15,8 @@ public data class PublicChatMessage(
     public val quote: Quote?,
     public val attachments: List<Attachment>,
     public val profilePicture: ProfilePicture?,
-    public val signature: Signature?
+    public val signature: Signature?,
+    public val serverTimestamp: Long
 ) {
 
     // region Settings
@@ -80,7 +81,7 @@ public data class PublicChatMessage(
 
     // region Initialization
     constructor(hexEncodedPublicKey: String, displayName: String, body: String, timestamp: Long, type: String, quote: Quote?, attachments: List<Attachment>)
-        : this(null, hexEncodedPublicKey, displayName, body, timestamp, type, quote, attachments, null, null)
+        : this(null, hexEncodedPublicKey, displayName, body, timestamp, type, quote, attachments, null, null, 0)
     // endregion
 
     // region Crypto

@@ -25,7 +25,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         val sharedContext = Kovenant.createContext("LokiPublicChatAPISharedContext")
 
         // region Settings
-        private val fallbackBatchCount = 16
+        private val fallbackBatchCount = 64
         private val maxRetryCount = 8
         // endregion
 
@@ -134,14 +134,17 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                         val hexEncodedSignature = value["sig"] as String
                         val signatureVersion = value["sigver"] as? Long ?: (value["sigver"] as? Int)?.toLong() ?: (value["sigver"] as String).toLong()
                         val signature = PublicChatMessage.Signature(Hex.fromStringCondensed(hexEncodedSignature), signatureVersion)
+                        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                        val dateAsString = message["created_at"] as String
+                        val serverTimestamp = format.parse(dateAsString).time
                         // Verify the message
-                        val groupMessage = PublicChatMessage(serverID, publicKey, displayName, body, timestamp, publicChatMessageType, quote, attachments, profilePicture, signature)
+                        val groupMessage = PublicChatMessage(serverID, publicKey, displayName, body, timestamp, publicChatMessageType, quote, attachments, profilePicture, signature, serverTimestamp)
                         if (groupMessage.hasValidSignature()) groupMessage else null
                     } catch (exception: Exception) {
                         Log.d("Loki", "Couldn't parse message for open group with ID: $channel on server: $server from: ${JsonUtil.toJson(message)}. Exception: ${exception.message}")
                         return@mapNotNull null
                     }
-                }.sortedBy { it.timestamp }
+                }.sortedBy { it.serverTimestamp }
                 messages
             } catch (exception: Exception) {
                 Log.d("Loki", "Couldn't parse messages for open group with ID: $channel on server: $server.")
@@ -200,7 +203,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                             val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
                             val dateAsString = data["created_at"] as String
                             val timestamp = format.parse(dateAsString).time
-                            @Suppress("NAME_SHADOWING") val message = PublicChatMessage(serverID, userPublicKey, displayName, text, timestamp, publicChatMessageType, message.quote, message.attachments, null, signedMessage.signature)
+                            @Suppress("NAME_SHADOWING") val message = PublicChatMessage(serverID, userPublicKey, displayName, text, timestamp, publicChatMessageType, message.quote, message.attachments, null, signedMessage.signature, timestamp)
                             message
                         } catch (exception: Exception) {
                             Log.d("Loki", "Couldn't parse message for open group with ID: $channel on server: $server.")
