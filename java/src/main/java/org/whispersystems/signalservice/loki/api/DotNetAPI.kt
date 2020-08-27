@@ -173,21 +173,19 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
             .addFormDataPart("content", UUID.randomUUID().toString(), file)
             .build()
         val request = Request.Builder().url("$server/files").post(body)
-        return retryIfNeeded(4) {
-            upload(server, request) { json ->
-                val data = json["data"] as? Map<*, *>
-                if (data == null) {
-                    Log.d("Loki", "Couldn't parse attachment from: $json.")
-                    throw SnodeAPI.Error.ParsingFailed
-                }
-                val id = data["id"] as? Long ?: (data["id"] as? Int)?.toLong() ?: (data["id"] as? String)?.toLong()
-                val url = data["url"] as? String
-                if (id == null || url == null || url.isEmpty()) {
-                    Log.d("Loki", "Couldn't parse upload from: $json.")
-                    throw SnodeAPI.Error.ParsingFailed
-                }
-                UploadResult(id, url, file.transmittedDigest)
+        return upload(server, request) { json -> // Retrying is handled by AttachmentUploadJob
+            val data = json["data"] as? Map<*, *>
+            if (data == null) {
+                Log.d("Loki", "Couldn't parse attachment from: $json.")
+                throw SnodeAPI.Error.ParsingFailed
             }
+            val id = data["id"] as? Long ?: (data["id"] as? Int)?.toLong() ?: (data["id"] as? String)?.toLong()
+            val url = data["url"] as? String
+            if (id == null || url == null || url.isEmpty()) {
+                Log.d("Loki", "Couldn't parse upload from: $json.")
+                throw SnodeAPI.Error.ParsingFailed
+            }
+            UploadResult(id, url, file.transmittedDigest)
         }.get()
     }
 
@@ -203,7 +201,7 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
             .addFormDataPart("content", UUID.randomUUID().toString(), file)
             .build()
         val request = Request.Builder().url("$server/files").post(body)
-        return retryIfNeeded(8) {
+        return retryIfNeeded(4) {
             upload(server, request) { json ->
                 val data = json["data"] as? Map<*, *>
                 if (data == null) {
