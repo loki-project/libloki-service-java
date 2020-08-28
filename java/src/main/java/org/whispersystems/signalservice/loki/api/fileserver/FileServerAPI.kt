@@ -46,7 +46,7 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
          * the size of the file by this number. The alternative would be to actually check the size of the HTTP request but that's only possible after proof of work
          * has been calculated and the onion request encryption has happened, which takes several seconds.
          */
-        public val fileSizeORMultiplier = 6.0
+        public val fileSizeORMultiplier = 10.0
         // endregion
 
         // region Initialization
