@@ -283,7 +283,7 @@ public object OnionRequestAPI {
             val finalEncryptionResult = result.finalEncryptionResult
             val onion = finalEncryptionResult.ciphertext
             if (destination is Destination.Server
-                && onion.count().toDouble() > 0.75 * (FileServerAPI.maxFileSize.toDouble() / FileServerAPI.fileSizeORMultiplier)) {
+                && onion.count().toDouble() > 0.75 * FileServerAPI.maxFileSize.toDouble()) {
                 Log.d("Loki", "Approaching request size limit: ~${onion.count()} bytes.")
             }
             @Suppress("NAME_SHADOWING") val parameters = mapOf(
