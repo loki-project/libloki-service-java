@@ -231,6 +231,7 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
                 SwarmAPI.shared.dropSnodeFromSwarmIfNeeded(snode, publicKey)
             }
             SwarmAPI.shared.snodePool = SwarmAPI.shared.snodePool.toMutableSet().minus(snode).toSet()
+            Log.d("Loki", "Snode pool count: ${SwarmAPI.shared.snodePool.count()}.")
             SwarmAPI.shared.snodeFailureCount[snode] = 0
         }
     }

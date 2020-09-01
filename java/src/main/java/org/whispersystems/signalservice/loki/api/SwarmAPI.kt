@@ -23,14 +23,14 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
         private val seedNodePool: Set<String> = setOf( "https://storage.seed1.loki.network", "https://storage.seed3.loki.network", "https://public.loki.foundation" )
 
         // region Settings
-        private val minimumSnodePoolCount = 32
+        private val minimumSnodePoolCount = 64
         private val minimumSwarmSnodeCount = 2
         private val targetSwarmSnodeCount = 2
 
         /**
          * A snode is kicked out of a swarm and/or the snode pool if it fails this many times.
          */
-        internal val snodeFailureThreshold = 2
+        internal val snodeFailureThreshold = 1
         // endregion
 
         // region Initialization

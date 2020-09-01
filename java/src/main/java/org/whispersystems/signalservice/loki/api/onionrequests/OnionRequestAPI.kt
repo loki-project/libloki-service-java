@@ -37,12 +37,6 @@ public object OnionRequestAPI {
             }
         }
 
-    private val reliableSnodePool: Set<Snode>
-        get() {
-            val unreliableSnodes = SwarmAPI.shared.snodeFailureCount.keys
-            return SwarmAPI.shared.snodePool.minus(unreliableSnodes)
-        }
-
     // region Settings
     /**
      * The number of snodes (including the guard snode) in a path.
@@ -105,7 +99,7 @@ public object OnionRequestAPI {
         } else {
             Log.d("Loki", "Populating guard snode cache.")
             return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
-                var unusedSnodes = reliableSnodePool
+                var unusedSnodes = SwarmAPI.shared.snodePool
                 if (unusedSnodes.count() < guardSnodeCount) { throw InsufficientSnodesException() }
                 fun getGuardSnode(): Promise<Snode, Exception> {
                     val candidate = unusedSnodes.getRandomElementOrNull()
@@ -146,7 +140,7 @@ public object OnionRequestAPI {
         SnodeAPI.shared.broadcaster.broadcast("buildingPaths")
         return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
             getGuardSnodes().map(SnodeAPI.sharedContext) { guardSnodes ->
-                var unusedSnodes = reliableSnodePool.minus(guardSnodes)
+                var unusedSnodes = SwarmAPI.shared.snodePool.minus(guardSnodes)
                 val pathSnodeCount = guardSnodeCount * pathSize - guardSnodeCount
                 if (unusedSnodes.count() < pathSnodeCount) { throw InsufficientSnodesException() }
                 // Don't test path snodes as this would reveal the user's IP to them
