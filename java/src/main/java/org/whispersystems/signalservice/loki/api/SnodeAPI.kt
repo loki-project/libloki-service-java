@@ -220,23 +220,25 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
     // endregion
 
     // region Error Handling
-    private fun dropSnodeIfNeeded(snode: Snode, hexEncodedPublicKey: String) {
+    private fun dropSnodeIfNeeded(snode: Snode, publicKey: String? = null) {
         val oldFailureCount = SwarmAPI.shared.snodeFailureCount[snode] ?: 0
         val newFailureCount = oldFailureCount + 1
         SwarmAPI.shared.snodeFailureCount[snode] = newFailureCount
         Log.d("Loki", "Couldn't reach snode at $snode; setting failure count to $newFailureCount.")
         if (newFailureCount >= SwarmAPI.snodeFailureThreshold) {
             Log.d("Loki", "Failure threshold reached for: $snode; dropping it.")
-            SwarmAPI.shared.dropSnodeFromSwarmIfNeeded(snode, hexEncodedPublicKey)
+            if (publicKey != null) {
+                SwarmAPI.shared.dropSnodeFromSwarmIfNeeded(snode, publicKey)
+            }
             SwarmAPI.shared.snodePool = SwarmAPI.shared.snodePool.toMutableSet().minus(snode).toSet()
             SwarmAPI.shared.snodeFailureCount[snode] = 0
         }
     }
 
-    internal fun handleSnodeError(statusCode: Int, json: Map<*, *>?, snode: Snode, hexEncodedPublicKey: String): Exception {
+    internal fun handleSnodeError(statusCode: Int, json: Map<*, *>?, snode: Snode, publicKey: String? = null): Exception {
         when (statusCode) {
             400, 500, 503 -> { // Usually indicates that the snode isn't up to date
-                dropSnodeIfNeeded(snode, hexEncodedPublicKey)
+                dropSnodeIfNeeded(snode, publicKey)
                 return Error.HTTPRequestFailed(statusCode)
             }
             406 -> {
@@ -246,8 +248,12 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
             }
             421 -> {
                 // The snode isn't associated with the given public key anymore
-                Log.d("Loki", "Invalidating swarm for: $hexEncodedPublicKey.")
-                SwarmAPI.shared.dropSnodeFromSwarmIfNeeded(snode, hexEncodedPublicKey)
+                if (publicKey != null) {
+                    Log.d("Loki", "Invalidating swarm for: $publicKey.")
+                    SwarmAPI.shared.dropSnodeFromSwarmIfNeeded(snode, publicKey)
+                } else {
+                    Log.d("Loki", "Got a 421 without an associated public key.")
+                }
                 return Error.SnodeMigrated
             }
             432 -> {
@@ -262,7 +268,7 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
                 return Error.InsufficientProofOfWork
             }
             else -> {
-                dropSnodeIfNeeded(snode, hexEncodedPublicKey)
+                dropSnodeIfNeeded(snode, publicKey)
                 Log.d("Loki", "Unhandled response code: ${statusCode}.")
                 return Error.Generic
             }
