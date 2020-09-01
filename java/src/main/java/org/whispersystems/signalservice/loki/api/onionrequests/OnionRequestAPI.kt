@@ -18,6 +18,7 @@ import org.whispersystems.signalservice.loki.utilities.*
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
 
 private typealias Path = List<Snode>
 
@@ -28,7 +29,13 @@ public object OnionRequestAPI {
     public var guardSnodes = setOf<Snode>()
     public var paths: List<Path> // Not a set to ensure we consistently show the same path to the user
         get() = SnodeAPI.shared.database.getOnionRequestPaths()
-        set(newValue) { SnodeAPI.shared.database.setOnionRequestPaths(newValue) }
+        set(newValue) {
+            if (newValue.isEmpty()) {
+                SnodeAPI.shared.database.clearOnionRequestPaths()
+            } else {
+                SnodeAPI.shared.database.setOnionRequestPaths(newValue)
+            }
+        }
 
     private val reliableSnodePool: Set<Snode>
         get() {
@@ -184,8 +191,8 @@ public object OnionRequestAPI {
         }
     }
 
-    private fun dropPathContaining(snode: Snode) {
-        paths = paths.filter { !it.contains(snode) }
+    private fun dropAllPaths() {
+        paths = listOf()
     }
 
     private fun dropGuardSnode(snode: Snode) {
@@ -356,7 +363,7 @@ public object OnionRequestAPI {
                     @Suppress("ThrowableNotThrown")
                     SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
                 }
-                dropPathContaining(guardSnode)
+                dropAllPaths()
                 dropGuardSnode(guardSnode)
             }
         }
