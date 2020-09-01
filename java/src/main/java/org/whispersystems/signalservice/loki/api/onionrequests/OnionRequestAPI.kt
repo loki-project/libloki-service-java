@@ -349,6 +349,10 @@ public object OnionRequestAPI {
         val promise = deferred.promise
         promise.fail { exception ->
             if (exception is HTTP.HTTPRequestFailedException) {
+                val path = paths.firstOrNull { it.contains(guardSnode) }
+                path?.forEach { snode ->
+                    throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null)
+                }
                 dropPathContaining(guardSnode)
                 dropGuardSnode(guardSnode)
             }
