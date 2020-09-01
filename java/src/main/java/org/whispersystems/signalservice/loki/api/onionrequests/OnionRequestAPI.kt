@@ -349,6 +349,8 @@ public object OnionRequestAPI {
         val promise = deferred.promise
         promise.fail { exception ->
             if (exception is HTTP.HTTPRequestFailedException) {
+                // Marking all the snodes in the path as unreliable here is aggressive, but otherwise users
+                // can get stuck with a failing path that just refreshes to the same path.
                 val path = paths.firstOrNull { it.contains(guardSnode) }
                 path?.forEach { snode ->
                     throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null)
