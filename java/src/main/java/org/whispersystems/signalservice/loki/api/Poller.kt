@@ -38,6 +38,7 @@ class Poller(public var userPublicKey: String, private val database: LokiAPIData
 
     // region Private API
     private fun setUpPolling() {
+        if (!hasStarted) { return; }
         val thread = Thread.currentThread()
         SwarmAPI.shared.getSwarm(userPublicKey).bind(SnodeAPI.messagePollingContext) {
             usedSnodes.clear()
