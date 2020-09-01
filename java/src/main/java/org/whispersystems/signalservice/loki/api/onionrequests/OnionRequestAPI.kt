@@ -18,6 +18,7 @@ import org.whispersystems.signalservice.loki.utilities.*
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
 
 private typealias Path = List<Snode>
 
@@ -28,12 +29,12 @@ public object OnionRequestAPI {
     public var guardSnodes = setOf<Snode>()
     public var paths: List<Path> // Not a set to ensure we consistently show the same path to the user
         get() = SnodeAPI.shared.database.getOnionRequestPaths()
-        set(newValue) { SnodeAPI.shared.database.setOnionRequestPaths(newValue) }
-
-    private val reliableSnodePool: Set<Snode>
-        get() {
-            val unreliableSnodes = SwarmAPI.shared.snodeFailureCount.keys
-            return SwarmAPI.shared.snodePool.minus(unreliableSnodes)
+        set(newValue) {
+            if (newValue.isEmpty()) {
+                SnodeAPI.shared.database.clearOnionRequestPaths()
+            } else {
+                SnodeAPI.shared.database.setOnionRequestPaths(newValue)
+            }
         }
 
     // region Settings
@@ -98,7 +99,7 @@ public object OnionRequestAPI {
         } else {
             Log.d("Loki", "Populating guard snode cache.")
             return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
-                var unusedSnodes = reliableSnodePool
+                var unusedSnodes = SwarmAPI.shared.snodePool
                 if (unusedSnodes.count() < guardSnodeCount) { throw InsufficientSnodesException() }
                 fun getGuardSnode(): Promise<Snode, Exception> {
                     val candidate = unusedSnodes.getRandomElementOrNull()
@@ -139,7 +140,7 @@ public object OnionRequestAPI {
         SnodeAPI.shared.broadcaster.broadcast("buildingPaths")
         return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
             getGuardSnodes().map(SnodeAPI.sharedContext) { guardSnodes ->
-                var unusedSnodes = reliableSnodePool.minus(guardSnodes)
+                var unusedSnodes = SwarmAPI.shared.snodePool.minus(guardSnodes)
                 val pathSnodeCount = guardSnodeCount * pathSize - guardSnodeCount
                 if (unusedSnodes.count() < pathSnodeCount) { throw InsufficientSnodesException() }
                 // Don't test path snodes as this would reveal the user's IP to them
@@ -184,8 +185,8 @@ public object OnionRequestAPI {
         }
     }
 
-    private fun dropPathContaining(snode: Snode) {
-        paths = paths.filter { !it.contains(snode) }
+    private fun dropAllPaths() {
+        paths = listOf()
     }
 
     private fun dropGuardSnode(snode: Snode) {
@@ -349,7 +350,14 @@ public object OnionRequestAPI {
         val promise = deferred.promise
         promise.fail { exception ->
             if (exception is HTTP.HTTPRequestFailedException) {
-                dropPathContaining(guardSnode)
+                // Marking all the snodes in the path as unreliable here is aggressive, but otherwise users
+                // can get stuck with a failing path that just refreshes to the same path.
+                val path = paths.firstOrNull { it.contains(guardSnode) }
+                path?.forEach { snode ->
+                    @Suppress("ThrowableNotThrown")
+                    SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
+                }
+                dropAllPaths()
                 dropGuardSnode(guardSnode)
             }
         }
