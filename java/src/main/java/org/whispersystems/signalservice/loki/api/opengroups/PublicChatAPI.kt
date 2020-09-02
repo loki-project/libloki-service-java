@@ -135,6 +135,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                         val signatureVersion = value["sigver"] as? Long ?: (value["sigver"] as? Int)?.toLong() ?: (value["sigver"] as String).toLong()
                         val signature = PublicChatMessage.Signature(Hex.fromStringCondensed(hexEncodedSignature), signatureVersion)
                         val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                        format.timeZone = TimeZone.getTimeZone("GMT")
                         val dateAsString = message["created_at"] as String
                         val serverTimestamp = format.parse(dateAsString).time
                         // Verify the message
@@ -201,6 +202,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                             val displayName = userDatabase.getDisplayName(userPublicKey) ?: "Anonymous"
                             val text = data["text"] as String
                             val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                            format.timeZone = TimeZone.getTimeZone("GMT")
                             val dateAsString = data["created_at"] as String
                             val timestamp = format.parse(dateAsString).time
                             @Suppress("NAME_SHADOWING") val message = PublicChatMessage(serverID, userPublicKey, displayName, text, timestamp, publicChatMessageType, message.quote, message.attachments, null, signedMessage.signature, timestamp)
