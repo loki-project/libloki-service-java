@@ -30,7 +30,7 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
         /**
          * A snode is kicked out of a swarm and/or the snode pool if it fails this many times.
          */
-        internal val snodeFailureThreshold = 1
+        internal val snodeFailureThreshold = 2
         // endregion
 
         // region Initialization
