@@ -166,10 +166,11 @@ public object OnionRequestAPI {
      */
     private fun getPath(snodeToExclude: Snode?): Promise<Path, Exception> {
         if (pathSize < 1) { throw Exception("Can't build path of size zero.") }
+        val paths = this.paths
         if (guardSnodes.isEmpty() && paths.count() >= pathCount) {
             guardSnodes = setOf( paths[0][0], paths[1][0] )
         }
-        fun getPath(): Path {
+        fun getPath(paths: List<Path>): Path {
             if (snodeToExclude != null) {
                 return paths.filter { !it.contains(snodeToExclude) }.getRandomElement()
             } else {
@@ -177,10 +178,10 @@ public object OnionRequestAPI {
             }
         }
         if (paths.count() >= pathCount) {
-            return Promise.of(getPath())
+            return Promise.of(getPath(paths))
         } else {
-            return buildPaths().map(SnodeAPI.sharedContext) { _ ->
-                getPath()
+            return buildPaths().map(SnodeAPI.sharedContext) { newPaths ->
+                getPath(newPaths)
             }
         }
     }
