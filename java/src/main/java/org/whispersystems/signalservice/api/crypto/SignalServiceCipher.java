@@ -33,14 +33,12 @@ import org.whispersystems.libsignal.NoSessionException;
 import org.whispersystems.libsignal.SessionCipher;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.UntrustedIdentityException;
-import org.whispersystems.libsignal.loki.ClosedGroupCiphertextMessage;
 import org.whispersystems.libsignal.loki.LokiSessionCipher;
 import org.whispersystems.libsignal.loki.SessionResetProtocol;
 import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
-import org.whispersystems.libsignal.util.Hex;
 import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
@@ -76,8 +74,8 @@ import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 import org.whispersystems.signalservice.internal.push.PushTransportDetails;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.AttachmentPointer;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Content;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ClosedGroupUpdate;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Content;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope.Type;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ReceiptMessage;
@@ -86,11 +84,10 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Typing
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
 import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.loki.api.opengroups.PublicChat;
+import org.whispersystems.signalservice.loki.protocol.closedgroups.ClosedGroupUtilities;
 import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
-import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysImplementation;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
 import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
-import org.whispersystems.signalservice.loki.utilities.HexEncodingKt;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -138,19 +135,15 @@ public class SignalServiceCipher {
       throws UntrustedIdentityException, InvalidKeyException, IOException
   {
     if (unidentifiedAccess.isPresent() && sskDatabase.isSSKBasedClosedGroup(destination.getName())) {
-        String senderPublicKey = HexEncodingKt.toHexString(signalProtocolStore.getIdentityKeyPair().getPublicKey().serialize());
-        SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(localAddress.getNumber(), 1);
-        SealedSessionCipher  sessionCipher = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, signalProtocolAddress);
-        PushTransportDetails transportDetails = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
-        byte[] plaintext = transportDetails.getPaddedMessageBody(unpaddedMessage);
-        List<Object> ciphertextAndKeyIndex0 = SharedSenderKeysImplementation.Companion.getShared().encrypt(plaintext, destination.getName(), senderPublicKey);
-        byte[] ivAndCiphertext0 = (byte[])ciphertextAndKeyIndex0.get(0);
-        int keyIndex = (int)ciphertextAndKeyIndex0.get(1);
-        ClosedGroupCiphertextMessage closedGroupCiphertextMessage = new ClosedGroupCiphertextMessage(ivAndCiphertext0, Hex.fromStringCondensed(senderPublicKey), keyIndex);
-        byte[] ciphertext1 = sessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), closedGroupCiphertextMessage);
-        String body = Base64.encodeBytes(ciphertext1);
-        int remoteRegistrationId = sessionCipher.getRemoteRegistrationId(destination);
-        return new OutgoingPushMessage(Type.CLOSED_GROUP_CIPHERTEXT_VALUE, destination.getDeviceId(), remoteRegistrationId, body);
+      String                userPublicKey         = localAddress.getNumber();
+      SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(userPublicKey, 1);
+      SealedSessionCipher   sessionCipher         = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, signalProtocolAddress);
+      PushTransportDetails  transportDetails      = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
+      byte[]                plaintext             = transportDetails.getPaddedMessageBody(unpaddedMessage);
+      byte[]                ciphertext            = ClosedGroupUtilities.encrypt(plaintext, destination.getName(), userPublicKey);
+      String                body                  = Base64.encodeBytes(ciphertext);
+      int                   remoteRegistrationId  = sessionCipher.getRemoteRegistrationId(destination);
+      return new OutgoingPushMessage(Type.CLOSED_GROUP_CIPHERTEXT_VALUE, destination.getDeviceId(), remoteRegistrationId, body);
     } else if (unidentifiedAccess.isPresent()) {
       SealedSessionCipher  sessionCipher        = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
       PushTransportDetails transportDetails     = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
@@ -203,14 +196,13 @@ public class SignalServiceCipher {
         PreKeyBundleMessage preKeyBundleMessage = null;
         if (message.hasPreKeyBundleMessage()) {
           SignalServiceProtos.PreKeyBundleMessage protoPreKeyBundleMessage = message.getPreKeyBundleMessage();
-          preKeyBundleMessage = new PreKeyBundleMessage(
-              protoPreKeyBundleMessage.getIdentityKey().toByteArray(),
-              protoPreKeyBundleMessage.getDeviceId(),
-              protoPreKeyBundleMessage.getPreKeyId(),
-              protoPreKeyBundleMessage.getSignedKeyId(),
-              protoPreKeyBundleMessage.getPreKey().toByteArray(),
-              protoPreKeyBundleMessage.getSignedKey().toByteArray(),
-              protoPreKeyBundleMessage.getSignature().toByteArray()
+          preKeyBundleMessage = new PreKeyBundleMessage(protoPreKeyBundleMessage.getIdentityKey().toByteArray(),
+                                                        protoPreKeyBundleMessage.getDeviceId(),
+                                                        protoPreKeyBundleMessage.getPreKeyId(),
+                                                        protoPreKeyBundleMessage.getSignedKeyId(),
+                                                        protoPreKeyBundleMessage.getPreKey().toByteArray(),
+                                                        protoPreKeyBundleMessage.getSignedKey().toByteArray(),
+                                                        protoPreKeyBundleMessage.getSignature().toByteArray()
           );
         }
 
@@ -242,13 +234,12 @@ public class SignalServiceCipher {
           DataMessage dataMessage = message.getDataMessage();
 
           SignalServiceDataMessage signalServiceDataMessage = createSignalServiceMessage(plaintext.getMetadata(), dataMessage);
-          SignalServiceContent content = new SignalServiceContent(
-              signalServiceDataMessage,
-              plaintext.getMetadata().getSender(),
-              plaintext.getMetadata().getSenderDevice(),
-              plaintext.getMetadata().getTimestamp(),
-              plaintext.getMetadata().isNeedsReceipt(),
-              signalServiceDataMessage.isDeviceUnlinkingRequest());
+          SignalServiceContent content = new SignalServiceContent(signalServiceDataMessage,
+                                                                  plaintext.getMetadata().getSender(),
+                                                                  plaintext.getMetadata().getSenderDevice(),
+                                                                  plaintext.getMetadata().getTimestamp(),
+                                                                  plaintext.getMetadata().isNeedsReceipt(),
+                                                                  signalServiceDataMessage.isDeviceUnlinkingRequest());
 
           content.setPreKeyBundleMessage(preKeyBundleMessage);
 
@@ -257,11 +248,11 @@ public class SignalServiceCipher {
           return content;
         } else if (message.hasSyncMessage()) {
           SignalServiceContent content = new SignalServiceContent(createSynchronizeMessage(
-              plaintext.getMetadata(),
-              message.getSyncMessage()),
-              plaintext.getMetadata().getSender(),
-              plaintext.getMetadata().getSenderDevice(),
-              plaintext.getMetadata().getTimestamp());
+                                                                  plaintext.getMetadata(),
+                                                                  message.getSyncMessage()),
+                                                                  plaintext.getMetadata().getSender(),
+                                                                  plaintext.getMetadata().getSenderDevice(),
+                                                                  plaintext.getMetadata().getTimestamp());
 
           if (message.getSyncMessage().hasSent() && message.getSyncMessage().getSent().hasMessage()) {
             DataMessage dataMessage = message.getSyncMessage().getSent().getMessage();
@@ -286,9 +277,9 @@ public class SignalServiceCipher {
                                           plaintext.getMetadata().getTimestamp());
         } else if (message.hasNullMessage()) {
             SignalServiceContent content = new SignalServiceContent(new SignalServiceNullMessage(),
-                                                            plaintext.getMetadata().getSender(),
-                                                            plaintext.getMetadata().getSenderDevice(),
-                                                            plaintext.getMetadata().getTimestamp());
+                                                                    plaintext.getMetadata().getSender(),
+                                                                    plaintext.getMetadata().getSenderDevice(),
+                                                                    plaintext.getMetadata().getTimestamp());
 
             content.setPreKeyBundleMessage(preKeyBundleMessage);
 
@@ -326,11 +317,12 @@ public class SignalServiceCipher {
       int sessionVersion;
 
       if (envelope.isClosedGroupCiphertext()) {
-        Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp(), envelope.getSource());
-        Pair<Integer, byte[]> data = results.second();
-        paddedMessage = data.second();
-        metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false);
-        sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
+        Pair<byte[], String> plaintextAndSenderPublicKey = ClosedGroupUtilities.decrypt(envelope);
+        String               senderPublicKey             = plaintextAndSenderPublicKey.second();
+        if (senderPublicKey.equals(localAddress.getNumber())) { throw new SelfSendException(); } // Will be caught and ignored in PushDecryptJob
+        paddedMessage  = plaintextAndSenderPublicKey.first();
+        metadata       = new Metadata(senderPublicKey, envelope.getSourceDevice(), envelope.getTimestamp(), false);
+        sessionVersion = sessionCipher.getSessionVersion();
       } else if (envelope.isPreKeySignalMessage()) {
         paddedMessage  = sessionCipher.decrypt(new PreKeySignalMessage(ciphertext));
         metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
@@ -341,9 +333,9 @@ public class SignalServiceCipher {
         sessionVersion = sessionCipher.getSessionVersion();
       } else if (envelope.isUnidentifiedSender()) {
         Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp(), envelope.getSource());
-        Pair<Integer, byte[]> data = results.second();
-        paddedMessage = data.second();
-        metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false);
+        Pair<Integer, byte[]>                              data    = results.second();
+        paddedMessage  = data.second();
+        metadata       = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false);
         sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
       } else {
         throw new InvalidMetadataMessageException("Unknown type: " + envelope.getType());
@@ -855,6 +847,4 @@ public class SignalServiceCipher {
       return data;
     }
   }
-
 }
-

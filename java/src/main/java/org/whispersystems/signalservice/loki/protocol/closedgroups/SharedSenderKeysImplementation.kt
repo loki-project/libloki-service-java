@@ -8,6 +8,7 @@ import org.whispersystems.libsignal.util.ByteUtil
 import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Util
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestEncryption
+import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 import org.whispersystems.signalservice.loki.utilities.toHexString
 import javax.crypto.Cipher
@@ -139,7 +140,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         return ratchet
     }
 
-    public fun encrypt(plaintext: ByteArray, groupPublicKey: String, senderPublicKey: String): List<Any> {
+    public fun encrypt(plaintext: ByteArray, groupPublicKey: String, senderPublicKey: String): Pair<ByteArray, Int> {
         val ratchet: ClosedGroupRatchet
         try {
             ratchet = stepRatchetOnce(groupPublicKey, senderPublicKey)
@@ -153,7 +154,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.last()
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(gcmTagSize, iv))
-        return listOf( ByteUtil.combine(iv, cipher.doFinal(plaintext)), ratchet.keyIndex )
+        return Pair(ByteUtil.combine(iv, cipher.doFinal(plaintext)), ratchet.keyIndex)
     }
 
     public fun decrypt(ivAndCiphertext: ByteArray, groupPublicKey: String, senderPublicKey: String, keyIndex: Int): ByteArray {
@@ -170,7 +171,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         val ciphertext = ivAndCiphertext.sliceArray(ivSize until ivAndCiphertext.count())
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.lastOrNull() ?: throw MessageKeyMissing(keyIndex, groupPublicKey, senderPublicKey)
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
+        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(EncryptionUtilities.gcmTagSize, iv))
         return cipher.doFinal(ciphertext)
     }
 
