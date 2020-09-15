@@ -27,7 +27,6 @@ message UnidentifiedSenderMessage {
             PREKEY_MESSAGE          = 1;
             MESSAGE                 = 2;
             FALLBACK_MESSAGE        = 3;
-            CLOSED_GROUP_CIPHERTEXT = 4;
         }
 
         optional Type              type              = 1;

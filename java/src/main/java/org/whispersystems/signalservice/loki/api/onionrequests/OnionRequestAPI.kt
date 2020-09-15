@@ -11,7 +11,8 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.*
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
-import org.whispersystems.signalservice.loki.api.utilities.HTTP
+import org.whispersystems.signalservice.loki.api.utilities.*
+import org.whispersystems.signalservice.loki.api.utilities.EncryptionResult
 import org.whispersystems.signalservice.loki.api.utilities.getBodyForOnionRequest
 import org.whispersystems.signalservice.loki.api.utilities.getHeadersForOnionRequest
 import org.whispersystems.signalservice.loki.utilities.*
@@ -54,7 +55,7 @@ public object OnionRequestAPI {
 
     private data class OnionBuildingResult(
         internal val guardSnode: Snode,
-        internal val finalEncryptionResult: OnionRequestEncryption.EncryptionResult,
+        internal val finalEncryptionResult: EncryptionResult,
         internal val destinationSymmetricKey: ByteArray
     )
 
@@ -200,7 +201,7 @@ public object OnionRequestAPI {
     private fun buildOnionForDestination(payload: Map<*, *>, destination: Destination): Promise<OnionBuildingResult, Exception> {
         lateinit var guardSnode: Snode
         lateinit var destinationSymmetricKey: ByteArray // Needed by LokiAPI to decrypt the response sent back by the destination
-        lateinit var encryptionResult: OnionRequestEncryption.EncryptionResult
+        lateinit var encryptionResult: EncryptionResult
         val snodeToExclude = when (destination) {
             is Destination.Snode -> destination.snode
             is Destination.Server -> null
@@ -214,7 +215,7 @@ public object OnionRequestAPI {
                 encryptionResult = r
                 @Suppress("NAME_SHADOWING") var path = path
                 var rhs = destination
-                fun addLayer(): Promise<OnionRequestEncryption.EncryptionResult, Exception> {
+                fun addLayer(): Promise<EncryptionResult, Exception> {
                     if (path.isEmpty()) {
                         return Promise.of(encryptionResult)
                     } else {
@@ -298,12 +299,8 @@ public object OnionRequestAPI {
                     val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
                     val base64EncodedIVAndCiphertext = json["result"] as? String ?: return@Thread deferred.reject(Exception("Invalid JSON"))
                     val ivAndCiphertext = Base64.decode(base64EncodedIVAndCiphertext)
-                    val iv = ivAndCiphertext.sliceArray(0 until OnionRequestEncryption.ivSize)
-                    val ciphertext = ivAndCiphertext.sliceArray(OnionRequestEncryption.ivSize until ivAndCiphertext.count())
                     try {
-                        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-                        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(destinationSymmetricKey, "AES"), GCMParameterSpec(OnionRequestEncryption.gcmTagSize, iv))
-                        val plaintext = cipher.doFinal(ciphertext)
+                        val plaintext = DecryptionUtilities.decryptUsingAESGCM(ivAndCiphertext, destinationSymmetricKey)
                         try {
                             @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(plaintext.toString(Charsets.UTF_8), Map::class.java)
                             val statusCode = json["status"] as Int

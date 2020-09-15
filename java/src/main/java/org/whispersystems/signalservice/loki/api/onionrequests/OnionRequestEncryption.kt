@@ -9,6 +9,8 @@ import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.internal.util.Util
 import org.whispersystems.signalservice.loki.api.Snode
+import org.whispersystems.signalservice.loki.api.utilities.EncryptionResult
+import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
 import org.whispersystems.signalservice.loki.utilities.toHexString
 import javax.crypto.Cipher
 import javax.crypto.Mac
@@ -16,38 +18,6 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 object OnionRequestEncryption {
-    internal val gcmTagSize = 128
-    internal val ivSize = 12
-
-    internal data class EncryptionResult(
-        internal val ciphertext: ByteArray,
-        internal val symmetricKey: ByteArray,
-        internal val ephemeralPublicKey: ByteArray
-    )
-
-    /**
-     * Sync. Don't call from the main thread.
-     */
-    private fun encryptUsingAESGCM(plaintext: ByteArray, symmetricKey: ByteArray): ByteArray {
-        val iv = Util.getSecretBytes(ivSize)
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(symmetricKey, "AES"), GCMParameterSpec(gcmTagSize, iv))
-        return ByteUtil.combine(iv, cipher.doFinal(plaintext))
-    }
-
-    /**
-     * Sync. Don't call from the main thread.
-     */
-    private fun encryptForX25519PublicKey(plaintext: ByteArray, hexEncodedX25519PublicKey: String): EncryptionResult {
-        val x25519PublicKey = Hex.fromStringCondensed(hexEncodedX25519PublicKey)
-        val ephemeralKeyPair = Curve25519.getInstance(Curve25519.BEST).generateKeyPair()
-        val ephemeralSharedSecret = Curve25519.getInstance(Curve25519.BEST).calculateAgreement(x25519PublicKey, ephemeralKeyPair.privateKey)
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec("LOKI".toByteArray(), "HmacSHA256"))
-        val symmetricKey = mac.doFinal(ephemeralSharedSecret)
-        val ciphertext = encryptUsingAESGCM(plaintext, symmetricKey)
-        return EncryptionResult(ciphertext, symmetricKey, ephemeralKeyPair.publicKey)
-    }
 
     /**
      * Encrypts `payload` for `destination` and returns the result. Use this to build the core of an onion request.
@@ -63,12 +33,12 @@ object OnionRequestEncryption {
                         val payloadAsString = JsonUtil.toJson(payload) // Snodes only accept this as a string
                         val wrapper = mapOf( "body" to payloadAsString, "headers" to "" )
                         val plaintext = JsonUtil.toJson(wrapper).toByteArray()
-                        val result = encryptForX25519PublicKey(plaintext, snodeX25519PublicKey)
+                        val result = EncryptionUtilities.encryptForX25519PublicKey(plaintext, snodeX25519PublicKey)
                         deferred.resolve(result)
                     }
                     is OnionRequestAPI.Destination.Server -> {
                         val plaintext = JsonUtil.toJson(payload).toByteArray()
-                        val result = encryptForX25519PublicKey(plaintext, destination.x25519PublicKey)
+                        val result = EncryptionUtilities.encryptForX25519PublicKey(plaintext, destination.x25519PublicKey)
                         deferred.resolve(result)
                     }
                 }
@@ -107,7 +77,7 @@ object OnionRequestEncryption {
                     }
                 }
                 val plaintext = JsonUtil.toJson(payload).toByteArray()
-                val result = encryptForX25519PublicKey(plaintext, x25519PublicKey)
+                val result = EncryptionUtilities.encryptForX25519PublicKey(plaintext, x25519PublicKey)
                 deferred.resolve(result)
             } catch (exception: Exception) {
                 deferred.reject(exception)
