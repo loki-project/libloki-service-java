@@ -1352,7 +1352,7 @@ public class SignalServiceMessageSender {
 
     if (!recipient.equals(localAddress) || unidentifiedAccess.isPresent()) {
       if (sskDatabase.isSSKBasedClosedGroup(recipient.getNumber()) && unidentifiedAccess.isPresent()) {
-          messages.add(getSSKEncryptedMessage(recipient.getNumber(), unidentifiedAccess.get(), plaintext));
+        messages.add(getSSKEncryptedMessage(recipient.getNumber(), unidentifiedAccess.get(), plaintext));
       } else if (useFallbackEncryption) {
         messages.add(getFallbackCipherEncryptedMessage(recipient.getNumber(), plaintext, unidentifiedAccess));
       } else {
@@ -1445,7 +1445,7 @@ public class SignalServiceMessageSender {
     } catch (InvalidKeyException e) {
       throw new IOException(e);
     }
-    
+
     // Loki - Ensure all session processing has finished
     synchronized (SESSION_LOCK) {
       try {

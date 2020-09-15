@@ -141,7 +141,15 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
     }
 
     public fun encrypt(plaintext: ByteArray, groupPublicKey: String, senderPublicKey: String): Pair<ByteArray, Int> {
-        val ratchet = stepRatchetOnce(groupPublicKey, senderPublicKey)
+        val ratchet: ClosedGroupRatchet
+        try {
+            ratchet = stepRatchetOnce(groupPublicKey, senderPublicKey)
+        } catch (exception: Exception) {
+            if (exception is LoadingFailed) {
+                delegate.requestSenderKey(groupPublicKey, senderPublicKey)
+            }
+            throw exception
+        }
         val iv = Util.getSecretBytes(ivSize)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.last()
