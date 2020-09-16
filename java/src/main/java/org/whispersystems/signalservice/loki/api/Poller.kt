@@ -79,6 +79,7 @@ class Poller(public var userPublicKey: String, private val database: LokiAPIData
     }
 
     private fun poll(snode: Snode, deferred: Deferred<Unit, Exception>): Promise<Unit, Exception> {
+        if (!hasStarted) { return Promise.ofFail(PromiseCanceledException()) }
         return SnodeAPI.shared.getRawMessages(snode, userPublicKey).bind(SnodeAPI.messagePollingContext) { rawResponse ->
             isCaughtUp = true
             if (deferred.promise.isDone()) {
