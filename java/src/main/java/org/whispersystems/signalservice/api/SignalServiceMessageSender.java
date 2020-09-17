@@ -74,6 +74,7 @@ import org.whispersystems.signalservice.internal.util.StaticCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Util;
 import org.whispersystems.signalservice.internal.util.concurrent.SettableFuture;
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI;
+import org.whispersystems.signalservice.loki.api.PushNotificationAcknowledgement;
 import org.whispersystems.signalservice.loki.api.SignalMessageInfo;
 import org.whispersystems.signalservice.loki.api.SnodeAPI;
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI;
@@ -1187,7 +1188,7 @@ public class SignalServiceMessageSender {
       if (ttl <= 0) { ttl = TTLUtilities.INSTANCE.getFallbackMessageTTL(); }
       final int regularMessageTTL = TTLUtilities.getTTL(TTLUtilities.MessageType.Regular);
       final int __ttl = ttl;
-      SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
+      final SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
       SnodeAPI.shared.sendSignalMessage(messageInfo).success(new Function1<Set<Promise<Map<?, ?>, Exception>>, Unit>() {
 
         @Override
@@ -1205,6 +1206,7 @@ public class SignalServiceMessageSender {
                   broadcaster.broadcast("messageSent", timestamp);
                 }
                 isSuccess[0] = true;
+                PushNotificationAcknowledgement.shared.notify(messageInfo);
                 @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
                 f.set(Unit.INSTANCE);
                 return Unit.INSTANCE;
