@@ -61,7 +61,7 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
             deferred<Snode, Exception>(SnodeAPI.sharedContext)
             Thread {
                 try {
-                    val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
+                    val json = HTTP.execute(HTTP.Verb.POST, url, parameters, useSeedNodeConnection = true)
                     val intermediate = json["result"] as? Map<*, *>
                     val rawSnodes = intermediate?.get("service_node_states") as? List<*>
                     if (rawSnodes != null) {
