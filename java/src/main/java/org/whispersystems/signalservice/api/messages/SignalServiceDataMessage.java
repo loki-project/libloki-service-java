@@ -273,6 +273,11 @@ public class SignalServiceDataMessage {
 
   public Optional<DeviceLink> getDeviceLink() { return deviceLink; }
 
+  public boolean hasVisibleContent() {
+    return (body.isPresent() && !body.get().isEmpty())
+        || (attachments.isPresent() && !attachments.get().isEmpty());
+  }
+
   public int getTTL() {
     if (deviceLink.isPresent()) { return TTLUtilities.getTTL(TTLUtilities.MessageType.DeviceLink); }
     else if (isDeviceUnlinkingRequest) { return TTLUtilities.getTTL(TTLUtilities.MessageType.DeviceUnlinkingRequest); }

@@ -74,6 +74,7 @@ import org.whispersystems.signalservice.internal.util.StaticCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Util;
 import org.whispersystems.signalservice.internal.util.concurrent.SettableFuture;
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI;
+import org.whispersystems.signalservice.loki.api.PushNotificationAcknowledgement;
 import org.whispersystems.signalservice.loki.api.SignalMessageInfo;
 import org.whispersystems.signalservice.loki.api.SnodeAPI;
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI;
@@ -253,7 +254,7 @@ public class SignalServiceMessageSender {
       throws IOException
   {
     byte[] content = createTypingContent(message);
-    sendMessage(0, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL(), false);
+    sendMessage(0, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL(), false, false);
   }
 
   /**
@@ -291,7 +292,7 @@ public class SignalServiceMessageSender {
     long              timestamp                       = message.getTimestamp();
     boolean           useFallbackEncryption           = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(message, recipient.getNumber(), store);
     boolean           isClosedGroup                   = message.group.isPresent() && message.group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
-    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.getDeviceLink().isPresent(), useFallbackEncryption, isClosedGroup, false);
+    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.getDeviceLink().isPresent(), useFallbackEncryption, isClosedGroup, false, message.hasVisibleContent());
 
     // Loki - This shouldn't get invoked for note to self
     boolean wouldSignalSendSyncMessage = (result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent();
@@ -332,7 +333,7 @@ public class SignalServiceMessageSender {
     byte[]                  content            = createMessageContent(message, recipients.get(0));
     long                    timestamp          = message.getTimestamp();
     boolean                 isClosedGroup      = message.group.isPresent() && message.group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
-    List<SendMessageResult> results            = sendMessage(messageID, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), isClosedGroup);
+    List<SendMessageResult> results            = sendMessage(messageID, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), isClosedGroup, message.hasVisibleContent());
     boolean                 needsSyncInResults = false;
 
     for (SendMessageResult result : results) {
@@ -392,7 +393,7 @@ public class SignalServiceMessageSender {
     for (String device : linkedDevices) {
       SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
       boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(message, device, store);
-      sendMessageToPrivateChat(0, deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL(), useFallbackEncryption, false);
+      sendMessageToPrivateChat(0, deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL(), useFallbackEncryption, false, false);
     }
   }
 
@@ -982,7 +983,8 @@ public class SignalServiceMessageSender {
                                               byte[]                             content,
                                               boolean                            online,
                                               int                                ttl,
-                                              boolean                            isClosedGroup)
+                                              boolean                            isClosedGroup,
+                                              boolean                            notifyPNServer)
       throws IOException
   {
     List<SendMessageResult>                results                    = new LinkedList<>();
@@ -994,7 +996,7 @@ public class SignalServiceMessageSender {
 
       try {
         boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(content, recipient.getNumber(), store);
-        SendMessageResult result = sendMessage(messageID, recipient, unidentifiedAccessIterator.next(), timestamp, content, online, ttl, false, useFallbackEncryption, isClosedGroup, false);
+        SendMessageResult result = sendMessage(messageID, recipient, unidentifiedAccessIterator.next(), timestamp, content, online, ttl, false, useFallbackEncryption, isClosedGroup, false, notifyPNServer);
         results.add(result);
       } catch (UnregisteredUserException e) {
         Log.w(TAG, e);
@@ -1019,7 +1021,7 @@ public class SignalServiceMessageSender {
       throws IOException
   {
     // Loki - This method is only invoked for various types of control messages
-    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, useFallbackEncryption, isSyncMessage);
+    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, useFallbackEncryption, isSyncMessage, false);
   }
 
   public SendMessageResult sendMessage(final long                   messageID,
@@ -1032,7 +1034,8 @@ public class SignalServiceMessageSender {
                                        boolean                      isDeviceLinkMessage,
                                        boolean                      useFallbackEncryption,
                                        boolean                      isClosedGroup,
-                                       boolean                      isSyncMessage)
+                                       boolean                      isSyncMessage,
+                                       boolean                      notifyPNServer)
       throws IOException
   {
     long threadID = threadDatabase.getThreadID(recipient.getNumber());
@@ -1041,7 +1044,7 @@ public class SignalServiceMessageSender {
       if (publicChat != null) {
         return sendMessageToPublicChat(messageID, recipient, timestamp, content, publicChat);
       } else {
-        return sendMessageToPrivateChat(messageID, recipient, unidentifiedAccess, timestamp, content, online, ttl, useFallbackEncryption, isClosedGroup);
+        return sendMessageToPrivateChat(messageID, recipient, unidentifiedAccess, timestamp, content, online, ttl, useFallbackEncryption, isClosedGroup, notifyPNServer);
       }
     } catch (PushNetworkException e) {
       return SendMessageResult.networkFailure(recipient);
@@ -1149,7 +1152,8 @@ public class SignalServiceMessageSender {
                                                      boolean                      online,
                                                      int                          ttl,
                                                      boolean                      useFallbackEncryption,
-                                                     boolean                      isClosedGroup)
+                                                     boolean                      isClosedGroup,
+                                                     final boolean                notifyPNServer)
       throws IOException, UntrustedIdentityException
   {
     if (recipient.getNumber().equals(userPublicKey)) { return SendMessageResult.success(recipient, false, false); }
@@ -1187,7 +1191,7 @@ public class SignalServiceMessageSender {
       if (ttl <= 0) { ttl = TTLUtilities.INSTANCE.getFallbackMessageTTL(); }
       final int regularMessageTTL = TTLUtilities.getTTL(TTLUtilities.MessageType.Regular);
       final int __ttl = ttl;
-      SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
+      final SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
       SnodeAPI.shared.sendSignalMessage(messageInfo).success(new Function1<Set<Promise<Map<?, ?>, Exception>>, Unit>() {
 
         @Override
@@ -1205,6 +1209,9 @@ public class SignalServiceMessageSender {
                   broadcaster.broadcast("messageSent", timestamp);
                 }
                 isSuccess[0] = true;
+                if (notifyPNServer) {
+                    PushNotificationAcknowledgement.shared.notify(messageInfo);
+                }
                 @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
                 f.set(Unit.INSTANCE);
                 return Unit.INSTANCE;

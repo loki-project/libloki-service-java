@@ -251,7 +251,7 @@ public object OnionRequestAPI {
      *
      * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
-    internal fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
+    public fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
         val headers = request.getHeadersForOnionRequest()
         val url = request.url()
         val urlAsString = url.toString()

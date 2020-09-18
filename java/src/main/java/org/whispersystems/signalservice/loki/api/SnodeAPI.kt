@@ -174,9 +174,6 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
         val expiration = lastMessageAsJSON?.get("expiration") as? Int
         if (hashValue != null) {
             database.setLastMessageHashValue(snode, publicKey, hashValue)
-            if (expiration != null) {
-                PushNotificationAcknowledgement.shared.acknowledgeDeliveryForMessageWith(hashValue, expiration, userPublicKey)
-            }
         } else if (rawMessages.isNotEmpty()) {
             Log.d("Loki", "Failed to update last message hash value from: ${rawMessages.prettifiedDescription()}.")
         }
