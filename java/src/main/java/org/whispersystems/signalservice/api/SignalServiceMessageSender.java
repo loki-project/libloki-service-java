@@ -1385,7 +1385,7 @@ public class SignalServiceMessageSender {
     byte[] bytes = cipher.encrypt(transportDetails.getPaddedMessageBody(plaintext));
     if (bytes == null) { bytes = new byte[0]; }
     if (unidentifiedAccess.isPresent()) {
-      SealedSessionCipher sealedSessionCipher = new SealedSessionCipher(store, sskDatabase, null, signalProtocolAddress);
+      SealedSessionCipher sealedSessionCipher = new SealedSessionCipher(store, null, signalProtocolAddress);
       FallbackMessage message = new FallbackMessage(bytes);
       byte[] ciphertext = sealedSessionCipher.encrypt(signalProtocolAddress, unidentifiedAccess.get().getUnidentifiedCertificate(), message);
       return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE, deviceID, 0, Base64.encodeBytes(ciphertext));

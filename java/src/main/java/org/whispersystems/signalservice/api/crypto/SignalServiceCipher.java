@@ -137,7 +137,7 @@ public class SignalServiceCipher {
     if (unidentifiedAccess.isPresent() && sskDatabase.isSSKBasedClosedGroup(destination.getName())) {
       String                userPublicKey         = localAddress.getNumber();
       SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(userPublicKey, 1);
-      SealedSessionCipher   sessionCipher         = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, signalProtocolAddress);
+      SealedSessionCipher   sessionCipher         = new SealedSessionCipher(signalProtocolStore, sessionResetProtocol, signalProtocolAddress);
       PushTransportDetails  transportDetails      = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
       byte[]                plaintext             = transportDetails.getPaddedMessageBody(unpaddedMessage);
       byte[]                ciphertext            = ClosedGroupUtilities.encrypt(plaintext, destination.getName(), userPublicKey);
@@ -145,7 +145,7 @@ public class SignalServiceCipher {
       int                   remoteRegistrationId  = sessionCipher.getRemoteRegistrationId(destination);
       return new OutgoingPushMessage(Type.CLOSED_GROUP_CIPHERTEXT_VALUE, destination.getDeviceId(), remoteRegistrationId, body);
     } else if (unidentifiedAccess.isPresent()) {
-      SealedSessionCipher  sessionCipher        = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
+      SealedSessionCipher  sessionCipher        = new SealedSessionCipher(signalProtocolStore, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
       PushTransportDetails transportDetails     = new PushTransportDetails(sessionCipher.getSessionVersion(destination));
       byte[]               ciphertext           = sessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), transportDetails.getPaddedMessageBody(unpaddedMessage));
       String               body                 = Base64.encodeBytes(ciphertext);
@@ -310,7 +310,7 @@ public class SignalServiceCipher {
     try {
       SignalProtocolAddress sourceAddress       = new SignalProtocolAddress(envelope.getSource(), envelope.getSourceDevice());
       SessionCipher         sessionCipher       = new LokiSessionCipher(signalProtocolStore, sessionResetProtocol, sourceAddress);
-      SealedSessionCipher   sealedSessionCipher = new SealedSessionCipher(signalProtocolStore, sskDatabase, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
+      SealedSessionCipher   sealedSessionCipher = new SealedSessionCipher(signalProtocolStore, sessionResetProtocol, new SignalProtocolAddress(localAddress.getNumber(), 1));
 
       byte[] paddedMessage;
       Metadata metadata;

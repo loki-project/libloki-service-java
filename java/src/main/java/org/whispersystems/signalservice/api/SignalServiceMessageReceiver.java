@@ -121,13 +121,6 @@ public class SignalServiceMessageReceiver {
     return new ProfileCipherInputStream(new FileInputStream(destination), profileKey);
   }
 
-  public InputStream retrievePublicProfilePicture(String path, File destination, int maxSizeBytes)
-    throws IOException
-  {
-    DownloadUtilities.INSTANCE.downloadFile(destination, path, maxSizeBytes, null);
-    return new FileInputStream(destination);
-  }
-
   /**
    * Retrieves a SignalServiceAttachment.
    *
