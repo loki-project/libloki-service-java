@@ -74,7 +74,7 @@ import org.whispersystems.signalservice.internal.util.StaticCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Util;
 import org.whispersystems.signalservice.internal.util.concurrent.SettableFuture;
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI;
-import org.whispersystems.signalservice.loki.api.PushNotificationAcknowledgement;
+import org.whispersystems.signalservice.loki.api.PushNotificationAPI;
 import org.whispersystems.signalservice.loki.api.SignalMessageInfo;
 import org.whispersystems.signalservice.loki.api.SnodeAPI;
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI;
@@ -1210,7 +1210,7 @@ public class SignalServiceMessageSender {
                 }
                 isSuccess[0] = true;
                 if (notifyPNServer) {
-                    PushNotificationAcknowledgement.shared.notify(messageInfo);
+                    PushNotificationAPI.shared.notify(messageInfo);
                 }
                 @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
                 f.set(Unit.INSTANCE);
