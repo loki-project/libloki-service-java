@@ -22,6 +22,7 @@ object HTTP {
     private val defaultConnection by lazy {
         // Snode to snode communication uses self-signed certificates but clients can safely ignore this
         val trustManager = object : X509TrustManager {
+
             override fun checkClientTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
             override fun checkServerTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
             override fun getAcceptedIssuers(): Array<X509Certificate> {
