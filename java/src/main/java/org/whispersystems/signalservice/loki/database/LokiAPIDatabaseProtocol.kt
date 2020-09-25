@@ -29,6 +29,8 @@ interface LokiAPIDatabaseProtocol {
     fun setSessionRequestProcessedTimestamp(publicKey: String, newValue: Long)
     fun getOpenGroupPublicKey(server: String): String?
     fun setOpenGroupPublicKey(server: String, newValue: String)
+    fun setOpenGroupAvatarURL(url: String, group: Long, server: String)
+    fun getOpenGroupAvatarURL(group: Long, server: String): String?
 
     // region Deprecated
     fun getDeviceLinks(publicKey: String): Set<DeviceLink>
@@ -36,6 +38,4 @@ interface LokiAPIDatabaseProtocol {
     fun addDeviceLink(deviceLink: DeviceLink)
     fun removeDeviceLink(deviceLink: DeviceLink)
     // endregion
-    fun setOpenGroupAvatarURL(url: String, group: Long, server: String)
-    fun getOpenGroupAvatarURL(group: Long, server: String): String?
 }
