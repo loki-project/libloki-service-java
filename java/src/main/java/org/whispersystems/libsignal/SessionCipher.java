@@ -331,7 +331,7 @@ public class SessionCipher {
   public int getSessionVersion() {
     synchronized (SESSION_LOCK) {
       if (!sessionStore.containsSession(remoteAddress)) {
-          // If we have no session then we must be using the FallbackSessionCipher
+          // Loki - If we have no session then we must be using the FallbackSessionCipher
           return FallbackSessionCipher.getSessionVersion();
       }
 

@@ -1,7 +1,7 @@
 package org.whispersystems.signalservice.loki.protocol.meta
 
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
-import org.whispersystems.signalservice.loki.protocol.multidevice.MultiDeviceProtocol
+import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.MultiDeviceProtocol
 
 public class SessionMetaProtocol(private val apiDatabase: LokiAPIDatabaseProtocol, private val userPublicKey: String) {
 
@@ -19,7 +19,7 @@ public class SessionMetaProtocol(private val apiDatabase: LokiAPIDatabaseProtoco
 
     // region Utilities
     public fun isNoteToSelf(publicKey: String): Boolean {
-        return MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey).contains(publicKey)
+        return userPublicKey == publicKey // return MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey).contains(publicKey)
     }
     // endregion
 }

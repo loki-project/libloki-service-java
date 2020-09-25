@@ -39,5 +39,5 @@ public class SignalServiceTypingMessage {
     return action == Action.STOPPED;
   }
 
-  public int getTTL() { return TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.TypingIndicator); }
+  public int getTTL() { return TTLUtilities.getTTL(TTLUtilities.MessageType.TypingIndicator); }
 }

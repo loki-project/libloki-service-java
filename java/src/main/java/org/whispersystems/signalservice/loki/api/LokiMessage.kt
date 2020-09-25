@@ -12,7 +12,7 @@ internal data class LokiMessage(
     /**
      * The hex encoded public key of the receiver.
      */
-    internal val destination: String,
+    internal val recipientPublicKey: String,
     /**
      * The content of the message.
      */
@@ -41,7 +41,7 @@ internal data class LokiMessage(
 
         internal fun from(message: SignalMessageInfo): LokiMessage? {
             try {
-                val wrappedMessage = LokiMessageWrapper.wrap(message)
+                val wrappedMessage = MessageWrapper.wrap(message)
                 val data = Base64.encodeBytes(wrappedMessage)
                 val destination = message.recipientPublicKey
                 var ttl = TTLUtilities.fallbackMessageTTL
@@ -62,18 +62,18 @@ internal data class LokiMessage(
         // Run PoW in a background thread
         Thread {
             val now = System.currentTimeMillis()
-            val nonce = ProofOfWork.calculate(data, destination, now, ttl)
+            val nonce = ProofOfWork.calculate(data, recipientPublicKey, now, ttl)
             if (nonce != null ) {
                 deferred.resolve(copy(nonce = nonce, timestamp = now))
             } else {
-                deferred.reject(LokiAPI.Error.ProofOfWorkCalculationFailed)
+                deferred.reject(SnodeAPI.Error.ProofOfWorkCalculationFailed)
             }
         }.start()
         return deferred.promise
     }
 
     internal fun toJSON(): Map<String, String> {
-        val result = mutableMapOf( "pubKey" to destination, "data" to data, "ttl" to ttl.toString() )
+        val result = mutableMapOf( "pubKey" to recipientPublicKey, "data" to data, "ttl" to ttl.toString() )
         val timestamp = timestamp
         val nonce = nonce
         if (timestamp != null && nonce != null) {

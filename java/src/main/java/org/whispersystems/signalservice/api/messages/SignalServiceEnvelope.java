@@ -262,8 +262,12 @@ public class SignalServiceEnvelope {
     return envelope.getType().getNumber() == Envelope.Type.UNIDENTIFIED_SENDER_VALUE;
   }
 
-  public boolean isFriendRequest() {
-    return envelope.getType().getNumber() == Envelope.Type.FRIEND_REQUEST_VALUE;
+  public boolean isFallbackMessage() {
+    return envelope.getType().getNumber() == Envelope.Type.FALLBACK_MESSAGE_VALUE;
+  }
+
+  public boolean isClosedGroupCiphertext() {
+      return envelope.getType().getNumber() == Envelope.Type.CLOSED_GROUP_CIPHERTEXT_VALUE;
   }
 
   private byte[] getPlaintext(byte[] ciphertext, SecretKeySpec cipherKey) throws IOException {

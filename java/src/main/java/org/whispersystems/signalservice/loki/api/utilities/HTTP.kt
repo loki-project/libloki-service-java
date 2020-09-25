@@ -11,9 +11,18 @@ import javax.net.ssl.X509TrustManager
 
 object HTTP {
 
-    private val connection by lazy {
+    private val seedNodeConnection by lazy {
+        OkHttpClient().newBuilder()
+            .connectTimeout(timeout, TimeUnit.SECONDS)
+            .readTimeout(timeout, TimeUnit.SECONDS)
+            .writeTimeout(timeout, TimeUnit.SECONDS)
+            .build()
+    }
+
+    private val defaultConnection by lazy {
         // Snode to snode communication uses self-signed certificates but clients can safely ignore this
         val trustManager = object : X509TrustManager {
+
             override fun checkClientTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
             override fun checkServerTrusted(chain: Array<out X509Certificate>?, authorizationType: String?) { }
             override fun getAcceptedIssuers(): Array<X509Certificate> {
@@ -31,7 +40,7 @@ object HTTP {
             .build()
     }
 
-    private const val timeout: Long = 10
+    private const val timeout: Long = 20
 
     class HTTPRequestFailedException(val statusCode: Int, val json: Map<*, *>?)
         : kotlin.Exception("HTTP request failed with status code $statusCode.")
@@ -43,7 +52,7 @@ object HTTP {
     /**
      * Sync. Don't call from the main thread.
      */
-    fun execute(verb: Verb, url: String, parameters: Map<String, Any>? = null): Map<*, *> {
+    fun execute(verb: Verb, url: String, parameters: Map<String, Any>? = null, useSeedNodeConnection: Boolean = false): Map<*, *> {
         val request = Request.Builder().url(url)
         when (verb) {
             Verb.GET -> request.get()
@@ -57,6 +66,7 @@ object HTTP {
         }
         lateinit var response: Response
         try {
+            val connection = if (useSeedNodeConnection) seedNodeConnection else defaultConnection
             response = connection.newCall(request.build()).execute()
         } catch (exception: Exception) {
             Log.d("Loki", "${verb.rawValue} request to $url failed due to error: ${exception.localizedMessage}.")

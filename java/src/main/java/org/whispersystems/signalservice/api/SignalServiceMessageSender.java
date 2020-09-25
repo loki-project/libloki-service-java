@@ -12,12 +12,11 @@ import org.jetbrains.annotations.Nullable;
 import org.signal.libsignal.metadata.SealedSessionCipher;
 import org.whispersystems.libsignal.InvalidKeyException;
 import org.whispersystems.libsignal.SessionBuilder;
-import org.whispersystems.libsignal.SessionCipher;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.logging.Log;
+import org.whispersystems.libsignal.loki.FallbackMessage;
 import org.whispersystems.libsignal.loki.FallbackSessionCipher;
-import org.whispersystems.libsignal.loki.LokiFriendRequestMessage;
-import org.whispersystems.libsignal.loki.LokiSessionResetProtocol;
+import org.whispersystems.libsignal.loki.SessionResetProtocol;
 import org.whispersystems.libsignal.state.PreKeyBundle;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
 import org.whispersystems.libsignal.util.guava.Optional;
@@ -52,7 +51,6 @@ import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserExce
 import org.whispersystems.signalservice.api.util.CredentialsProvider;
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration;
 import org.whispersystems.signalservice.internal.crypto.PaddingInputStream;
-import org.whispersystems.signalservice.internal.push.MismatchedDevices;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessage;
 import org.whispersystems.signalservice.internal.push.OutgoingPushMessageList;
 import org.whispersystems.signalservice.internal.push.PushAttachmentData;
@@ -64,37 +62,36 @@ import org.whispersystems.signalservice.internal.push.SignalServiceProtos.CallMe
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Content;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.GroupContext;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiProfile;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos.PrekeyBundleMessage;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.LokiUserProfile;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.PreKeyBundleMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ReceiptMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.SyncMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.TypingMessage;
-import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Verified;
-import org.whispersystems.signalservice.internal.push.StaleDevices;
 import org.whispersystems.signalservice.internal.push.http.AttachmentCipherOutputStreamFactory;
 import org.whispersystems.signalservice.internal.push.http.OutputStreamFactory;
 import org.whispersystems.signalservice.internal.util.Base64;
 import org.whispersystems.signalservice.internal.util.StaticCredentialsProvider;
 import org.whispersystems.signalservice.internal.util.Util;
 import org.whispersystems.signalservice.internal.util.concurrent.SettableFuture;
-import org.whispersystems.signalservice.loki.api.LokiAPI;
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI;
+import org.whispersystems.signalservice.loki.api.PushNotificationAPI;
 import org.whispersystems.signalservice.loki.api.SignalMessageInfo;
-import org.whispersystems.signalservice.loki.api.fileserver.LokiFileServerAPI;
-import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChat;
-import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChatAPI;
-import org.whispersystems.signalservice.loki.api.opengroups.LokiPublicChatMessage;
+import org.whispersystems.signalservice.loki.api.SnodeAPI;
+import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI;
+import org.whispersystems.signalservice.loki.api.opengroups.PublicChat;
+import org.whispersystems.signalservice.loki.api.opengroups.PublicChatAPI;
+import org.whispersystems.signalservice.loki.api.opengroups.PublicChatMessage;
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiMessageDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiPreKeyBundleDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol;
-import org.whispersystems.signalservice.loki.protocol.friendrequests.FriendRequestProtocol;
+import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
 import org.whispersystems.signalservice.loki.protocol.meta.TTLUtilities;
-import org.whispersystems.signalservice.loki.protocol.multidevice.DeviceLink;
-import org.whispersystems.signalservice.loki.protocol.multidevice.MultiDeviceProtocol;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.SessionManagementProtocol;
-import org.whispersystems.signalservice.loki.protocol.syncmessages.SyncMessagesProtocol;
+import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.MultiDeviceProtocol;
+import org.whispersystems.signalservice.loki.protocol.shelved.syncmessages.SyncMessagesProtocol;
 import org.whispersystems.signalservice.loki.utilities.Broadcaster;
 import org.whispersystems.signalservice.loki.utilities.PlaintextOutputStreamFactory;
 
@@ -107,15 +104,17 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import kotlin.Unit;
-import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import nl.komponents.kovenant.Promise;
+
+import static org.whispersystems.libsignal.SessionCipher.SESSION_LOCK;
 
 /**
  * The main interface for sending Signal Service messages.
@@ -136,13 +135,13 @@ public class SignalServiceMessageSender {
   private final AtomicBoolean                                       isMultiDevice;
 
   // Loki
-  private final String                                              userHexEncodedPublicKey;
-  private final String                                              masterHexEncodedPublicKey;
+  private final String                                              userPublicKey;
   private final LokiAPIDatabaseProtocol                             apiDatabase;
+  private final SharedSenderKeysDatabaseProtocol                    sskDatabase;
   private final LokiThreadDatabaseProtocol                          threadDatabase;
   private final LokiMessageDatabaseProtocol                         messageDatabase;
   private final LokiPreKeyBundleDatabaseProtocol                    preKeyBundleDatabase;
-  private final LokiSessionResetProtocol                            sessionResetImpl;
+  private final SessionResetProtocol                                sessionResetImpl;
   private final LokiUserDatabaseProtocol                            userDatabase;
   private final Broadcaster                                         broadcaster;
 
@@ -164,17 +163,17 @@ public class SignalServiceMessageSender {
                                     Optional<SignalServiceMessagePipe> pipe,
                                     Optional<SignalServiceMessagePipe> unidentifiedPipe,
                                     Optional<EventListener> eventListener,
-                                    String userHexEncodedPublicKey,
-                                    String masterHexEncodedPublicKey,
+                                    String userPublicKey,
                                     LokiAPIDatabaseProtocol apiDatabase,
+                                    SharedSenderKeysDatabaseProtocol sskDatabase,
                                     LokiThreadDatabaseProtocol threadDatabase,
                                     LokiMessageDatabaseProtocol messageDatabase,
                                     LokiPreKeyBundleDatabaseProtocol preKeyBundleDatabase,
-                                    LokiSessionResetProtocol sessionResetImpl,
+                                    SessionResetProtocol sessionResetImpl,
                                     LokiUserDatabaseProtocol userDatabase,
                                     Broadcaster broadcaster)
   {
-    this(urls, new StaticCredentialsProvider(user, password, null), store, userAgent, isMultiDevice, pipe, unidentifiedPipe, eventListener, userHexEncodedPublicKey, masterHexEncodedPublicKey, apiDatabase, threadDatabase, messageDatabase, preKeyBundleDatabase, sessionResetImpl, userDatabase, broadcaster);
+    this(urls, new StaticCredentialsProvider(user, password, null), store, userAgent, isMultiDevice, pipe, unidentifiedPipe, eventListener, userPublicKey, apiDatabase, sskDatabase, threadDatabase, messageDatabase, preKeyBundleDatabase, sessionResetImpl, userDatabase, broadcaster);
   }
 
   public SignalServiceMessageSender(SignalServiceConfiguration urls,
@@ -185,13 +184,13 @@ public class SignalServiceMessageSender {
                                     Optional<SignalServiceMessagePipe> pipe,
                                     Optional<SignalServiceMessagePipe> unidentifiedPipe,
                                     Optional<EventListener> eventListener,
-                                    String userHexEncodedPublicKey,
-                                    String masterHexEncodedPublicKey,
+                                    String userPublicKey,
                                     LokiAPIDatabaseProtocol apiDatabase,
+                                    SharedSenderKeysDatabaseProtocol sskDatabase,
                                     LokiThreadDatabaseProtocol threadDatabase,
                                     LokiMessageDatabaseProtocol messageDatabase,
                                     LokiPreKeyBundleDatabaseProtocol preKeyBundleDatabase,
-                                    LokiSessionResetProtocol sessionResetImpl,
+                                    SessionResetProtocol sessionResetImpl,
                                     LokiUserDatabaseProtocol userDatabase,
                                     Broadcaster broadcaster)
   {
@@ -202,9 +201,9 @@ public class SignalServiceMessageSender {
     this.unidentifiedPipe          = new AtomicReference<>(unidentifiedPipe);
     this.isMultiDevice             = new AtomicBoolean(isMultiDevice);
     this.eventListener             = eventListener;
-    this.userHexEncodedPublicKey   = userHexEncodedPublicKey;
-    this.masterHexEncodedPublicKey = masterHexEncodedPublicKey;
+    this.userPublicKey             = userPublicKey;
     this.apiDatabase               = apiDatabase;
+    this.sskDatabase               = sskDatabase;
     this.threadDatabase            = threadDatabase;
     this.messageDatabase           = messageDatabase;
     this.preKeyBundleDatabase      = preKeyBundleDatabase;
@@ -227,8 +226,8 @@ public class SignalServiceMessageSender {
       throws IOException, UntrustedIdentityException
   {
     byte[] content = createReceiptContent(message);
-
-    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getWhen(), content, false, message.getTTL(), false);
+    boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(message, recipient.getNumber(), store);
+    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getWhen(), content, false, message.getTTL(), useFallbackEncryption, false);
   }
 
   /**
@@ -245,8 +244,8 @@ public class SignalServiceMessageSender {
       throws IOException, UntrustedIdentityException
   {
     byte[] content = createTypingContent(message);
-
-    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL(), false);
+    boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(message, recipient.getNumber(), store);
+    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL(), useFallbackEncryption, false);
   }
 
   public void sendTyping(List<SignalServiceAddress>             recipients,
@@ -255,7 +254,7 @@ public class SignalServiceMessageSender {
       throws IOException
   {
     byte[] content = createTypingContent(message);
-    sendMessage(0, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL(), false);
+    sendMessage(0, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, true, message.getTTL(), false, false);
   }
 
   /**
@@ -271,7 +270,8 @@ public class SignalServiceMessageSender {
       throws IOException, UntrustedIdentityException
   {
     byte[] content = createCallContent(message);
-    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), System.currentTimeMillis(), content, false, message.getTTL(), false);
+    boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(message, recipient.getNumber(), store);
+    sendMessage(recipient, getTargetUnidentifiedAccess(unidentifiedAccess), System.currentTimeMillis(), content, false, message.getTTL(), useFallbackEncryption, false);
   }
 
   /**
@@ -290,19 +290,20 @@ public class SignalServiceMessageSender {
   {
     byte[]            content                         = createMessageContent(message, recipient);
     long              timestamp                       = message.getTimestamp();
-    boolean           shouldUpdateFriendRequestStatus = FriendRequestProtocol.shared.shouldUpdateFriendRequestStatusFromMessage(message, recipient.getNumber());
+    boolean           useFallbackEncryption           = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(message, recipient.getNumber(), store);
     boolean           isClosedGroup                   = message.group.isPresent() && message.group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
-    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.isFriendRequest(), shouldUpdateFriendRequestStatus, message.getDeviceLink().isPresent(), isClosedGroup, false);
+    SendMessageResult result                          = sendMessage(messageID, recipient, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), message.getDeviceLink().isPresent(), useFallbackEncryption, isClosedGroup, false, message.hasVisibleContent());
 
     // Loki - This shouldn't get invoked for note to self
     boolean wouldSignalSendSyncMessage = (result.getSuccess() != null && result.getSuccess().isNeedsSync()) || unidentifiedAccess.isPresent();
     if (wouldSignalSendSyncMessage && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.of(recipient), timestamp, Collections.singletonList(result));
       // Loki - Customize multi device logic
-      Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
+      Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey);
       for (String device : linkedDevices) {
         SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
-        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL(), true);
+        boolean useFallbackEncryptionForSyncMessage = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(syncMessage, device, store);
+        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL(), useFallbackEncryptionForSyncMessage, true);
       }
     }
 
@@ -332,7 +333,7 @@ public class SignalServiceMessageSender {
     byte[]                  content            = createMessageContent(message, recipients.get(0));
     long                    timestamp          = message.getTimestamp();
     boolean                 isClosedGroup      = message.group.isPresent() && message.group.get().getGroupType() == SignalServiceGroup.GroupType.SIGNAL;
-    List<SendMessageResult> results            = sendMessage(messageID, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), isClosedGroup);
+    List<SendMessageResult> results            = sendMessage(messageID, recipients, getTargetUnidentifiedAccess(unidentifiedAccess), timestamp, content, false, message.getTTL(), isClosedGroup, message.hasVisibleContent());
     boolean                 needsSyncInResults = false;
 
     for (SendMessageResult result : results) {
@@ -346,10 +347,11 @@ public class SignalServiceMessageSender {
     if (needsSyncInResults && SyncMessagesProtocol.shared.shouldSyncMessage(message)) {
       byte[] syncMessage = createMultiDeviceSentTranscriptContent(content, Optional.<SignalServiceAddress>absent(), timestamp, results);
       // Loki - Customize multi device logic
-      Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
+      Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey);
       for (String device : linkedDevices) {
         SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
-        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL(), true);
+        boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(syncMessage, device, store);
+        sendMessage(deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, syncMessage, false, message.getTTL(), useFallbackEncryption, true);
       }
     }
 
@@ -387,10 +389,11 @@ public class SignalServiceMessageSender {
     }
 
     // Loki - Customize multi device logic
-    Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
+    Set<String> linkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey);
     for (String device : linkedDevices) {
       SignalServiceAddress deviceAsAddress = new SignalServiceAddress(device);
-      sendMessageToPrivateChat(0, deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL(), false, false, false);
+      boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(message, device, store);
+      sendMessageToPrivateChat(0, deviceAsAddress, Optional.<UnidentifiedAccess>absent(), timestamp, content, false, message.getTTL(), useFallbackEncryption, false, false);
     }
   }
 
@@ -415,12 +418,12 @@ public class SignalServiceMessageSender {
       throws IOException
   {
     boolean shouldEncrypt = true;
-    String server = LokiFileServerAPI.shared.getServer();
+    String server = FileServerAPI.shared.getServer();
 
     // Loki - Check if we are sending to an open group
     if (recipient != null) {
       long threadID = threadDatabase.getThreadID(recipient.getNumber());
-      LokiPublicChat publicChat = threadDatabase.getPublicChat(threadID);
+      PublicChat publicChat = threadDatabase.getPublicChat(threadID);
       if (publicChat != null) {
         shouldEncrypt = false;
         server = publicChat.getServer();
@@ -433,10 +436,10 @@ public class SignalServiceMessageSender {
     long               ciphertextLength = shouldEncrypt ? AttachmentCipherOutputStream.getCiphertextLength(paddedLength) : attachment.getLength();
 
     OutputStreamFactory outputStreamFactory = shouldEncrypt ? new AttachmentCipherOutputStreamFactory(attachmentKey) : new PlaintextOutputStreamFactory();
-    PushAttachmentData attachmentData   = new PushAttachmentData(attachment.getContentType(), dataStream, ciphertextLength, outputStreamFactory, attachment.getListener());
+    PushAttachmentData  attachmentData      = new PushAttachmentData(attachment.getContentType(), dataStream, ciphertextLength, outputStreamFactory, attachment.getListener());
 
     // Loki - Upload attachment
-    LokiDotNetAPI.UploadResult result = LokiFileServerAPI.shared.uploadAttachment(server, attachmentData);
+    LokiDotNetAPI.UploadResult result = FileServerAPI.shared.uploadAttachment(server, attachmentData);
     return new SignalServiceAttachmentPointer(result.getId(),
                                               attachment.getContentType(),
                                               attachmentKey,
@@ -453,29 +456,7 @@ public class SignalServiceMessageSender {
   private void sendMessage(VerifiedMessage message, Optional<UnidentifiedAccessPair> unidentifiedAccess)
       throws IOException, UntrustedIdentityException
   {
-    return;
-    /*
-    byte[] nullMessageBody = DataMessage.newBuilder()
-                                        .setBody(Base64.encodeBytes(Util.getRandomLengthBytes(140)))
-                                        .build()
-                                        .toByteArray();
 
-    NullMessage nullMessage = NullMessage.newBuilder()
-                                         .setPadding(ByteString.copyFrom(nullMessageBody))
-                                         .build();
-
-    byte[] content = Content.newBuilder()
-                            .setNullMessage(nullMessage)
-                            .build()
-                            .toByteArray();
-
-    SendMessageResult result = sendMessage(new SignalServiceAddress(message.getDestination()), getTargetUnidentifiedAccess(unidentifiedAccess), message.getTimestamp(), content, false, message.getTTL(), false);
-
-    if (result.getSuccess().isNeedsSync()) {
-      byte[] syncMessage = createMultiDeviceVerifiedContent(message, nullMessage.toByteArray());
-      sendMessage(localAddress, Optional.<UnidentifiedAccess>absent(), message.getTimestamp(), syncMessage, false, message.getTTL(), false);
-    }
-    */
   }
 
   private byte[] createTypingContent(SignalServiceTypingMessage message) {
@@ -514,10 +495,9 @@ public class SignalServiceMessageSender {
   {
     Content.Builder container = Content.newBuilder();
 
-    // Loki - Set the pre key bundle if needed
     if (message.getPreKeyBundle().isPresent()) {
       PreKeyBundle preKeyBundle = message.getPreKeyBundle().get();
-      PrekeyBundleMessage.Builder preKeyBuilder = PrekeyBundleMessage.newBuilder()
+      PreKeyBundleMessage.Builder preKeyBundleMessageBuilder = PreKeyBundleMessage.newBuilder()
           .setDeviceId(preKeyBundle.getDeviceId())
           .setIdentityKey(ByteString.copyFrom(preKeyBundle.getIdentityKey().serialize()))
           .setPreKeyId(preKeyBundle.getPreKeyId())
@@ -526,18 +506,19 @@ public class SignalServiceMessageSender {
           .setSignedKey(ByteString.copyFrom(preKeyBundle.getSignedPreKey().serialize()))
           .setSignature(ByteString.copyFrom(preKeyBundle.getSignedPreKeySignature()))
           .setIdentityKey(ByteString.copyFrom(preKeyBundle.getIdentityKey().serialize()));
-      container.setPreKeyBundleMessage(preKeyBuilder);
+      container.setPreKeyBundleMessage(preKeyBundleMessageBuilder);
     }
 
-    // Loki - Set the device link if needed
     if (message.getDeviceLink().isPresent()) {
       DeviceLink deviceLink = message.getDeviceLink().get();
-      SignalServiceProtos.PairingAuthorisationMessage.Builder builder = SignalServiceProtos.PairingAuthorisationMessage.newBuilder()
-          .setPrimaryDevicePublicKey(deviceLink.getMasterHexEncodedPublicKey())
-          .setSecondaryDevicePublicKey(deviceLink.getSlaveHexEncodedPublicKey());
-      builder.setRequestSignature(ByteString.copyFrom(deviceLink.getRequestSignature()));
-      if (deviceLink.getAuthorizationSignature() != null) { builder.setGrantSignature(ByteString.copyFrom(deviceLink.getAuthorizationSignature())); }
-      container.setPairingAuthorisation(builder);
+      SignalServiceProtos.DeviceLinkMessage.Builder deviceLinkMessageBuilder = SignalServiceProtos.DeviceLinkMessage.newBuilder()
+          .setPrimaryPublicKey(deviceLink.getMasterPublicKey())
+          .setSecondaryPublicKey(deviceLink.getSlavePublicKey())
+          .setRequestSignature(ByteString.copyFrom(Objects.requireNonNull(deviceLink.getRequestSignature())));
+      if (deviceLink.getAuthorizationSignature() != null) {
+          deviceLinkMessageBuilder.setAuthorizationSignature(ByteString.copyFrom(deviceLink.getAuthorizationSignature()));
+      }
+      container.setDeviceLinkMessage(deviceLinkMessageBuilder.build());
     }
 
     DataMessage.Builder builder = DataMessage.newBuilder();
@@ -563,23 +544,12 @@ public class SignalServiceMessageSender {
       builder.setFlags(DataMessage.Flags.EXPIRATION_TIMER_UPDATE_VALUE);
     }
 
-    // Loki - Set unlinking request flag if needed
-    if (message.isUnlinkingRequest()) {
-      builder.setFlags(DataMessage.Flags.UNPAIRING_REQUEST_VALUE);
-    }
-
     if (message.isProfileKeyUpdate()) {
       builder.setFlags(DataMessage.Flags.PROFILE_KEY_UPDATE_VALUE);
     }
 
-    // Loki - Set session restoration request flag if needed
-    if (message.isSessionRestorationRequest()) {
-      builder.setFlags(DataMessage.Flags.SESSION_RESTORE_VALUE);
-    }
-
-    // Loki - Set session request flag if needed
-    if (message.isSessionRequest()) {
-      builder.setFlags(DataMessage.Flags.SESSION_REQUEST_VALUE);
+    if (message.isDeviceUnlinkingRequest()) {
+      builder.setFlags(DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE);
     }
 
     if (message.getExpiresInSeconds() > 0) {
@@ -653,17 +623,15 @@ public class SignalServiceMessageSender {
       builder.setSticker(stickerBuilder.build());
     }
 
-    // Loki - Set display name & profile picture (exclude the profile picture if this is a friend request
-    // to prevent unsolicited content from being sent)
-    LokiProfile.Builder profile = LokiProfile.newBuilder();
-    String displayName = userDatabase.getDisplayName(userHexEncodedPublicKey);
-    if (displayName != null) { profile.setDisplayName(displayName); }
-    String profilePictureURL = userDatabase.getProfilePictureURL(userHexEncodedPublicKey);
-    boolean shouldIncludeProfilePicture = !message.isFriendRequest() && profilePictureURL != null;
-    profile.setAvatar(shouldIncludeProfilePicture ? profilePictureURL : "");
-    builder.setProfile(profile);
+    LokiUserProfile.Builder lokiUserProfileBuilder = LokiUserProfile.newBuilder();
+    String displayName = userDatabase.getDisplayName(userPublicKey);
+    if (displayName != null) { lokiUserProfileBuilder.setDisplayName(displayName); }
+    String profilePictureURL = userDatabase.getProfilePictureURL(userPublicKey);
+    if (profilePictureURL != null) { lokiUserProfileBuilder.setProfilePictureURL(profilePictureURL); }
+    builder.setProfile(lokiUserProfileBuilder.build());
 
     builder.setTimestamp(message.getTimestamp());
+
     container.setDataMessage(builder);
 
     return container.build().toByteArray();
@@ -726,17 +694,17 @@ public class SignalServiceMessageSender {
     return container.setSyncMessage(builder).build().toByteArray();
   }
 
-  private byte[] createMultiDeviceOpenGroupsContent(List<LokiPublicChat> openGroups)
+  private byte[] createMultiDeviceOpenGroupsContent(List<PublicChat> openGroups)
       throws IOException
   {
       Content.Builder     container = Content.newBuilder();
       SyncMessage.Builder builder   = createSyncMessageBuilder();
-      for (LokiPublicChat openGroup : openGroups) {
+      for (PublicChat openGroup : openGroups) {
           String url = openGroup.getServer();
           int channel = Long.valueOf(openGroup.getChannel()).intValue();
           SyncMessage.OpenGroupDetails details = SyncMessage.OpenGroupDetails.newBuilder()
                                                                               .setUrl(url)
-                                                                              .setChannelId(channel)
+                                                                              .setChannelID(channel)
                                                                               .build();
           builder.addOpenGroups(details);
       }
@@ -866,26 +834,6 @@ public class SignalServiceMessageSender {
       syncMessage.addStickerPackOperation(builder);
     }
 
-    return container.setSyncMessage(syncMessage).build().toByteArray();
-  }
-
-  private byte[] createMultiDeviceVerifiedContent(VerifiedMessage verifiedMessage, byte[] nullMessage) {
-    Content.Builder     container              = Content.newBuilder();
-    SyncMessage.Builder syncMessage            = createSyncMessageBuilder();
-    Verified.Builder    verifiedMessageBuilder = Verified.newBuilder();
-
-    verifiedMessageBuilder.setNullMessage(ByteString.copyFrom(nullMessage));
-    verifiedMessageBuilder.setDestination(verifiedMessage.getDestination());
-    verifiedMessageBuilder.setIdentityKey(ByteString.copyFrom(verifiedMessage.getIdentityKey().serialize()));
-
-      switch(verifiedMessage.getVerified()) {
-        case DEFAULT:    verifiedMessageBuilder.setState(Verified.State.DEFAULT);    break;
-        case VERIFIED:   verifiedMessageBuilder.setState(Verified.State.VERIFIED);   break;
-        case UNVERIFIED: verifiedMessageBuilder.setState(Verified.State.UNVERIFIED); break;
-        default:         throw new AssertionError("Unknown: " + verifiedMessage.getVerified());
-      }
-
-    syncMessage.setVerified(verifiedMessageBuilder);
     return container.setSyncMessage(syncMessage).build().toByteArray();
   }
 
@@ -1035,7 +983,8 @@ public class SignalServiceMessageSender {
                                               byte[]                             content,
                                               boolean                            online,
                                               int                                ttl,
-                                              boolean                            isClosedGroup)
+                                              boolean                            isClosedGroup,
+                                              boolean                            notifyPNServer)
       throws IOException
   {
     List<SendMessageResult>                results                    = new LinkedList<>();
@@ -1046,7 +995,8 @@ public class SignalServiceMessageSender {
       SignalServiceAddress recipient = recipientIterator.next();
 
       try {
-        SendMessageResult result = sendMessage(messageID, recipient, unidentifiedAccessIterator.next(), timestamp, content, online, ttl, false, false, false, isClosedGroup, false);
+        boolean useFallbackEncryption = SessionManagementProtocol.shared.shouldMessageUseFallbackEncryption(content, recipient.getNumber(), store);
+        SendMessageResult result = sendMessage(messageID, recipient, unidentifiedAccessIterator.next(), timestamp, content, online, ttl, false, useFallbackEncryption, isClosedGroup, false, notifyPNServer);
         results.add(result);
       } catch (UnregisteredUserException e) {
         Log.w(TAG, e);
@@ -1066,34 +1016,35 @@ public class SignalServiceMessageSender {
                                         byte[]                       content,
                                         boolean                      online,
                                         int                          ttl,
+                                        boolean                      useFallbackEncryption,
                                         boolean                      isSyncMessage)
       throws IOException
   {
     // Loki - This method is only invoked for various types of control messages
-    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, false, false, isSyncMessage);
+    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, useFallbackEncryption, isSyncMessage, false);
   }
 
-  private SendMessageResult sendMessage(final long                   messageID,
-                                        final SignalServiceAddress   recipient,
-                                        Optional<UnidentifiedAccess> unidentifiedAccess,
-                                        long                         timestamp,
-                                        byte[]                       content,
-                                        boolean                      online,
-                                        int                          ttl,
-                                        boolean                      isFriendRequest,
-                                        boolean                      shouldUpdateFriendRequestStatus,
-                                        boolean                      isDeviceLinkMessage,
-                                        boolean                      isClosedGroup,
-                                        boolean                      isSyncMessage)
+  public SendMessageResult sendMessage(final long                   messageID,
+                                       final SignalServiceAddress   recipient,
+                                       Optional<UnidentifiedAccess> unidentifiedAccess,
+                                       long                         timestamp,
+                                       byte[]                       content,
+                                       boolean                      online,
+                                       int                          ttl,
+                                       boolean                      isDeviceLinkMessage,
+                                       boolean                      useFallbackEncryption,
+                                       boolean                      isClosedGroup,
+                                       boolean                      isSyncMessage,
+                                       boolean                      notifyPNServer)
       throws IOException
   {
     long threadID = threadDatabase.getThreadID(recipient.getNumber());
-    LokiPublicChat publicChat = threadDatabase.getPublicChat(threadID);
+    PublicChat publicChat = threadDatabase.getPublicChat(threadID);
     try {
       if (publicChat != null) {
         return sendMessageToPublicChat(messageID, recipient, timestamp, content, publicChat);
       } else {
-        return sendMessageToPrivateChat(messageID, recipient, unidentifiedAccess, timestamp, content, online, ttl, isFriendRequest, shouldUpdateFriendRequestStatus, isClosedGroup);
+        return sendMessageToPrivateChat(messageID, recipient, unidentifiedAccess, timestamp, content, online, ttl, useFallbackEncryption, isClosedGroup, notifyPNServer);
       }
     } catch (PushNetworkException e) {
       return SendMessageResult.networkFailure(recipient);
@@ -1106,7 +1057,7 @@ public class SignalServiceMessageSender {
                                                     final SignalServiceAddress recipient,
                                                     long                       timestamp,
                                                     byte[]                     content,
-                                                    LokiPublicChat             publicChat) {
+                                                    PublicChat publicChat) {
     if (messageID == 0) {
       Log.d("Loki", "Missing message ID.");
     }
@@ -1114,58 +1065,58 @@ public class SignalServiceMessageSender {
     try {
       SignalServiceProtos.DataMessage data = SignalServiceProtos.Content.parseFrom(content).getDataMessage();
       String body = (data.getBody() != null && data.getBody().length() > 0) ? data.getBody() : Long.toString(data.getTimestamp());
-      LokiPublicChatMessage.Quote quote = null;
+      PublicChatMessage.Quote quote = null;
       if (data.hasQuote()) {
         long quoteID = data.getQuote().getId();
-        String quoteeHexEncodedPublicKey = data.getQuote().getAuthor();
-        long serverID = messageDatabase.getQuoteServerID(quoteID, quoteeHexEncodedPublicKey);
-        quote = new LokiPublicChatMessage.Quote(quoteID, quoteeHexEncodedPublicKey, data.getQuote().getText(), serverID);
+        String quoteePublicKey = data.getQuote().getAuthor();
+        long serverID = messageDatabase.getQuoteServerID(quoteID, quoteePublicKey);
+        quote = new PublicChatMessage.Quote(quoteID, quoteePublicKey, data.getQuote().getText(), serverID);
       }
       SignalServiceProtos.DataMessage.Preview linkPreview = (data.getPreviewList().size() > 0) ? data.getPreviewList().get(0) : null;
-      ArrayList<LokiPublicChatMessage.Attachment> attachments = new ArrayList<>();
+      ArrayList<PublicChatMessage.Attachment> attachments = new ArrayList<>();
       if (linkPreview != null && linkPreview.hasImage()) {
         AttachmentPointer attachmentPointer = linkPreview.getImage();
         String caption = attachmentPointer.hasCaption() ? attachmentPointer.getCaption() : null;
-        attachments.add(new LokiPublicChatMessage.Attachment(
-                LokiPublicChatMessage.Attachment.Kind.LinkPreview,
-                publicChat.getServer(),
-                attachmentPointer.getId(),
-                attachmentPointer.getContentType(),
-                attachmentPointer.getSize(),
-                attachmentPointer.getFileName(),
-                attachmentPointer.getFlags(),
-                attachmentPointer.getWidth(),
-                attachmentPointer.getHeight(),
-                caption,
-                attachmentPointer.getUrl(),
-                linkPreview.getUrl(),
-                linkPreview.getTitle()
+        attachments.add(new PublicChatMessage.Attachment(
+            PublicChatMessage.Attachment.Kind.LinkPreview,
+            publicChat.getServer(),
+            attachmentPointer.getId(),
+            attachmentPointer.getContentType(),
+            attachmentPointer.getSize(),
+            attachmentPointer.getFileName(),
+            attachmentPointer.getFlags(),
+            attachmentPointer.getWidth(),
+            attachmentPointer.getHeight(),
+            caption,
+            attachmentPointer.getUrl(),
+            linkPreview.getUrl(),
+            linkPreview.getTitle()
         ));
       }
       for (AttachmentPointer attachmentPointer : data.getAttachmentsList()) {
         String caption = attachmentPointer.hasCaption() ? attachmentPointer.getCaption() : null;
-        attachments.add(new LokiPublicChatMessage.Attachment(
-                LokiPublicChatMessage.Attachment.Kind.Attachment,
-                publicChat.getServer(),
-                attachmentPointer.getId(),
-                attachmentPointer.getContentType(),
-                attachmentPointer.getSize(),
-                attachmentPointer.getFileName(),
-                attachmentPointer.getFlags(),
-                attachmentPointer.getWidth(),
-                attachmentPointer.getHeight(),
-                caption,
-                attachmentPointer.getUrl(),
-                null,
-                null
+        attachments.add(new PublicChatMessage.Attachment(
+            PublicChatMessage.Attachment.Kind.Attachment,
+            publicChat.getServer(),
+            attachmentPointer.getId(),
+            attachmentPointer.getContentType(),
+            attachmentPointer.getSize(),
+            attachmentPointer.getFileName(),
+            attachmentPointer.getFlags(),
+            attachmentPointer.getWidth(),
+            attachmentPointer.getHeight(),
+            caption,
+            attachmentPointer.getUrl(),
+            null,
+            null
         ));
       }
-      LokiPublicChatMessage message = new LokiPublicChatMessage(userHexEncodedPublicKey, "", body, timestamp, LokiPublicChatAPI.getPublicChatMessageType(), quote, attachments);
+      PublicChatMessage message = new PublicChatMessage(userPublicKey, "", body, timestamp, PublicChatAPI.getPublicChatMessageType(), quote, attachments);
       byte[] privateKey = store.getIdentityKeyPair().getPrivateKey().serialize();
-      new LokiPublicChatAPI(userHexEncodedPublicKey, privateKey, apiDatabase, userDatabase).sendMessage(message, publicChat.getChannel(), publicChat.getServer()).success(new Function1<LokiPublicChatMessage, Unit>() {
+      new PublicChatAPI(userPublicKey, privateKey, apiDatabase, userDatabase).sendMessage(message, publicChat.getChannel(), publicChat.getServer()).success(new Function1<PublicChatMessage, Unit>() {
 
         @Override
-        public Unit invoke(LokiPublicChatMessage message) {
+        public Unit invoke(PublicChatMessage message) {
           @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
           messageDatabase.setServerID(messageID, message.getServerID());
           f.set(Unit.INSTANCE);
@@ -1200,54 +1151,48 @@ public class SignalServiceMessageSender {
                                                      byte[]                       content,
                                                      boolean                      online,
                                                      int                          ttl,
-                                                     boolean                      isFriendRequest,
-                                                     final boolean                shouldUpdateFriendRequestStatus,
-                                                     boolean                      isClosedGroup)
+                                                     boolean                      useFallbackEncryption,
+                                                     boolean                      isClosedGroup,
+                                                     final boolean                notifyPNServer)
       throws IOException, UntrustedIdentityException
   {
-    if (recipient.getNumber().equals(userHexEncodedPublicKey)) { return SendMessageResult.success(recipient, false, false); }
+    if (recipient.getNumber().equals(userPublicKey)) { return SendMessageResult.success(recipient, false, false); }
     final SettableFuture<?>[] future = { new SettableFuture<Unit>() };
-    final long threadID = threadDatabase.getThreadID(recipient.getNumber());
     try {
-      OutgoingPushMessageList messages = getEncryptedMessages(socket, recipient, unidentifiedAccess, timestamp, content, online, isFriendRequest, isClosedGroup);
+      OutgoingPushMessageList messages = getEncryptedMessages(socket, recipient, unidentifiedAccess, timestamp, content, online, useFallbackEncryption, isClosedGroup);
       // Loki - Remove this when we have shared sender keys
       // ========
       if (messages.getMessages().isEmpty()) {
           return SendMessageResult.success(recipient, false, false);
       }
       // ========
-      Set<String> userLinkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userHexEncodedPublicKey);
-      if (recipient.getNumber().equals(userHexEncodedPublicKey)) {
-        Log.d("Loki", "Sending message to self (id: " + messageID + ", ttl: " + ttl + ", isFriendRequest: " + isFriendRequest + ").");
+      Set<String> userLinkedDevices = MultiDeviceProtocol.shared.getAllLinkedDevices(userPublicKey);
+      if (sskDatabase.isSSKBasedClosedGroup(recipient.getNumber())) {
+        Log.d("Loki", "Sending message to closed group.")  ;
+      } else if (recipient.getNumber().equals(userPublicKey)) {
+        Log.d("Loki", "Sending message to self.");
       } else if (userLinkedDevices.contains(recipient.getNumber())) {
-        Log.d("Loki", "Sending message to linked device (id: " + messageID + ", ttl: " + ttl + ", isFriendRequest: " + isFriendRequest + ").");
+        Log.d("Loki", "Sending message to linked device.");
       } else {
-        Log.d("Loki", "Sending message to " + recipient.getNumber() + " (id: " + messageID + ", ttl: " + ttl + ", isFriendRequest: " + isFriendRequest + ").");
+        Log.d("Loki", "Sending message to " + recipient.getNumber() + ".");
       }
       OutgoingPushMessage message = messages.getMessages().get(0);
       final SignalServiceProtos.Envelope.Type type = SignalServiceProtos.Envelope.Type.valueOf(message.type);
-      final boolean isFriendRequestMessage = isFriendRequest;
-      final String senderID = type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER ? "" : userHexEncodedPublicKey;
-      final int senderDeviceID = type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER ? 0 : SignalServiceAddress.DEFAULT_DEVICE_ID;
-      // Make sure we have a valid ttl; otherwise default to a day
-      if (ttl <= 0) { ttl = TTLUtilities.INSTANCE.getFallbackMessageTTL$signal_service_java(); }
-      final int regularMessageTTL = TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.Regular);
-      final int frMessageTTL = TTLUtilities.getTTL$signal_service_java(TTLUtilities.MessageType.FriendRequest);
-      final int __ttl = ttl;
-      SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
-      // TODO: PoW indicator
-      // Update the message and thread if needed
-      if (isFriendRequestMessage && shouldUpdateFriendRequestStatus && eventListener.isPresent()) {
-        eventListener.get().onFriendRequestSending(messageID, threadID);
+      final String senderID;
+      if (type == SignalServiceProtos.Envelope.Type.CLOSED_GROUP_CIPHERTEXT) {
+          senderID = recipient.getNumber();
+      } else if (type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER) {
+          senderID = "";
+      } else {
+          senderID = userPublicKey;
       }
-      LokiAPI.shared.sendSignalMessage(messageInfo, new Function0<Unit>() {
-
-        @Override
-        public Unit invoke() {
-          // TODO: onP2PSuccess
-          return Unit.INSTANCE;
-        }
-      }).success(new Function1<Set<Promise<Map<?, ?>, Exception>>, Unit>() {
+      final int senderDeviceID = (type == SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER) ? 0 : SignalServiceAddress.DEFAULT_DEVICE_ID;
+      // Make sure we have a valid ttl; otherwise default to 2 days
+      if (ttl <= 0) { ttl = TTLUtilities.INSTANCE.getFallbackMessageTTL(); }
+      final int regularMessageTTL = TTLUtilities.getTTL(TTLUtilities.MessageType.Regular);
+      final int __ttl = ttl;
+      final SignalMessageInfo messageInfo = new SignalMessageInfo(type, timestamp, senderID, senderDeviceID, message.content, recipient.getNumber(), ttl, false);
+      SnodeAPI.shared.sendSignalMessage(messageInfo).success(new Function1<Set<Promise<Map<?, ?>, Exception>>, Unit>() {
 
         @Override
         public Unit invoke(Set<Promise<Map<?, ?>, Exception>> promises) {
@@ -1260,13 +1205,12 @@ public class SignalServiceMessageSender {
               @Override
               public Unit invoke(Map<?, ?> map) {
                 if (isSuccess[0]) { return Unit.INSTANCE; } // Succeed as soon as the first promise succeeds
-                if (__ttl == regularMessageTTL || __ttl == frMessageTTL) {
+                if (__ttl == regularMessageTTL) {
                   broadcaster.broadcast("messageSent", timestamp);
                 }
                 isSuccess[0] = true;
-                // Update the message and thread if needed
-                if (isFriendRequestMessage && shouldUpdateFriendRequestStatus && eventListener.isPresent()) {
-                    eventListener.get().onFriendRequestSent(messageID, threadID);
+                if (notifyPNServer) {
+                    PushNotificationAPI.shared.notify(messageInfo);
                 }
                 @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
                 f.set(Unit.INSTANCE);
@@ -1278,12 +1222,8 @@ public class SignalServiceMessageSender {
               public Unit invoke(Exception exception) {
                 errorCount[0] += 1;
                 if (errorCount[0] != promiseCount[0]) { return Unit.INSTANCE; } // Only error out if all promises failed
-                if (__ttl == regularMessageTTL || __ttl == frMessageTTL) {
+                if (__ttl == regularMessageTTL) {
                     broadcaster.broadcast("messageFailed", timestamp);
-                }
-                // Update the message and thread if needed
-                if (isFriendRequestMessage && shouldUpdateFriendRequestStatus && eventListener.isPresent()) {
-                    eventListener.get().onFriendRequestSendingFailed(messageID, threadID);
                 }
                 @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
                 f.setException(exception);
@@ -1297,10 +1237,6 @@ public class SignalServiceMessageSender {
 
         @Override
         public Unit invoke(Exception exception) {
-          // Update the message and thread if needed
-          if (isFriendRequestMessage && eventListener.isPresent()) {
-              eventListener.get().onFriendRequestSendingFailed(messageID, threadID);
-          }
           @SuppressWarnings("unchecked") SettableFuture<Unit> f = (SettableFuture<Unit>)future[0];
           f.setException(exception);
           return Unit.INSTANCE;
@@ -1315,8 +1251,8 @@ public class SignalServiceMessageSender {
       return SendMessageResult.success(recipient, false, true);
     } catch (Exception exception) {
       Throwable underlyingError = exception.getCause();
-      if (underlyingError instanceof LokiAPI.Error) {
-        return SendMessageResult.lokiAPIError(recipient, (LokiAPI.Error)underlyingError);
+      if (underlyingError instanceof SnodeAPI.Error) {
+        return SendMessageResult.lokiAPIError(recipient, (SnodeAPI.Error)underlyingError);
       } else {
         return SendMessageResult.networkFailure(recipient);
       }
@@ -1407,17 +1343,27 @@ public class SignalServiceMessageSender {
                                                        long                         timestamp,
                                                        byte[]                       plaintext,
                                                        boolean                      online,
-                                                       boolean                      isFriendRequest,
+                                                       boolean                      useFallbackEncryption,
                                                        boolean                      isClosedGroup)
       throws IOException, InvalidKeyException, UntrustedIdentityException
   {
     List<OutgoingPushMessage> messages = new LinkedList<>();
 
+    // Loki - The way this works is:
+    // • Alice sends a session request (i.e. a pre key bundle) to Bob using fallback encryption.
+    // • She may send any number of subsequent messages also encrypted using fallback encryption.
+    // • When Bob receives the session request, he sets up his Signal cipher session locally and sends back a null message,
+    //   now encrypted using Signal encryption.
+    // • Alice receives this, sets up her Signal cipher session locally, and sends any subsequent messages
+    //   using Signal encryption.
+
     if (!recipient.equals(localAddress) || unidentifiedAccess.isPresent()) {
-      if (isFriendRequest) {
-        messages.add(getEncryptedFriendRequestMessage(recipient, SignalServiceAddress.DEFAULT_DEVICE_ID, plaintext, unidentifiedAccess));
+      if (sskDatabase.isSSKBasedClosedGroup(recipient.getNumber()) && unidentifiedAccess.isPresent()) {
+        messages.add(getSSKEncryptedMessage(recipient.getNumber(), unidentifiedAccess.get(), plaintext));
+      } else if (useFallbackEncryption) {
+        messages.add(getFallbackCipherEncryptedMessage(recipient.getNumber(), plaintext, unidentifiedAccess));
       } else {
-        OutgoingPushMessage message = getEncryptedMessage(socket, recipient, unidentifiedAccess, SignalServiceAddress.DEFAULT_DEVICE_ID, plaintext, isClosedGroup);
+        OutgoingPushMessage message = getEncryptedMessage(socket, recipient, unidentifiedAccess, plaintext, isClosedGroup);
         if (message != null) { // May be null in a closed group context
           messages.add(message);
         }
@@ -1427,29 +1373,69 @@ public class SignalServiceMessageSender {
     return new OutgoingPushMessageList(recipient.getNumber(), timestamp, messages, online);
   }
 
+  private OutgoingPushMessage getFallbackCipherEncryptedMessage(String publicKey, byte[] plaintext, Optional<UnidentifiedAccess> unidentifiedAccess)
+      throws InvalidKeyException
+  {
+    Log.d("Loki", "Using fallback cipher.");
+    int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
+    SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(publicKey, deviceID);
+    byte[] userPrivateKey = store.getIdentityKeyPair().getPrivateKey().serialize();
+    FallbackSessionCipher cipher = new FallbackSessionCipher(userPrivateKey, publicKey);
+    PushTransportDetails transportDetails = new PushTransportDetails(FallbackSessionCipher.getSessionVersion());
+    byte[] bytes = cipher.encrypt(transportDetails.getPaddedMessageBody(plaintext));
+    if (bytes == null) { bytes = new byte[0]; }
+    if (unidentifiedAccess.isPresent()) {
+      SealedSessionCipher sealedSessionCipher = new SealedSessionCipher(store, null, signalProtocolAddress);
+      FallbackMessage message = new FallbackMessage(bytes);
+      byte[] ciphertext = sealedSessionCipher.encrypt(signalProtocolAddress, unidentifiedAccess.get().getUnidentifiedCertificate(), message);
+      return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE, deviceID, 0, Base64.encodeBytes(ciphertext));
+    } else {
+      return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.FALLBACK_MESSAGE_VALUE, deviceID, 0, Base64.encodeBytes(bytes));
+    }
+  }
+
+  private OutgoingPushMessage getSSKEncryptedMessage(String groupPublicKey, UnidentifiedAccess unidentifiedAccess, byte[] plaintext)
+      throws InvalidKeyException, UntrustedIdentityException, IOException
+  {
+      int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
+      SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(groupPublicKey, deviceID);
+      SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, null);
+      synchronized (SESSION_LOCK) {
+          try {
+              return cipher.encrypt(signalProtocolAddress, Optional.of(unidentifiedAccess), plaintext);
+          } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
+              throw new UntrustedIdentityException("Untrusted identity", groupPublicKey, e.getUntrustedIdentity());
+          }
+      }
+  }
+
   private OutgoingPushMessage getEncryptedMessage(PushServiceSocket            socket,
                                                   SignalServiceAddress         recipient,
                                                   Optional<UnidentifiedAccess> unidentifiedAccess,
-                                                  int                          deviceId,
                                                   byte[]                       plaintext,
                                                   boolean                      isClosedGroup)
       throws IOException, InvalidKeyException, UntrustedIdentityException
   {
-    SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(recipient.getNumber(), deviceId);
-    SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sessionResetImpl, null);
+    Log.d("Loki", "Using Signal cipher.");
+    int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
+    SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(recipient.getNumber(), deviceID);
+    SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, null);
 
-    if (!store.containsSession(signalProtocolAddress)) {
-      try {
-        String contactPublicKey = recipient.getNumber();
-        PreKeyBundle preKeyBundle = preKeyBundleDatabase.getPreKeyBundle(contactPublicKey);
-        if (preKeyBundle == null) {
+    try {
+      String contactPublicKey = recipient.getNumber();
+      PreKeyBundle preKeyBundle = preKeyBundleDatabase.getPreKeyBundle(contactPublicKey);
+      if (preKeyBundle == null) {
+        if (!store.containsSession(signalProtocolAddress)) {
           SessionManagementProtocol.shared.repairSessionIfNeeded(recipient, isClosedGroup);
           // Loki - Remove this when we have shared sender keys
           // ========
-          if (SessionManagementProtocol.shared.shouldIgnoreMissingPreKeyBundleException(isClosedGroup)) { return null; }
+          if (SessionManagementProtocol.shared.shouldIgnoreMissingPreKeyBundleException(isClosedGroup)) {
+            return null;
+          }
           // ========
           throw new InvalidKeyException("Pre key bundle not found for: " + recipient.getNumber() + ".");
         }
+      } else {
         try {
           SignalProtocolAddress address = new SignalProtocolAddress(contactPublicKey, preKeyBundle.getDeviceId());
           SessionBuilder sessionBuilder = new SessionBuilder(store, address);
@@ -1462,67 +1448,18 @@ public class SignalServiceMessageSender {
         if (eventListener.isPresent()) {
           eventListener.get().onSecurityEvent(recipient);
         }
-      } catch (InvalidKeyException e) {
-        throw new IOException(e);
       }
+    } catch (InvalidKeyException e) {
+      throw new IOException(e);
     }
 
     // Loki - Ensure all session processing has finished
-    synchronized (SessionCipher.SESSION_LOCK) {
+    synchronized (SESSION_LOCK) {
       try {
         return cipher.encrypt(signalProtocolAddress, unidentifiedAccess, plaintext);
       } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
         throw new UntrustedIdentityException("Untrusted on send", recipient.getNumber(), e.getUntrustedIdentity());
       }
-    }
-  }
-
-  private OutgoingPushMessage getEncryptedFriendRequestMessage(SignalServiceAddress recipient, int deviceID, byte[] plaintext, Optional<UnidentifiedAccess> unidentifiedAccess)
-      throws InvalidKeyException
-  {
-    SignalProtocolAddress destination = new SignalProtocolAddress(recipient.getNumber(), deviceID);
-    byte[] userPrivateKey = store.getIdentityKeyPair().getPrivateKey().serialize();
-    FallbackSessionCipher cipher = new FallbackSessionCipher(userPrivateKey, recipient.getNumber());
-    PushTransportDetails transportDetails = new PushTransportDetails(FallbackSessionCipher.getSessionVersion());
-    byte[] bytes = cipher.encrypt(transportDetails.getPaddedMessageBody(plaintext));
-    if (bytes == null) { bytes = new byte[0]; }
-    if (unidentifiedAccess.isPresent()) {
-      SealedSessionCipher sealedSessionCipher = new SealedSessionCipher(store, null, destination);
-      LokiFriendRequestMessage message = new LokiFriendRequestMessage(bytes);
-      byte[] ciphertext = sealedSessionCipher.encrypt(destination, unidentifiedAccess.get().getUnidentifiedCertificate(), message);
-      return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE, deviceID, 0, Base64.encodeBytes(ciphertext));
-    } else {
-      return new OutgoingPushMessage(SignalServiceProtos.Envelope.Type.FRIEND_REQUEST_VALUE, deviceID, 0, Base64.encodeBytes(bytes));
-    }
-  }
-
-  private void handleMismatchedDevices(PushServiceSocket socket, SignalServiceAddress recipient,
-                                       MismatchedDevices mismatchedDevices)
-      throws IOException, UntrustedIdentityException
-  {
-    try {
-      for (int extraDeviceId : mismatchedDevices.getExtraDevices()) {
-        store.deleteSession(new SignalProtocolAddress(recipient.getNumber(), extraDeviceId));
-      }
-
-      for (int missingDeviceId : mismatchedDevices.getMissingDevices()) {
-        PreKeyBundle preKey = socket.getPreKey(recipient, missingDeviceId);
-
-        try {
-          SessionBuilder sessionBuilder = new SessionBuilder(store, new SignalProtocolAddress(recipient.getNumber(), missingDeviceId));
-          sessionBuilder.process(preKey);
-        } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
-          throw new UntrustedIdentityException("Untrusted identity key!", recipient.getNumber(), preKey.getIdentityKey());
-        }
-      }
-    } catch (InvalidKeyException e) {
-      throw new IOException(e);
-    }
-  }
-
-  private void handleStaleDevices(SignalServiceAddress recipient, StaleDevices staleDevices) {
-    for (int staleDeviceId : staleDevices.getStaleDevices()) {
-      store.deleteSession(new SignalProtocolAddress(recipient.getNumber(), staleDeviceId));
     }
   }
 
@@ -1548,8 +1485,5 @@ public class SignalServiceMessageSender {
   public static interface EventListener {
 
     public void onSecurityEvent(SignalServiceAddress address);
-    public void onFriendRequestSending(long messageID, long threadID);
-    public void onFriendRequestSent(long messageID, long threadID);
-    public void onFriendRequestSendingFailed(long messageID, long threadID);
   }
 }

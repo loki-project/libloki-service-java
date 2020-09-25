@@ -10,7 +10,7 @@ public class DjbECPrivateKey implements ECPrivateKey {
 
   private final byte[] privateKey;
 
-  DjbECPrivateKey(byte[] privateKey) {
+  public DjbECPrivateKey(byte[] privateKey) {
     this.privateKey = privateKey;
   }
 

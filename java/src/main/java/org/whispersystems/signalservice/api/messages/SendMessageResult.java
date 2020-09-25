@@ -3,7 +3,7 @@ package org.whispersystems.signalservice.api.messages;
 
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
-import org.whispersystems.signalservice.loki.api.LokiAPI;
+import org.whispersystems.signalservice.loki.api.SnodeAPI;
 
 public class SendMessageResult {
 
@@ -12,13 +12,13 @@ public class SendMessageResult {
   private final boolean              networkFailure;
   private final boolean              unregisteredFailure;
   private final IdentityFailure      identityFailure;
-  private final LokiAPI.Error        lokiAPIError;
+  private final SnodeAPI.Error        lokiAPIError;
 
   public static SendMessageResult success(SignalServiceAddress address, boolean unidentified, boolean needsSync) {
     return new SendMessageResult(address, new Success(unidentified, needsSync), false, false, null, null);
   }
 
-  public static SendMessageResult lokiAPIError(SignalServiceAddress address, LokiAPI.Error lokiAPIError) {
+  public static SendMessageResult lokiAPIError(SignalServiceAddress address, SnodeAPI.Error lokiAPIError) {
       return new SendMessageResult(address, null, false, false, null, lokiAPIError);
   }
 
@@ -54,9 +54,9 @@ public class SendMessageResult {
     return identityFailure;
   }
 
-  public LokiAPI.Error getLokiAPIError() { return lokiAPIError; }
+  public SnodeAPI.Error getLokiAPIError() { return lokiAPIError; }
 
-  private SendMessageResult(SignalServiceAddress address, Success success, boolean networkFailure, boolean unregisteredFailure, IdentityFailure identityFailure, LokiAPI.Error lokiAPIError) {
+  private SendMessageResult(SignalServiceAddress address, Success success, boolean networkFailure, boolean unregisteredFailure, IdentityFailure identityFailure, SnodeAPI.Error lokiAPIError) {
     this.address             = address;
     this.success             = success;
     this.networkFailure      = networkFailure;

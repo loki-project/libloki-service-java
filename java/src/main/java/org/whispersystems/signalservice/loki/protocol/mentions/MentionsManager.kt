@@ -3,26 +3,26 @@ package org.whispersystems.signalservice.loki.protocol.mentions
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 
-class MentionsManager(private val userHexEncodedPublicKey: String, private val threadDatabase: LokiThreadDatabaseProtocol,
-        private val userDatabase: LokiUserDatabaseProtocol) {
+class MentionsManager(private val userPublicKey: String, private val threadDatabase: LokiThreadDatabaseProtocol,
+    private val userDatabase: LokiUserDatabaseProtocol) {
     var userPublicKeyCache = mutableMapOf<Long, Set<String>>() // Thread ID to set of user hex encoded public keys
 
     companion object {
 
         public lateinit var shared: MentionsManager
 
-        public fun configureIfNeeded(userHexEncodedPublicKey: String, threadDatabase: LokiThreadDatabaseProtocol, userDatabase: LokiUserDatabaseProtocol) {
+        public fun configureIfNeeded(userPublicKey: String, threadDatabase: LokiThreadDatabaseProtocol, userDatabase: LokiUserDatabaseProtocol) {
             if (::shared.isInitialized) { return; }
-            shared = MentionsManager(userHexEncodedPublicKey, threadDatabase, userDatabase)
+            shared = MentionsManager(userPublicKey, threadDatabase, userDatabase)
         }
     }
 
-    fun cache(hexEncodedPublicKey: String, threadID: Long) {
+    fun cache(publicKey: String, threadID: Long) {
         val cache = userPublicKeyCache[threadID]
         if (cache != null) {
-            userPublicKeyCache[threadID] = cache.plus(hexEncodedPublicKey)
+            userPublicKeyCache[threadID] = cache.plus(publicKey)
         } else {
-            userPublicKeyCache[threadID] = setOf( hexEncodedPublicKey )
+            userPublicKeyCache[threadID] = setOf( publicKey )
         }
     }
 
@@ -31,18 +31,18 @@ class MentionsManager(private val userHexEncodedPublicKey: String, private val t
         val cache = userPublicKeyCache[threadID] ?: return listOf()
         // Gather candidates
         val publicChat = threadDatabase.getPublicChat(threadID)
-        var candidates: List<Mention> = cache.mapNotNull { hexEncodedPublicKey ->
+        var candidates: List<Mention> = cache.mapNotNull { publicKey ->
             val displayName: String?
             if (publicChat != null) {
-                displayName = userDatabase.getServerDisplayName(publicChat.id, hexEncodedPublicKey)
+                displayName = userDatabase.getServerDisplayName(publicChat.id, publicKey)
             } else {
-                displayName = userDatabase.getDisplayName(hexEncodedPublicKey)
+                displayName = userDatabase.getDisplayName(publicKey)
             }
             if (displayName == null) { return@mapNotNull null }
             if (displayName.startsWith("Anonymous")) { return@mapNotNull null }
-            Mention(hexEncodedPublicKey, displayName)
+            Mention(publicKey, displayName)
         }
-        candidates = candidates.filter { it.hexEncodedPublicKey != userHexEncodedPublicKey }
+        candidates = candidates.filter { it.publicKey != userPublicKey }
         // Sort alphabetically first
         candidates.sortedBy { it.displayName }
         if (query.length >= 2) {
