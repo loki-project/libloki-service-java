@@ -1,28 +1,23 @@
 package org.whispersystems.signalservice.loki.api.opengroups
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import nl.komponents.kovenant.Kovenant
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.map
 import nl.komponents.kovenant.then
-import okhttp3.*
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
-import org.whispersystems.signalservice.loki.api.LokiHTTPClient
+import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiGroupDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol, private val userDatabase: LokiUserDatabaseProtocol) : LokiDotNetAPI(userPublicKey, userPrivateKey, apiDatabase) {
 
@@ -284,9 +279,9 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                     val displayName = info["name"] as String
                     val countInfo = data["counts"] as Map<*, *>
                     val memberCount = countInfo["subscribers"] as? Int ?: (countInfo["subscribers"] as? Long)?.toInt() ?: (countInfo["subscribers"] as String).toInt()
-                    val profilePictureURL = info.get("avatar").asText()
-                    apiDatabase.setUserCount(channel, server, memberCount)
+                    val profilePictureURL = info["avatar"] as String
                     val publicChatInfo = LokiPublicChatInfo(displayName, profilePictureURL, memberCount)
+                    apiDatabase.setUserCount(channel, server, memberCount)
                     publicChatInfo
                 } catch (exception: Exception) {
                     Log.d("Loki", "Couldn't parse info for open group with ID: $channel on server: $server.")
@@ -298,7 +293,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
 
     public fun updateOpenGroupProfileIfNeeded(channel: Long, server: String, groupId: String, info: LokiPublicChatInfo, groupDatabase: LokiGroupDatabaseProtocol, forceUpdate: Boolean) {
         //Save user count
-        apiDatabase.setUserCount(info.memberCount, channel, server)
+        apiDatabase.setUserCount(channel, server, info.memberCount)
 
         //Update display name
         groupDatabase.updateTitle(groupId, info.displayName)
@@ -313,17 +308,20 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
     }
 
     public fun downloadOpenGroupAvatar(url: String): ByteArray? {
-        val client = LokiHTTPClient(60).getClearnetConnection()
-        val request = Request
-            .Builder()
-            .get()
-            .url(url)
-            .build()
-        val response = client.newCall(request).execute()
-        val inputStream = response.body()?.byteStream()
-        val avatarBytes = inputStream?.readBytes()
-        inputStream?.close()
-        return avatarBytes
+        //TODO Download the avatar.
+//        val client = LokiHTTPClient(60).getClearnetConnection()
+//        val request = Request
+//            .Builder()
+//            .get()
+//            .url(url)
+//            .build()
+//        val response = client.newCall(request).execute()
+//        val inputStream = response.body()?.byteStream()
+//        val avatarBytes = inputStream?.readBytes()
+//        inputStream?.close()
+//        return avatarBytes
+
+        return byteArrayOf()
     }
 
     public fun join(channel: Long, server: String): Promise<Unit, Exception> {
