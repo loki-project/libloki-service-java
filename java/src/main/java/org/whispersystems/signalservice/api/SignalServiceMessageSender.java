@@ -1400,12 +1400,10 @@ public class SignalServiceMessageSender {
       int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
       SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(groupPublicKey, deviceID);
       SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, null);
-      synchronized (SESSION_LOCK) {
-          try {
-              return cipher.encrypt(signalProtocolAddress, Optional.of(unidentifiedAccess), plaintext);
-          } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
-              throw new UntrustedIdentityException("Untrusted identity", groupPublicKey, e.getUntrustedIdentity());
-          }
+      try {
+          return cipher.encrypt(signalProtocolAddress, Optional.of(unidentifiedAccess), plaintext);
+      } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
+          throw new UntrustedIdentityException("Untrusted identity", groupPublicKey, e.getUntrustedIdentity());
       }
   }
 
