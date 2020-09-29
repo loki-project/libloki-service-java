@@ -7,7 +7,6 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.libsignal.util.ByteUtil
 import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Util
-import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestEncryption
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 import org.whispersystems.signalservice.loki.utilities.toHexString
@@ -91,7 +90,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         }
         try {
             val result = step(ratchet)
-            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, ratchet)
+            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, result)
             return result
         } catch (exception: Exception) {
             Log.d("Loki", "Couldn't step ratchet due to error: $exception.")
