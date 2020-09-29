@@ -29,7 +29,7 @@ interface LokiAPIDatabaseProtocol {
     fun setSessionRequestProcessedTimestamp(publicKey: String, newValue: Long)
     fun getOpenGroupPublicKey(server: String): String?
     fun setOpenGroupPublicKey(server: String, newValue: String)
-    fun setOpenGroupAvatarURL(url: String, group: Long, server: String)
+    fun setOpenGroupAvatarURL(group: Long, server: String, url: String)
     fun getOpenGroupAvatarURL(group: Long, server: String): String?
 
     // region Deprecated

@@ -305,7 +305,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         if (forceUpdate || !Objects.equals(oldAvatarURL, info.profilePictureURL)) {
             val avatarBytes = downloadOpenGroupAvatar(server, info.profilePictureURL) ?: return
             groupDatabase.updateAvatar(groupId, avatarBytes)
-            apiDatabase.setOpenGroupAvatarURL(info.profilePictureURL, channel, server)
+            apiDatabase.setOpenGroupAvatarURL(channel, server, info.profilePictureURL)
         }
     }
 
