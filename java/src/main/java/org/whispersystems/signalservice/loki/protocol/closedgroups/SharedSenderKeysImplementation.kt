@@ -171,7 +171,12 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.lastOrNull() ?: throw MessageKeyMissing(keyIndex, groupPublicKey, senderPublicKey)
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(EncryptionUtilities.gcmTagSize, iv))
-        return cipher.doFinal(ciphertext)
+        try {
+            return cipher.doFinal(ciphertext)
+        } catch (exception: Exception) {
+            delegate.requestSenderKey(groupPublicKey, senderPublicKey)
+            throw exception
+        }
     }
 
     public fun isClosedGroup(publicKey: String): Boolean {
