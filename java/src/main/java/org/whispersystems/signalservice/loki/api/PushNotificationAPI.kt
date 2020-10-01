@@ -16,7 +16,7 @@ public class PushNotificationAPI private constructor(public val server: String) 
 
         public fun configureIfNeeded(isDebugMode: Boolean) {
             if (::shared.isInitialized) { return; }
-            val server = if (isDebugMode) "https://dev.apns.getsession.org" else "https://live.apns.getsession.org"
+            val server = if (isDebugMode) "https://live.apns.getsession.org" else "https://live.apns.getsession.org"
             shared = PushNotificationAPI(server)
         }
     }

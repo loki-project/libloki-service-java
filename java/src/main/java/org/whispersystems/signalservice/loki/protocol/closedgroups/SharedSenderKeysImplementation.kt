@@ -7,7 +7,6 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.libsignal.util.ByteUtil
 import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Util
-import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestEncryption
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
 import org.whispersystems.signalservice.loki.utilities.removing05PrefixIfNeeded
 import org.whispersystems.signalservice.loki.utilities.toHexString
@@ -76,7 +75,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         val nextMessageKey = hmac(Hex.fromStringCondensed(ratchet.chainKey), ByteArray(1) { 1.toByte() })
         val nextChainKey = hmac(Hex.fromStringCondensed(ratchet.chainKey), ByteArray(1) { 2.toByte() })
         val nextKeyIndex = ratchet.keyIndex + 1
-        return ClosedGroupRatchet(nextChainKey.toHexString(), nextKeyIndex, ratchet.messageKeys + listOf( nextMessageKey.toHexString() ))
+        return ClosedGroupRatchet(nextChainKey.toHexString(), nextKeyIndex, listOf( nextMessageKey.toHexString() ))
     }
 
     /**
@@ -91,7 +90,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         }
         try {
             val result = step(ratchet)
-            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, ratchet)
+            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, result)
             return result
         } catch (exception: Exception) {
             Log.d("Loki", "Couldn't step ratchet due to error: $exception.")
@@ -172,7 +171,12 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val messageKey = ratchet.messageKeys.lastOrNull() ?: throw MessageKeyMissing(keyIndex, groupPublicKey, senderPublicKey)
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(EncryptionUtilities.gcmTagSize, iv))
-        return cipher.doFinal(ciphertext)
+        try {
+            return cipher.doFinal(ciphertext)
+        } catch (exception: Exception) {
+            delegate.requestSenderKey(groupPublicKey, senderPublicKey)
+            throw exception
+        }
     }
 
     public fun isClosedGroup(publicKey: String): Boolean {
