@@ -115,16 +115,19 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
             return ratchet
         } else {
             var currentKeyIndex = ratchet.keyIndex
-            var result: ClosedGroupRatchet = ratchet // Explicitly typed because otherwise the compiler has trouble inferring that this can't be null
+            var current: ClosedGroupRatchet = ratchet // Explicitly typed because otherwise the compiler has trouble inferring that this can't be null
+            val messageKeys = mutableListOf<String>()
             while (currentKeyIndex < targetKeyIndex) {
                 try {
-                    result = step(result)
-                    currentKeyIndex = result.keyIndex
+                    current = step(current)
+                    messageKeys.addAll(current.messageKeys)
+                    currentKeyIndex = current.keyIndex
                 } catch (exception: Exception) {
                     Log.d("Loki", "Couldn't step ratchet due to error: $exception.")
                     throw exception
                 }
             }
+            val result = ClosedGroupRatchet(current.chainKey, current.keyIndex, messageKeys) // Includes any skipped message keys
             database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, result)
             return result
         }
