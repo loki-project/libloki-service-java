@@ -76,7 +76,7 @@ public object OnionRequestAPI {
                 val json = HTTP.execute(HTTP.Verb.GET, url)
                 val version = json["version"] as? String
                 if (version == null) { deferred.reject(Exception("Missing snode version.")); return@Thread }
-                if (version >= "2.0.0") {
+                if (version >= "2.0.7") {
                     deferred.resolve(Unit)
                 } else {
                     val message = "Unsupported snode version: $version."
@@ -282,7 +282,7 @@ public object OnionRequestAPI {
         lateinit var guardSnode: Snode
         buildOnionForDestination(payload, destination).success { result ->
             guardSnode = result.guardSnode
-            val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
+            val url = "${guardSnode.address}:${guardSnode.port}/onion_req/v2"
             val finalEncryptionResult = result.finalEncryptionResult
             val onion = finalEncryptionResult.ciphertext
             if (destination is Destination.Server
@@ -290,13 +290,18 @@ public object OnionRequestAPI {
                 Log.d("Loki", "Approaching request size limit: ~${onion.count()} bytes.")
             }
             @Suppress("NAME_SHADOWING") val parameters = mapOf(
-                "ciphertext" to Base64.encodeBytes(onion),
                 "ephemeral_key" to finalEncryptionResult.ephemeralPublicKey.toHexString()
             )
+            val body: ByteArray
+            try {
+                body = OnionRequestEncryption.encode(onion, parameters)
+            } catch (exception: Exception) {
+                return@success deferred.reject(exception)
+            }
             val destinationSymmetricKey = result.destinationSymmetricKey
             Thread {
                 try {
-                    val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
+                    val json = HTTP.execute(HTTP.Verb.POST, url, body)
                     val base64EncodedIVAndCiphertext = json["result"] as? String ?: return@Thread deferred.reject(Exception("Invalid JSON"))
                     val ivAndCiphertext = Base64.decode(base64EncodedIVAndCiphertext)
                     try {

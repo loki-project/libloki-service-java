@@ -2,22 +2,27 @@ package org.whispersystems.signalservice.loki.api.onionrequests
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
-import org.whispersystems.curve25519.Curve25519
-import org.whispersystems.libsignal.util.ByteUtil
-import org.whispersystems.libsignal.util.Hex
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
-import org.whispersystems.signalservice.internal.util.Util
-import org.whispersystems.signalservice.loki.api.Snode
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionResult
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
 import org.whispersystems.signalservice.loki.utilities.toHexString
-import javax.crypto.Cipher
-import javax.crypto.Mac
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 object OnionRequestEncryption {
+
+    internal fun encode(ciphertext: ByteArray, json: Map<*, *>): ByteArray {
+        // The encoding of V2 onion requests looks like: | 4 bytes: size N of ciphertext | N bytes: ciphertext | json as utf8 |
+        val jsonAsData = JsonUtil.toJson(json).toByteArray()
+        val ciphertextSize = ciphertext.size
+        val ciphertextSizeAsBuffer = ByteBuffer.allocate(Int.SIZE_BYTES)
+        ciphertextSizeAsBuffer.order(ByteOrder.LITTLE_ENDIAN)
+        ciphertextSizeAsBuffer.putInt(ciphertextSize)
+        val ciphertextSizeAsData = ByteArray(ciphertextSizeAsBuffer.capacity())
+        ciphertextSizeAsBuffer.get(ciphertextSizeAsData)
+        return ciphertextSizeAsData + ciphertext + jsonAsData
+    }
 
     /**
      * Encrypts `payload` for `destination` and returns the result. Use this to build the core of an onion request.
@@ -30,9 +35,8 @@ object OnionRequestEncryption {
                 when (destination) {
                     is OnionRequestAPI.Destination.Snode -> {
                         val snodeX25519PublicKey = destination.snode.publicKeySet!!.x25519Key
-                        val payloadAsString = JsonUtil.toJson(payload) // Snodes only accept this as a string
-                        val wrapper = mapOf( "body" to payloadAsString, "headers" to "" )
-                        val plaintext = JsonUtil.toJson(wrapper).toByteArray()
+                        val payloadAsData = JsonUtil.toJson(payload).toByteArray()
+                        val plaintext = encode(payloadAsData, mapOf( "headers" to "" ))
                         val result = EncryptionUtilities.encryptForX25519PublicKey(plaintext, snodeX25519PublicKey)
                         deferred.resolve(result)
                     }
@@ -65,7 +69,6 @@ object OnionRequestEncryption {
                         payload = mutableMapOf( "host" to rhs.host, "target" to "/loki/v1/lsrpc", "method" to "POST" )
                     }
                 }
-                payload["ciphertext"] = Base64.encodeBytes(previousEncryptionResult.ciphertext)
                 payload["ephemeral_key"] = previousEncryptionResult.ephemeralPublicKey.toHexString()
                 val x25519PublicKey: String
                 when (lhs) {
@@ -76,7 +79,7 @@ object OnionRequestEncryption {
                         x25519PublicKey = lhs.x25519PublicKey
                     }
                 }
-                val plaintext = JsonUtil.toJson(payload).toByteArray()
+                val plaintext = encode(previousEncryptionResult.ciphertext, payload)
                 val result = EncryptionUtilities.encryptForX25519PublicKey(plaintext, x25519PublicKey)
                 deferred.resolve(result)
             } catch (exception: Exception) {
