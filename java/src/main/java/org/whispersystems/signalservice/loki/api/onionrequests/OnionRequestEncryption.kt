@@ -17,10 +17,11 @@ object OnionRequestEncryption {
         val jsonAsData = JsonUtil.toJson(json).toByteArray()
         val ciphertextSize = ciphertext.size
         val ciphertextSizeAsBuffer = ByteBuffer.allocate(Int.SIZE_BYTES)
-        ciphertextSizeAsBuffer.order(ByteOrder.LITTLE_ENDIAN)
         ciphertextSizeAsBuffer.putInt(ciphertextSize)
         val ciphertextSizeAsData = ByteArray(ciphertextSizeAsBuffer.capacity())
+        ciphertextSizeAsBuffer.position(0)
         ciphertextSizeAsBuffer.get(ciphertextSizeAsData)
+        // TODO: Ensure this is all little endian
         return ciphertextSizeAsData + ciphertext + jsonAsData
     }
 
