@@ -187,12 +187,29 @@ public object OnionRequestAPI {
         }
     }
 
-    private fun dropAllPaths() {
-        paths = listOf()
-    }
-
     private fun dropGuardSnode(snode: Snode) {
         guardSnodes = guardSnodes.filter { it != snode }.toSet()
+    }
+
+    private fun dropSnode(snode: Snode) {
+        val oldPaths = paths.toMutableList()
+        val pathIndex = oldPaths.indexOfFirst { it.contains(snode) }
+        if (pathIndex == -1) { return }
+        val path = oldPaths[pathIndex].toMutableList()
+        val snodeIndex = path.indexOf(snode)
+        if (snodeIndex == -1) { return }
+        path.removeAt(snodeIndex)
+        val unusedSnodes = SwarmAPI.shared.snodePool.minus(oldPaths.flatten())
+        if (unusedSnodes.isEmpty()) { throw InsufficientSnodesException() }
+        path.add(unusedSnodes.getRandomElement())
+        // Don't test the new snode as this would reveal the user's IP
+        oldPaths.removeAt(pathIndex)
+        val newPaths = oldPaths + listOf( path )
+        paths = newPaths
+    }
+
+    private fun dropAllPaths() {
+        paths = listOf()
     }
 
     /**
@@ -352,16 +369,36 @@ public object OnionRequestAPI {
         }
         val promise = deferred.promise
         promise.fail { exception ->
+            val path = paths.firstOrNull { it.contains(guardSnode) }
             if (exception is HTTP.HTTPRequestFailedException) {
-                // Marking all the snodes in the path as unreliable here is aggressive, but otherwise users
-                // can get stuck with a failing path that just refreshes to the same path.
-                val path = paths.firstOrNull { it.contains(guardSnode) }
-                path?.forEach { snode ->
-                    @Suppress("ThrowableNotThrown")
-                    SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
+                fun handleUnspecificError() {
+                    path?.forEach { snode ->
+                        @Suppress("ThrowableNotThrown")
+                        SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
+                    }
+                    dropAllPaths()
+                    dropGuardSnode(guardSnode)
                 }
-                dropAllPaths()
-                dropGuardSnode(guardSnode)
+                val json = exception.json
+                val message = json?.get("result") as? String
+                val prefix = "Next node not found: "
+                if (message != null && message.startsWith(prefix)) {
+                    val ed25519PublicKey = message.substringAfter(prefix)
+                    val snode = path?.firstOrNull { it.publicKeySet!!.ed25519Key == ed25519PublicKey }
+                    if (snode != null) {
+                        @Suppress("ThrowableNotThrown")
+                        SnodeAPI.shared.handleSnodeError(exception.statusCode, json, snode, null) // Intentionally don't throw
+                        try {
+                            dropSnode(snode)
+                        } catch (exception: Exception) {
+                            handleUnspecificError()
+                        }
+                    } else {
+                        handleUnspecificError()
+                    }
+                } else {
+                    handleUnspecificError()
+                }
             }
         }
         return promise

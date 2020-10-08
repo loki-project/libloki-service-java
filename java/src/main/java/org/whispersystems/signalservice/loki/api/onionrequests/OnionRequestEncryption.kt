@@ -21,7 +21,6 @@ object OnionRequestEncryption {
         val ciphertextSizeAsData = ByteArray(buffer.capacity())
         buffer.position(0)
         buffer.get(ciphertextSizeAsData)
-        // TODO: Ensure this is all little endian
         return ciphertextSizeAsData + ciphertext + jsonAsData
     }
 
