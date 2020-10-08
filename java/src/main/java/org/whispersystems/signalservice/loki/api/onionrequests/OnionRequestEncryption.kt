@@ -2,7 +2,6 @@ package org.whispersystems.signalservice.loki.api.onionrequests
 
 import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
-import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionResult
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
@@ -16,11 +15,12 @@ object OnionRequestEncryption {
         // The encoding of V2 onion requests looks like: | 4 bytes: size N of ciphertext | N bytes: ciphertext | json as utf8 |
         val jsonAsData = JsonUtil.toJson(json).toByteArray()
         val ciphertextSize = ciphertext.size
-        val ciphertextSizeAsBuffer = ByteBuffer.allocate(Int.SIZE_BYTES)
-        ciphertextSizeAsBuffer.putInt(ciphertextSize)
-        val ciphertextSizeAsData = ByteArray(ciphertextSizeAsBuffer.capacity())
-        ciphertextSizeAsBuffer.position(0)
-        ciphertextSizeAsBuffer.get(ciphertextSizeAsData)
+        val buffer = ByteBuffer.allocate(Int.SIZE_BYTES)
+        buffer.order(ByteOrder.LITTLE_ENDIAN)
+        buffer.putInt(ciphertextSize)
+        val ciphertextSizeAsData = ByteArray(buffer.capacity())
+        buffer.position(0)
+        buffer.get(ciphertextSizeAsData)
         // TODO: Ensure this is all little endian
         return ciphertextSizeAsData + ciphertext + jsonAsData
     }
