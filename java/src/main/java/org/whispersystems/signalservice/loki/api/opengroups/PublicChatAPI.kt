@@ -5,8 +5,6 @@ import nl.komponents.kovenant.Promise
 import nl.komponents.kovenant.deferred
 import nl.komponents.kovenant.functional.map
 import nl.komponents.kovenant.then
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.internal.util.Hex
@@ -303,36 +301,30 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         //Download and update profile picture if needed
         val oldAvatarURL = apiDatabase.getOpenGroupAvatarURL(channel, server)
         if (forceUpdate || !Objects.equals(oldAvatarURL, info.profilePictureURL)) {
-            val avatarBytes = downloadOpenGroupAvatar(server, info.profilePictureURL) ?: return
+            val avatarBytes = downloadOpenGroupAvatar(server, info.profilePictureURL)
+                ?: return
             groupDatabase.updateAvatar(groupId, avatarBytes)
             apiDatabase.setOpenGroupAvatarURL(channel, server, info.profilePictureURL)
         }
     }
 
     public fun downloadOpenGroupAvatar(server: String, endpoint: String): ByteArray? {
-        val url = "$server/${endpoint.removePrefix("/")}"
-        Log.v("Loki", "Downloading open group avatar using \"$url\"")
+        val actualEndpoint = "/loki/v1/${endpoint.removePrefix("/")}"
+        val url = "$server/${actualEndpoint.removePrefix("/")}"
+        Log.v("Loki", "Downloading open group avatar from \"$url\".")
 
         try {
-            OkHttpClient().newCall(Request.Builder()
-                .get()
-                .url(url)
-                .build())
-                .execute()
-                .use { response ->
-                    if (!response.isSuccessful) {
-                        Log.w("Loki", "Failed to load open group avatar picture. Response code is: ${response.code()}")
-                        return null
-                    }
-                    response.body()?.byteStream().use { bs ->
-                        return bs?.readBytes()
-                    }
-                }
+            val result = execute(HTTPVerb.GET, server, actualEndpoint).get()
+            Log.d("Loki", "Group avatar request result: ${result["result"]}")
+            if (!result.containsKey("data") || result["data"] !is ArrayList<*>) {
+                throw IllegalStateException("The response doesn't contain the expected data.")
+            }
+            val data = result["data"] as ArrayList<Int>
+            return data.map { v -> v.toByte() }.toByteArray()
         } catch (e: Exception) {
-            Log.w("Loki", "Failed to load open group avatar picture.", e)
+            Log.w("Loki", "Failed to download open group avatar picture from \"$url\".", e)
             return null
         }
-        return null
     }
 
     public fun join(channel: Long, server: String): Promise<Unit, Exception> {
