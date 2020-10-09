@@ -6,6 +6,7 @@ import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionResult
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
 import org.whispersystems.signalservice.loki.utilities.toHexString
+import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -19,7 +20,9 @@ object OnionRequestEncryption {
         buffer.order(ByteOrder.LITTLE_ENDIAN)
         buffer.putInt(ciphertextSize)
         val ciphertextSizeAsData = ByteArray(buffer.capacity())
-        buffer.position(0)
+        // Casting here avoids an issue where this gets compiled down to incorrect byte code. See
+        // https://github.com/eclipse/jetty.project/issues/3244 for more info
+        (buffer as Buffer).position(0)
         buffer.get(ciphertextSizeAsData)
         return ciphertextSizeAsData + ciphertext + jsonAsData
     }
