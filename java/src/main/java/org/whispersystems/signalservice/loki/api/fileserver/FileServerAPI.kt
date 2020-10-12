@@ -47,6 +47,8 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
          * has been calculated and the onion request encryption has happened, which takes several seconds.
          */
         public val fileSizeORMultiplier = 10.0
+
+        public val fileStaticServer = "https://file-static.lokinet.org"
         // endregion
 
         // region Initialization
