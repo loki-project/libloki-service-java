@@ -1,5 +1,6 @@
 package org.whispersystems.signalservice.loki.utilities
 
+import okhttp3.HttpUrl
 import okhttp3.Request
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment
@@ -34,13 +35,22 @@ object DownloadUtilities {
     /**
      * Blocks the calling thread.
      */
-    fun downloadFile(outputStream: OutputStream, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
+    fun downloadFile(outputStream: OutputStream, downloadURL: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
         // We need to throw a PushNetworkException or NonSuccessfulResponseCodeException
         // because the underlying Signal logic requires these to work correctly
-        val url = url.replace(FileServerAPI.fileStaticServer, FileServerAPI.shared.server + "/loki/v1")
-        val request = Request.Builder().url(url).get()
+        val url = HttpUrl.get(downloadURL)
+        var host = "https://" + url.host()
+        var actualURL: String
+        if (host.contains(FileServerAPI.fileStaticServer)) {
+            actualURL = downloadURL.replace(FileServerAPI.fileStaticServer, FileServerAPI.shared.server + "/loki/v1")
+            host = FileServerAPI.shared.server
+        } else {
+            actualURL = downloadURL.replace(host, "$host/loki/v1")
+        }
+        val request = Request.Builder().url(actualURL).get()
         try {
-            val json =OnionRequestAPI.sendOnionRequest(request.build(), FileServerAPI.shared.server, FileServerAPI.fileServerPublicKey, false).get()
+            val serverPublicKey = FileServerAPI.shared.getServerPublicKey(host).get()
+            val json = OnionRequestAPI.sendOnionRequest(request.build(), host, serverPublicKey, false).get()
             val data = json["data"] as? ArrayList<Int>
             if (data == null) {
                 Log.d("Loki", "Couldn't parse attachment.")

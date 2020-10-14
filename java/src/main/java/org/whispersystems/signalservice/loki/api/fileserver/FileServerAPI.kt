@@ -258,4 +258,11 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
             }
         }
     }
+
+    fun getServerPublicKey(host: String): Promise<String, Exception> {
+        if (host.contains(server)) {
+            return Promise.of(fileServerPublicKey)
+        }
+        return getPublicKeyForOpenGroupServer(host)
+    }
 }
