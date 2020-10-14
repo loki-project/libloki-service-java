@@ -37,16 +37,16 @@ object DownloadUtilities {
     fun downloadFile(outputStream: OutputStream, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
         // We need to throw a PushNetworkException or NonSuccessfulResponseCodeException
         // because the underlying Signal logic requires these to work correctly
-        val url = url.replace(FileServerAPI.fileStaticServer, FileServerAPI.shared.server + "/loki/v1")
+        val url = url.replace(FileServerAPI.fileStorageBucketURL, FileServerAPI.shared.server + "/loki/v1")
         val request = Request.Builder().url(url).get()
         try {
-            val json =OnionRequestAPI.sendOnionRequest(request.build(), FileServerAPI.shared.server, FileServerAPI.fileServerPublicKey, false).get()
+            val json = OnionRequestAPI.sendOnionRequest(request.build(), FileServerAPI.shared.server, FileServerAPI.fileServerPublicKey, false).get()
             val data = json["data"] as? ArrayList<Int>
             if (data == null) {
-                Log.d("Loki", "Couldn't parse attachment.")
+                Log.d("Loki", "Couldn't parse attachment from: $json.")
                 throw PushNetworkException("Missing response body.")
             }
-            val body = data.map { v -> v.toByte() }.toByteArray()
+            val body = data.map { it.toByte() }.toByteArray()
             if (body.size > maxSize) {
                 Log.d("Loki", "Attachment size limit exceeded.")
                 throw PushNetworkException("Max response size exceeded.")
@@ -66,7 +66,7 @@ object DownloadUtilities {
                 bytes = input.read(buffer)
             }
         } catch (e: Exception) {
-            Log.d("Loki", "Couldn't download attachment.")
+            Log.d("Loki", "Couldn't download attachment due to error: $e.")
             throw if (e is NonSuccessfulResponseCodeException) e else PushNetworkException(e)
         }
     }
