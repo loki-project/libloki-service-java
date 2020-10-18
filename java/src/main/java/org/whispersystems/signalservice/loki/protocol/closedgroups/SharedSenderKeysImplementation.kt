@@ -62,6 +62,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         : Exception("Couldn't get ratchet for closed group with public key: $groupPublicKey, sender public key: $senderPublicKey.")
     public class MessageKeyMissing(val targetKeyIndex: Int, val groupPublicKey: String, val senderPublicKey: String)
         : Exception("Couldn't find message key for old key index: $targetKeyIndex, public key: $groupPublicKey, sender public key: $senderPublicKey.")
+    public class GenericRatchetingException : Exception("An error occurred.")
     // endregion
 
     // region Private API
@@ -75,14 +76,15 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         val nextMessageKey = hmac(Hex.fromStringCondensed(ratchet.chainKey), ByteArray(1) { 1.toByte() })
         val nextChainKey = hmac(Hex.fromStringCondensed(ratchet.chainKey), ByteArray(1) { 2.toByte() })
         val nextKeyIndex = ratchet.keyIndex + 1
-        return ClosedGroupRatchet(nextChainKey.toHexString(), nextKeyIndex, listOf( nextMessageKey.toHexString() ))
+        val messageKeys = ratchet.messageKeys + listOf( nextMessageKey.toHexString() )
+        return ClosedGroupRatchet(nextChainKey.toHexString(), nextKeyIndex, messageKeys)
     }
 
     /**
      * Sync. Don't call from the main thread.
      */
     private fun stepRatchetOnce(groupPublicKey: String, senderPublicKey: String): ClosedGroupRatchet {
-        val ratchet = database.getClosedGroupRatchet(groupPublicKey, senderPublicKey)
+        val ratchet = database.getClosedGroupRatchet(groupPublicKey, senderPublicKey, ClosedGroupRatchetCollectionType.Current)
         if (ratchet == null) {
             val exception = LoadingFailed(groupPublicKey, senderPublicKey)
             Log.d("Loki", exception.message ?: "An error occurred.")
@@ -90,7 +92,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         }
         try {
             val result = step(ratchet)
-            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, result)
+            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, result, ClosedGroupRatchetCollectionType.Current)
             return result
         } catch (exception: Exception) {
             Log.d("Loki", "Couldn't step ratchet due to error: $exception.")
@@ -98,8 +100,9 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         }
     }
 
-    private fun stepRatchet(groupPublicKey: String, senderPublicKey: String, targetKeyIndex: Int): ClosedGroupRatchet {
-        val ratchet = database.getClosedGroupRatchet(groupPublicKey, senderPublicKey)
+    private fun stepRatchet(groupPublicKey: String, senderPublicKey: String, targetKeyIndex: Int, isRetry: Boolean = false): ClosedGroupRatchet {
+        val collection = if (isRetry) ClosedGroupRatchetCollectionType.Old else ClosedGroupRatchetCollectionType.Current
+        val ratchet = database.getClosedGroupRatchet(groupPublicKey, senderPublicKey, collection)
         if (ratchet == null) {
             val exception = LoadingFailed(groupPublicKey, senderPublicKey)
             Log.d("Loki", exception.message ?: "An error occurred.")
@@ -115,20 +118,18 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
             return ratchet
         } else {
             var currentKeyIndex = ratchet.keyIndex
-            var current: ClosedGroupRatchet = ratchet // Explicitly typed because otherwise the compiler has trouble inferring that this can't be null
-            val messageKeys = mutableListOf<String>()
+            var result: ClosedGroupRatchet = ratchet // Explicitly typed because otherwise the compiler has trouble inferring that this can't be null
             while (currentKeyIndex < targetKeyIndex) {
                 try {
-                    current = step(current)
-                    messageKeys.addAll(current.messageKeys)
-                    currentKeyIndex = current.keyIndex
+                    result = step(result)
+                    currentKeyIndex = result.keyIndex
                 } catch (exception: Exception) {
                     Log.d("Loki", "Couldn't step ratchet due to error: $exception.")
                     throw exception
                 }
             }
-            val result = ClosedGroupRatchet(current.chainKey, current.keyIndex, messageKeys) // Includes any skipped message keys
-            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, result)
+            val collection = if (isRetry) ClosedGroupRatchetCollectionType.Old else ClosedGroupRatchetCollectionType.Current
+            database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, result, collection)
             return result
         }
     }
@@ -138,7 +139,7 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
     public fun generateRatchet(groupPublicKey: String, senderPublicKey: String): ClosedGroupRatchet {
         val rootChainKey = Util.getSecretBytes(32).toHexString()
         val ratchet = ClosedGroupRatchet(rootChainKey, 0, listOf())
-        database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, ratchet)
+        database.setClosedGroupRatchet(groupPublicKey, senderPublicKey, ratchet, ClosedGroupRatchetCollectionType.Current)
         return ratchet
     }
 
@@ -159,26 +160,47 @@ public final class SharedSenderKeysImplementation(private val database: SharedSe
         return Pair(ByteUtil.combine(iv, cipher.doFinal(plaintext)), ratchet.keyIndex)
     }
 
-    public fun decrypt(ivAndCiphertext: ByteArray, groupPublicKey: String, senderPublicKey: String, keyIndex: Int): ByteArray {
+    public fun decrypt(ivAndCiphertext: ByteArray, groupPublicKey: String, senderPublicKey: String, keyIndex: Int, isRetry: Boolean = false): ByteArray {
         val ratchet: ClosedGroupRatchet
         try {
-            ratchet = stepRatchet(groupPublicKey, senderPublicKey, keyIndex)
+            ratchet = stepRatchet(groupPublicKey, senderPublicKey, keyIndex, isRetry)
         } catch (exception: Exception) {
-            if (exception is LoadingFailed) {
-                delegate.requestSenderKey(groupPublicKey, senderPublicKey)
+            if (!isRetry) {
+                return decrypt(ivAndCiphertext, groupPublicKey, senderPublicKey, keyIndex, true)
+            } else {
+                if (exception is LoadingFailed) {
+                    delegate.requestSenderKey(groupPublicKey, senderPublicKey)
+                }
+                throw exception
             }
-            throw exception
         }
         val iv = ivAndCiphertext.sliceArray(0 until ivSize)
         val ciphertext = ivAndCiphertext.sliceArray(ivSize until ivAndCiphertext.count())
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val messageKey = ratchet.messageKeys.lastOrNull() ?: throw MessageKeyMissing(keyIndex, groupPublicKey, senderPublicKey)
-        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(EncryptionUtilities.gcmTagSize, iv))
-        try {
-            return cipher.doFinal(ciphertext)
-        } catch (exception: Exception) {
+        val messageKeys = ratchet.messageKeys
+        val lastNMessageKeys: List<String>
+        if (messageKeys.count() > 16) { // Pick an arbitrary number of message keys to try; this helps resolve issues caused by messages arriving out of order
+            lastNMessageKeys = messageKeys.subList(messageKeys.lastIndex - 16, messageKeys.lastIndex)
+        } else {
+            lastNMessageKeys = messageKeys
+        }
+        if (lastNMessageKeys.isEmpty()) {
+            throw MessageKeyMissing(keyIndex, groupPublicKey, senderPublicKey)
+        }
+        var exception: Exception? = null
+        for (messageKey in lastNMessageKeys.reversed()) { // Reversed because most likely the last one is the one we need
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(Hex.fromStringCondensed(messageKey), "AES"), GCMParameterSpec(EncryptionUtilities.gcmTagSize, iv))
+            try {
+                return cipher.doFinal(ciphertext)
+            } catch (e: Exception) {
+                exception = e
+            }
+        }
+        if (!isRetry) {
+            return decrypt(ivAndCiphertext, groupPublicKey, senderPublicKey, keyIndex, true)
+        } else {
             delegate.requestSenderKey(groupPublicKey, senderPublicKey)
-            throw exception
+            throw exception ?: GenericRatchetingException()
         }
     }
 
