@@ -8,7 +8,7 @@ interface SharedSenderKeysDatabaseProtocol {
     fun getClosedGroupRatchet(groupPublicKey: String, senderPublicKey: String, collection: ClosedGroupRatchetCollectionType): ClosedGroupRatchet?
     fun setClosedGroupRatchet(groupPublicKey: String, senderPublicKey: String, ratchet: ClosedGroupRatchet, collection: ClosedGroupRatchetCollectionType)
     fun removeAllClosedGroupRatchets(groupPublicKey: String, collection: ClosedGroupRatchetCollectionType)
-    fun getAllClosedGroupRatchets(groupPublicKey: String, collection: ClosedGroupRatchetCollectionType): Set<ClosedGroupRatchet>
+    fun getAllClosedGroupRatchets(groupPublicKey: String, collection: ClosedGroupRatchetCollectionType): Set<Pair<String, ClosedGroupRatchet>>
     fun getAllClosedGroupSenderKeys(groupPublicKey: String, collection: ClosedGroupRatchetCollectionType): Set<ClosedGroupSenderKey>
     // endregion
 
