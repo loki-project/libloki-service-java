@@ -83,6 +83,7 @@ import org.whispersystems.signalservice.loki.api.opengroups.PublicChatAPI;
 import org.whispersystems.signalservice.loki.api.opengroups.PublicChatMessage;
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiMessageDatabaseProtocol;
+import org.whispersystems.signalservice.loki.database.LokiOpenGroupDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiPreKeyBundleDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiThreadDatabaseProtocol;
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol;
@@ -143,6 +144,7 @@ public class SignalServiceMessageSender {
   private final LokiPreKeyBundleDatabaseProtocol                    preKeyBundleDatabase;
   private final SessionResetProtocol                                sessionResetImpl;
   private final LokiUserDatabaseProtocol                            userDatabase;
+  private final LokiOpenGroupDatabaseProtocol                       openGroupDatabase;
   private final Broadcaster                                         broadcaster;
 
   /**
@@ -171,9 +173,10 @@ public class SignalServiceMessageSender {
                                     LokiPreKeyBundleDatabaseProtocol preKeyBundleDatabase,
                                     SessionResetProtocol sessionResetImpl,
                                     LokiUserDatabaseProtocol userDatabase,
+                                    LokiOpenGroupDatabaseProtocol openGroupDatabase,
                                     Broadcaster broadcaster)
   {
-    this(urls, new StaticCredentialsProvider(user, password, null), store, userAgent, isMultiDevice, pipe, unidentifiedPipe, eventListener, userPublicKey, apiDatabase, sskDatabase, threadDatabase, messageDatabase, preKeyBundleDatabase, sessionResetImpl, userDatabase, broadcaster);
+    this(urls, new StaticCredentialsProvider(user, password, null), store, userAgent, isMultiDevice, pipe, unidentifiedPipe, eventListener, userPublicKey, apiDatabase, sskDatabase, threadDatabase, messageDatabase, preKeyBundleDatabase, sessionResetImpl, userDatabase, openGroupDatabase, broadcaster);
   }
 
   public SignalServiceMessageSender(SignalServiceConfiguration urls,
@@ -192,6 +195,7 @@ public class SignalServiceMessageSender {
                                     LokiPreKeyBundleDatabaseProtocol preKeyBundleDatabase,
                                     SessionResetProtocol sessionResetImpl,
                                     LokiUserDatabaseProtocol userDatabase,
+                                    LokiOpenGroupDatabaseProtocol openGroupDatabase,
                                     Broadcaster broadcaster)
   {
     this.socket                    = new PushServiceSocket(urls, credentialsProvider, userAgent);
@@ -209,6 +213,7 @@ public class SignalServiceMessageSender {
     this.preKeyBundleDatabase      = preKeyBundleDatabase;
     this.sessionResetImpl          = sessionResetImpl;
     this.userDatabase              = userDatabase;
+    this.openGroupDatabase         = openGroupDatabase;
     this.broadcaster               = broadcaster;
   }
 
@@ -1113,7 +1118,7 @@ public class SignalServiceMessageSender {
       }
       PublicChatMessage message = new PublicChatMessage(userPublicKey, "", body, timestamp, PublicChatAPI.getPublicChatMessageType(), quote, attachments);
       byte[] privateKey = store.getIdentityKeyPair().getPrivateKey().serialize();
-      new PublicChatAPI(userPublicKey, privateKey, apiDatabase, userDatabase).sendMessage(message, publicChat.getChannel(), publicChat.getServer()).success(new Function1<PublicChatMessage, Unit>() {
+      new PublicChatAPI(userPublicKey, privateKey, apiDatabase, userDatabase, openGroupDatabase).sendMessage(message, publicChat.getChannel(), publicChat.getServer()).success(new Function1<PublicChatMessage, Unit>() {
 
         @Override
         public Unit invoke(PublicChatMessage message) {

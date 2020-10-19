@@ -12,14 +12,15 @@ import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
 import org.whispersystems.signalservice.loki.api.SnodeAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
-import org.whispersystems.signalservice.loki.database.LokiGroupDatabaseProtocol
+import org.whispersystems.signalservice.loki.database.LokiOpenGroupDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol, private val userDatabase: LokiUserDatabaseProtocol) : LokiDotNetAPI(userPublicKey, userPrivateKey, apiDatabase) {
+class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray, private val apiDatabase: LokiAPIDatabaseProtocol,
+    private val userDatabase: LokiUserDatabaseProtocol, private val openGroupDatabase: LokiOpenGroupDatabaseProtocol) : LokiDotNetAPI(userPublicKey, userPrivateKey, apiDatabase) {
 
     companion object {
         private val moderators: HashMap<String, HashMap<Long, Set<String>>> = hashMapOf() // Server URL to (channel ID to set of moderator IDs)
@@ -267,7 +268,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         }
     }
 
-    public fun getChannelInfo(channel: Long, server: String): Promise<LokiPublicChatInfo, Exception> {
+    public fun getChannelInfo(channel: Long, server: String): Promise<PublicChatInfo, Exception> {
         return retryIfNeeded(maxRetryCount) {
             val parameters = mapOf( "include_annotations" to 1 )
             execute(HTTPVerb.GET, server, "/channels/$channel", parameters = parameters).then(sharedContext) { json ->
@@ -280,7 +281,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                     val countInfo = data["counts"] as Map<*, *>
                     val memberCount = countInfo["subscribers"] as? Int ?: (countInfo["subscribers"] as? Long)?.toInt() ?: (countInfo["subscribers"] as String).toInt()
                     val profilePictureURL = info["avatar"] as String
-                    val publicChatInfo = LokiPublicChatInfo(displayName, profilePictureURL, memberCount)
+                    val publicChatInfo = PublicChatInfo(displayName, profilePictureURL, memberCount)
                     apiDatabase.setUserCount(channel, server, memberCount)
                     publicChatInfo
                 } catch (exception: Exception) {
@@ -291,38 +292,31 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
         }
     }
 
-    public fun updateOpenGroupProfileIfNeeded(channel: Long, server: String, groupId: String, info: LokiPublicChatInfo, groupDatabase: LokiGroupDatabaseProtocol, forceUpdate: Boolean) {
-        //Save user count
+    public fun updateProfileIfNeeded(channel: Long, server: String, groupID: String, info: PublicChatInfo, isForcedUpdate: Boolean) {
         apiDatabase.setUserCount(channel, server, info.memberCount)
-
-        //Update display name
-        groupDatabase.updateTitle(groupId, info.displayName)
-
-        //Download and update profile picture if needed
-        val oldAvatarURL = apiDatabase.getOpenGroupAvatarURL(channel, server)
-        if (forceUpdate || !Objects.equals(oldAvatarURL, info.profilePictureURL)) {
-            val avatarBytes = downloadOpenGroupAvatar(server, info.profilePictureURL)
-                ?: return
-            groupDatabase.updateAvatar(groupId, avatarBytes)
-            apiDatabase.setOpenGroupAvatarURL(channel, server, info.profilePictureURL)
+        openGroupDatabase.updateTitle(groupID, info.displayName)
+        // Download and update profile picture if needed
+        val oldProfilePictureURL = apiDatabase.getOpenGroupProfilePictureURL(channel, server)
+        if (isForcedUpdate || oldProfilePictureURL != info.profilePictureURL) {
+            val profilePictureAsByteArray = downloadOpenGroupProfilePicture(server, info.profilePictureURL) ?: return
+            openGroupDatabase.updateProfilePicture(groupID, profilePictureAsByteArray)
+            apiDatabase.setOpenGroupProfilePictureURL(channel, server, info.profilePictureURL)
         }
     }
 
-    public fun downloadOpenGroupAvatar(server: String, endpoint: String): ByteArray? {
+    public fun downloadOpenGroupProfilePicture(server: String, endpoint: String): ByteArray? {
         val actualEndpoint = "/loki/v1/${endpoint.removePrefix("/")}"
         val url = "$server/${actualEndpoint.removePrefix("/")}"
-        Log.v("Loki", "Downloading open group avatar from \"$url\".")
-
+        Log.d("Loki", "Downloading open group profile picture from \"$url\".")
         try {
             val result = execute(HTTPVerb.GET, server, actualEndpoint).get()
-            Log.d("Loki", "Group avatar request result: ${result["result"]}")
             if (!result.containsKey("data") || result["data"] !is ArrayList<*>) {
-                throw IllegalStateException("The response doesn't contain the expected data.")
+                throw IllegalStateException("Couldn't parse profile picture from $result.")
             }
             val data = result["data"] as ArrayList<Int>
             return data.map { v -> v.toByte() }.toByteArray()
         } catch (e: Exception) {
-            Log.w("Loki", "Failed to download open group avatar picture from \"$url\".", e)
+            Log.d("Loki", "Couldn't download open group profile picture from \"$url\" due to error: $e.")
             return null
         }
     }
