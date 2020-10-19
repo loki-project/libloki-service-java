@@ -1,15 +1,14 @@
 package org.whispersystems.signalservice.loki.utilities
 
-import okhttp3.OkHttpClient
+import okhttp3.HttpUrl
 import okhttp3.Request
 import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException
 import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
-import java.util.concurrent.TimeUnit
+import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
+import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
+import java.io.*
 
 object DownloadUtilities {
 
@@ -39,47 +38,45 @@ object DownloadUtilities {
     fun downloadFile(outputStream: OutputStream, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
         // We need to throw a PushNetworkException or NonSuccessfulResponseCodeException
         // because the underlying Signal logic requires these to work correctly
-        val connection = OkHttpClient()
-            .newBuilder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
-        val request = Request.Builder().url(url).get()
+        var host = "https://" + HttpUrl.get(url).host()
+        val sanitizedURL: String
+        if (host.contains(FileServerAPI.fileStorageBucketURL)) {
+            sanitizedURL = url.replace(FileServerAPI.fileStorageBucketURL, FileServerAPI.shared.server + "/loki/v1")
+            host = FileServerAPI.shared.server
+        } else {
+            sanitizedURL = url.replace(host, "$host/loki/v1")
+        }
+        val request = Request.Builder().url(sanitizedURL).get()
         try {
-            val response = connection.newCall(request.build()).execute()
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body == null) {
-                    Log.d("Loki", "Couldn't parse attachment.")
-                    throw PushNetworkException("Missing response body.")
-                }
-                if (body.contentLength() > maxSize) {
+            val serverPublicKey = if (host.contains(FileServerAPI.shared.server)) FileServerAPI.fileServerPublicKey
+                else FileServerAPI.shared.getPublicKeyForOpenGroupServer(host).get()
+            val json = OnionRequestAPI.sendOnionRequest(request.build(), host, serverPublicKey, false).get()
+            val data = json["data"] as? ArrayList<Int>
+            if (data == null) {
+                Log.d("Loki", "Couldn't parse attachment from: $json.")
+                throw PushNetworkException("Missing response body.")
+            }
+            val body = data.map { it.toByte() }.toByteArray()
+            if (body.size > maxSize) {
+                Log.d("Loki", "Attachment size limit exceeded.")
+                throw PushNetworkException("Max response size exceeded.")
+            }
+            val input = body.inputStream()
+            val buffer = ByteArray(32768)
+            var count = 0
+            var bytes = input.read(buffer)
+            while (bytes >= 0) {
+                outputStream.write(buffer, 0, bytes)
+                count += bytes
+                if (count > maxSize) {
                     Log.d("Loki", "Attachment size limit exceeded.")
                     throw PushNetworkException("Max response size exceeded.")
                 }
-                val input = body.byteStream()
-                val buffer = ByteArray(32768)
-                var count = 0
-                var bytes = input.read(buffer)
-                while (bytes >= 0) {
-                    outputStream.write(buffer, 0, bytes)
-                    count += bytes
-                    if (count > maxSize) {
-                        Log.d("Loki", "Attachment size limit exceeded.")
-                        throw PushNetworkException("Max response size exceeded.")
-                    }
-                    listener?.onAttachmentProgress(body.contentLength(), count.toLong())
-                    bytes = input.read(buffer)
-                }
-            } else {
-                Log.d("Loki", "Couldn't download attachment due to error: ${response.code() }.")
-                // The line below used to be: throw NonSuccessfulResponseCodeException("Response: $response"), but the file server
-                // returns an unsuccessful HTTP status code too often for us to do that (AttachmentDownloadJob wants a
-                // PushNetworkException or it won't retry).
-                throw PushNetworkException(NonSuccessfulResponseCodeException("Response: $response"))
+                listener?.onAttachmentProgress(body.size.toLong(), count.toLong())
+                bytes = input.read(buffer)
             }
         } catch (e: Exception) {
-            Log.d("Loki", "Couldn't download attachment.")
+            Log.d("Loki", "Couldn't download attachment due to error: $e.")
             throw if (e is NonSuccessfulResponseCodeException) e else PushNetworkException(e)
         }
     }
