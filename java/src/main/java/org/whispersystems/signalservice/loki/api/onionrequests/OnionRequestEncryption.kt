@@ -66,7 +66,7 @@ object OnionRequestEncryption {
                         payload = mutableMapOf( "destination" to rhs.snode.publicKeySet!!.ed25519Key )
                     }
                     is OnionRequestAPI.Destination.Server -> {
-                        payload = mutableMapOf( "host" to rhs.host, "target" to "/loki/v1/lsrpc", "method" to "POST" )
+                        payload = mutableMapOf( "host" to rhs.host, "target" to "/loki/v2/lsrpc", "method" to "POST" )
                     }
                 }
                 payload["ephemeral_key"] = previousEncryptionResult.ephemeralPublicKey.toHexString()
