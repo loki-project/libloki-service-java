@@ -76,7 +76,7 @@ public object OnionRequestAPI {
                 val json = HTTP.execute(HTTP.Verb.GET, url)
                 val version = json["version"] as? String
                 if (version == null) { deferred.reject(Exception("Missing snode version.")); return@Thread }
-                if (version >= "2.0.0") {
+                if (version >= "2.0.7") {
                     deferred.resolve(Unit)
                 } else {
                     val message = "Unsupported snode version: $version."
@@ -187,12 +187,29 @@ public object OnionRequestAPI {
         }
     }
 
-    private fun dropAllPaths() {
-        paths = listOf()
-    }
-
     private fun dropGuardSnode(snode: Snode) {
         guardSnodes = guardSnodes.filter { it != snode }.toSet()
+    }
+
+    private fun dropSnode(snode: Snode) {
+        val oldPaths = paths.toMutableList()
+        val pathIndex = oldPaths.indexOfFirst { it.contains(snode) }
+        if (pathIndex == -1) { return }
+        val path = oldPaths[pathIndex].toMutableList()
+        val snodeIndex = path.indexOf(snode)
+        if (snodeIndex == -1) { return }
+        path.removeAt(snodeIndex)
+        val unusedSnodes = SwarmAPI.shared.snodePool.minus(oldPaths.flatten())
+        if (unusedSnodes.isEmpty()) { throw InsufficientSnodesException() }
+        path.add(unusedSnodes.getRandomElement())
+        // Don't test the new snode as this would reveal the user's IP
+        oldPaths.removeAt(pathIndex)
+        val newPaths = oldPaths + listOf( path )
+        paths = newPaths
+    }
+
+    private fun dropAllPaths() {
+        paths = listOf()
     }
 
     /**
@@ -282,7 +299,7 @@ public object OnionRequestAPI {
         lateinit var guardSnode: Snode
         buildOnionForDestination(payload, destination).success { result ->
             guardSnode = result.guardSnode
-            val url = "${guardSnode.address}:${guardSnode.port}/onion_req"
+            val url = "${guardSnode.address}:${guardSnode.port}/onion_req/v2"
             val finalEncryptionResult = result.finalEncryptionResult
             val onion = finalEncryptionResult.ciphertext
             if (destination is Destination.Server
@@ -290,13 +307,18 @@ public object OnionRequestAPI {
                 Log.d("Loki", "Approaching request size limit: ~${onion.count()} bytes.")
             }
             @Suppress("NAME_SHADOWING") val parameters = mapOf(
-                "ciphertext" to Base64.encodeBytes(onion),
                 "ephemeral_key" to finalEncryptionResult.ephemeralPublicKey.toHexString()
             )
+            val body: ByteArray
+            try {
+                body = OnionRequestEncryption.encode(onion, parameters)
+            } catch (exception: Exception) {
+                return@success deferred.reject(exception)
+            }
             val destinationSymmetricKey = result.destinationSymmetricKey
             Thread {
                 try {
-                    val json = HTTP.execute(HTTP.Verb.POST, url, parameters)
+                    val json = HTTP.execute(HTTP.Verb.POST, url, body)
                     val base64EncodedIVAndCiphertext = json["result"] as? String ?: return@Thread deferred.reject(Exception("Invalid JSON"))
                     val ivAndCiphertext = Base64.decode(base64EncodedIVAndCiphertext)
                     try {
@@ -347,16 +369,36 @@ public object OnionRequestAPI {
         }
         val promise = deferred.promise
         promise.fail { exception ->
+            val path = paths.firstOrNull { it.contains(guardSnode) }
             if (exception is HTTP.HTTPRequestFailedException) {
-                // Marking all the snodes in the path as unreliable here is aggressive, but otherwise users
-                // can get stuck with a failing path that just refreshes to the same path.
-                val path = paths.firstOrNull { it.contains(guardSnode) }
-                path?.forEach { snode ->
-                    @Suppress("ThrowableNotThrown")
-                    SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
+                fun handleUnspecificError() {
+                    path?.forEach { snode ->
+                        @Suppress("ThrowableNotThrown")
+                        SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
+                    }
+                    dropAllPaths()
+                    dropGuardSnode(guardSnode)
                 }
-                dropAllPaths()
-                dropGuardSnode(guardSnode)
+                val json = exception.json
+                val message = json?.get("result") as? String
+                val prefix = "Next node not found: "
+                if (message != null && message.startsWith(prefix)) {
+                    val ed25519PublicKey = message.substringAfter(prefix)
+                    val snode = path?.firstOrNull { it.publicKeySet!!.ed25519Key == ed25519PublicKey }
+                    if (snode != null) {
+                        @Suppress("ThrowableNotThrown")
+                        SnodeAPI.shared.handleSnodeError(exception.statusCode, json, snode, null) // Intentionally don't throw
+                        try {
+                            dropSnode(snode)
+                        } catch (exception: Exception) {
+                            handleUnspecificError()
+                        }
+                    } else {
+                        handleUnspecificError()
+                    }
+                } else {
+                    handleUnspecificError()
+                }
             }
         }
         return promise
