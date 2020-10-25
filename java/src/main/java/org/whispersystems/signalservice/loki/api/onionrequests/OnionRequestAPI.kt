@@ -24,6 +24,7 @@ private typealias Path = List<Snode>
  */
 public object OnionRequestAPI {
     private val pathFailureCount = mutableMapOf<Path, Int>()
+    private val snodeFailureCount = mutableMapOf<Snode, Int>()
     public var guardSnodes = setOf<Snode>()
     public var paths: List<Path> // Not a set to ensure we consistently show the same path to the user
         get() = SnodeAPI.shared.database.getOnionRequestPaths()
@@ -44,6 +45,10 @@ public object OnionRequestAPI {
      * The number of times a path can fail before it's replaced.
      */
     private val pathFailureThreshold = 2
+    /**
+     * The number of times a snode can fail before it's replaced.
+     */
+    private val snodeFailureThreshold = 2
     /**
      * The number of paths to maintain.
      */
@@ -219,6 +224,7 @@ public object OnionRequestAPI {
         // We repair the path here because we can do it sync. In the case where we drop a whole
         // path we leave the re-building up to getPath() because re-building the path in that case
         // is async.
+        snodeFailureCount[snode] = 0
         val oldPaths = paths.toMutableList()
         val pathIndex = oldPaths.indexOfFirst { it.contains(snode) }
         if (pathIndex == -1) { return }
@@ -236,6 +242,7 @@ public object OnionRequestAPI {
     }
 
     private fun dropPath(path: Path) {
+        pathFailureCount[path] = 0
         val paths = OnionRequestAPI.paths.toMutableList()
         val pathIndex = paths.indexOf(path)
         if (pathIndex == -1) { return }
@@ -362,7 +369,7 @@ public object OnionRequestAPI {
             if (exception is HTTP.HTTPRequestFailedException) {
                 fun handleUnspecificError() {
                     if (path == null) { return }
-                    var pathFailureCount = OnionRequestAPI.pathFailureCount.get(path) ?: 0
+                    var pathFailureCount = OnionRequestAPI.pathFailureCount[path] ?: 0
                     pathFailureCount += 1
                     if (pathFailureCount >= pathFailureThreshold) {
                         dropGuardSnode(guardSnode)
@@ -382,16 +389,24 @@ public object OnionRequestAPI {
                     val ed25519PublicKey = message.substringAfter(prefix)
                     val snode = path?.firstOrNull { it.publicKeySet!!.ed25519Key == ed25519PublicKey }
                     if (snode != null) {
-                        @Suppress("ThrowableNotThrown")
-                        SnodeAPI.shared.handleSnodeError(exception.statusCode, json, snode, null) // Intentionally don't throw
-                        try {
-                            dropSnode(snode)
-                        } catch (exception: Exception) {
-                            handleUnspecificError()
+                        var snodeFailureCount = OnionRequestAPI.snodeFailureCount[snode] ?: 0
+                        snodeFailureCount += 1
+                        if (snodeFailureCount >= snodeFailureThreshold) {
+                            @Suppress("ThrowableNotThrown")
+                            SnodeAPI.shared.handleSnodeError(exception.statusCode, json, snode, null) // Intentionally don't throw
+                            try {
+                                dropSnode(snode)
+                            } catch (exception: Exception) {
+                                handleUnspecificError()
+                            }
+                        } else {
+                            OnionRequestAPI.snodeFailureCount[snode] = snodeFailureCount
                         }
                     } else {
                         handleUnspecificError()
                     }
+                } else if (message == "Loki Server error") {
+                    // Do nothing
                 } else {
                     handleUnspecificError()
                 }
