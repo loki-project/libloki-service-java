@@ -38,19 +38,18 @@ object DownloadUtilities {
     fun downloadFile(outputStream: OutputStream, url: String, maxSize: Int, listener: SignalServiceAttachment.ProgressListener?) {
         // We need to throw a PushNetworkException or NonSuccessfulResponseCodeException
         // because the underlying Signal logic requires these to work correctly
-        var host = "https://" + HttpUrl.get(url).host()
-        val sanitizedURL: String
-        if (host.contains(FileServerAPI.fileStorageBucketURL)) {
-            sanitizedURL = url.replace(FileServerAPI.fileStorageBucketURL, FileServerAPI.shared.server + "/loki/v1")
-            host = FileServerAPI.shared.server
-        } else {
-            sanitizedURL = url.replace(host, "$host/loki/v1")
+        val oldPrefixedHost = "https://" + HttpUrl.get(url).host()
+        var newPrefixedHost = oldPrefixedHost
+        if (oldPrefixedHost.contains(FileServerAPI.fileStorageBucketURL)) {
+            newPrefixedHost = FileServerAPI.shared.server
         }
+        val fileID = url.substringAfter("$oldPrefixedHost/f/")
+        val sanitizedURL = "$newPrefixedHost/loki/v1/f/$fileID"
         val request = Request.Builder().url(sanitizedURL).get()
         try {
-            val serverPublicKey = if (host.contains(FileServerAPI.shared.server)) FileServerAPI.fileServerPublicKey
-                else FileServerAPI.shared.getPublicKeyForOpenGroupServer(host).get()
-            val json = OnionRequestAPI.sendOnionRequest(request.build(), host, serverPublicKey, false).get()
+            val serverPublicKey = if (newPrefixedHost.contains(FileServerAPI.shared.server)) FileServerAPI.fileServerPublicKey
+                else FileServerAPI.shared.getPublicKeyForOpenGroupServer(newPrefixedHost).get()
+            val json = OnionRequestAPI.sendOnionRequest(request.build(), newPrefixedHost, serverPublicKey, false).get()
             val data = json["data"] as? ArrayList<Int>
             if (data == null) {
                 Log.d("Loki", "Couldn't parse attachment from: $json.")
