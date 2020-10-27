@@ -53,6 +53,7 @@ object DownloadUtilities {
             val data = json["data"] as? ArrayList<Int>
             if (data == null) {
                 Log.d("Loki", "Couldn't parse attachment from: $json.")
+                Log.d("Test", "Failing URL: $sanitizedURL")
                 throw PushNetworkException("Missing response body.")
             }
             val body = data.map { it.toByte() }.toByteArray()
