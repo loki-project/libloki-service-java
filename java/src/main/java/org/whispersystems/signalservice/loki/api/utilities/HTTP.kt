@@ -52,14 +52,33 @@ object HTTP {
     /**
      * Sync. Don't call from the main thread.
      */
-    fun execute(verb: Verb, url: String, parameters: Map<String, Any>? = null, useSeedNodeConnection: Boolean = false): Map<*, *> {
+    fun execute(verb: Verb, url: String, useSeedNodeConnection: Boolean = false): Map<*, *> {
+        return execute(verb = verb, url = url, body = null, useSeedNodeConnection = useSeedNodeConnection)
+    }
+
+    /**
+     * Sync. Don't call from the main thread.
+     */
+    fun execute(verb: Verb, url: String, parameters: Map<String, Any>?, useSeedNodeConnection: Boolean = false): Map<*, *> {
+        if (parameters != null) {
+            val body = JsonUtil.toJson(parameters).toByteArray()
+            return execute(verb = verb, url = url, body = body, useSeedNodeConnection = useSeedNodeConnection)
+        } else {
+            return execute(verb = verb, url = url, body = null, useSeedNodeConnection = useSeedNodeConnection)
+        }
+    }
+
+    /**
+     * Sync. Don't call from the main thread.
+     */
+    fun execute(verb: Verb, url: String, body: ByteArray?, useSeedNodeConnection: Boolean = false): Map<*, *> {
         val request = Request.Builder().url(url)
         when (verb) {
             Verb.GET -> request.get()
             Verb.PUT, Verb.POST -> {
-                if (parameters == null) { throw Exception("Invalid JSON.") }
+                if (body == null) { throw Exception("Invalid request body.") }
                 val contentType = MediaType.get("application/json; charset=utf-8")
-                val body = RequestBody.create(contentType, JsonUtil.toJson(parameters))
+                @Suppress("NAME_SHADOWING") val body = RequestBody.create(contentType, body)
                 if (verb == Verb.PUT) request.put(body) else request.post(body)
             }
             Verb.DELETE -> request.delete()
