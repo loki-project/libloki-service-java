@@ -43,7 +43,9 @@ object DownloadUtilities {
         if (oldPrefixedHost.contains(FileServerAPI.fileStorageBucketURL)) {
             newPrefixedHost = FileServerAPI.shared.server
         }
-        val fileID = url.substringAfter("$oldPrefixedHost/f/")
+        // Edge case that needs to work: https://file-static.lokinet.org/i1pNmpInq3w9gF3TP8TFCa1rSo38J6UM
+        // → https://file.getsession.org/loki/v1/f/XLxogNXVEIWHk14NVCDeppzTujPHxu35
+        val fileID = url.substringAfter(oldPrefixedHost).substringAfter("/f/")
         val sanitizedURL = "$newPrefixedHost/loki/v1/f/$fileID"
         val request = Request.Builder().url(sanitizedURL).get()
         try {
