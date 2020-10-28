@@ -29,6 +29,8 @@ interface LokiAPIDatabaseProtocol {
     fun setSessionRequestProcessedTimestamp(publicKey: String, newValue: Long)
     fun getOpenGroupPublicKey(server: String): String?
     fun setOpenGroupPublicKey(server: String, newValue: String)
+    fun setOpenGroupProfilePictureURL(group: Long, server: String, newValue: String)
+    fun getOpenGroupProfilePictureURL(group: Long, server: String): String?
 
     // region Deprecated
     fun getDeviceLinks(publicKey: String): Set<DeviceLink>
