@@ -16,10 +16,6 @@ import org.whispersystems.signalservice.loki.api.utilities.EncryptionResult
 import org.whispersystems.signalservice.loki.api.utilities.getBodyForOnionRequest
 import org.whispersystems.signalservice.loki.api.utilities.getHeadersForOnionRequest
 import org.whispersystems.signalservice.loki.utilities.*
-import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
-import kotlin.random.Random
 
 private typealias Path = List<Snode>
 
@@ -27,6 +23,8 @@ private typealias Path = List<Snode>
  * See the "Onion Requests" section of [The Session Whitepaper](https://arxiv.org/pdf/2002.04609.pdf) for more information.
  */
 public object OnionRequestAPI {
+    private val pathFailureCount = mutableMapOf<Path, Int>()
+    private val snodeFailureCount = mutableMapOf<Snode, Int>()
     public var guardSnodes = setOf<Snode>()
     public var paths: List<Path> // Not a set to ensure we consistently show the same path to the user
         get() = SnodeAPI.shared.database.getOnionRequestPaths()
@@ -43,10 +41,24 @@ public object OnionRequestAPI {
      * The number of snodes (including the guard snode) in a path.
      */
     private val pathSize = 3
-    public val pathCount = 2 // A main path and a backup path for the case where the target snode is in the main path
+    /**
+     * The number of times a path can fail before it's replaced.
+     */
+    private val pathFailureThreshold = 3
+    /**
+     * The number of times a snode can fail before it's replaced.
+     */
+    private val snodeFailureThreshold = 3
+    /**
+     * The number of paths to maintain.
+     */
+    public val targetPathCount = 2 // A main path and a backup path for the case where the target snode is in the main path
 
-    private val guardSnodeCount
-        get() = pathCount // One per path
+    /**
+     * The number of guard snodes required to maintain `targetPathCount` paths.
+     */
+    private val targetGuardSnodeCount
+        get() = targetPathCount // One per path
     // endregion
 
     class HTTPRequestFailedAtDestinationException(val statusCode: Int, val json: Map<*, *>)
@@ -91,17 +103,18 @@ public object OnionRequestAPI {
     }
 
     /**
-     * Finds `guardSnodeCount` guard snodes to use for path building. The returned promise errors out if not
+     * Finds `targetGuardSnodeCount` guard snodes to use for path building. The returned promise errors out if not
      * enough (reliable) snodes are available.
      */
-    private fun getGuardSnodes(): Promise<Set<Snode>, Exception> {
-        if (guardSnodes.count() >= guardSnodeCount) {
+    private fun getGuardSnodes(reusableGuardSnodes: List<Snode>): Promise<Set<Snode>, Exception> {
+        if (guardSnodes.count() >= targetGuardSnodeCount) {
             return Promise.of(guardSnodes)
         } else {
             Log.d("Loki", "Populating guard snode cache.")
             return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
-                var unusedSnodes = SwarmAPI.shared.snodePool
-                if (unusedSnodes.count() < guardSnodeCount) { throw InsufficientSnodesException() }
+                var unusedSnodes = SwarmAPI.shared.snodePool.minus(reusableGuardSnodes)
+                val reusableGuardSnodeCount = reusableGuardSnodes.count()
+                if (unusedSnodes.count() < (targetGuardSnodeCount - reusableGuardSnodeCount)) { throw InsufficientSnodesException() }
                 fun getGuardSnode(): Promise<Snode, Exception> {
                     val candidate = unusedSnodes.getRandomElementOrNull()
                         ?: return Promise.ofFail(InsufficientSnodesException())
@@ -122,9 +135,9 @@ public object OnionRequestAPI {
                     }
                     return deferred.promise
                 }
-                val promises = (0 until guardSnodeCount).map { getGuardSnode() }
+                val promises = (0 until (targetGuardSnodeCount - reusableGuardSnodeCount)).map { getGuardSnode() }
                 all(promises).map(SnodeAPI.sharedContext) { guardSnodes ->
-                    val guardSnodesAsSet = guardSnodes.toSet()
+                    val guardSnodesAsSet = (guardSnodes + reusableGuardSnodes).toSet()
                     OnionRequestAPI.guardSnodes = guardSnodesAsSet
                     guardSnodesAsSet
                 }
@@ -133,19 +146,21 @@ public object OnionRequestAPI {
     }
 
     /**
-     * Builds and returns `pathCount` paths. The returned promise errors out if not
+     * Builds and returns `targetPathCount` paths. The returned promise errors out if not
      * enough (reliable) snodes are available.
      */
-    private fun buildPaths(): Promise<List<Path>, Exception> {
+    private fun buildPaths(reusablePaths: List<Path>): Promise<List<Path>, Exception> {
         Log.d("Loki", "Building onion request paths.")
         SnodeAPI.shared.broadcaster.broadcast("buildingPaths")
         return SwarmAPI.shared.getRandomSnode().bind(SnodeAPI.sharedContext) { // Just used to populate the snode pool
-            getGuardSnodes().map(SnodeAPI.sharedContext) { guardSnodes ->
-                var unusedSnodes = SwarmAPI.shared.snodePool.minus(guardSnodes)
-                val pathSnodeCount = guardSnodeCount * pathSize - guardSnodeCount
+            val reusableGuardSnodes = reusablePaths.map { it[0] }
+            getGuardSnodes(reusableGuardSnodes).map(SnodeAPI.sharedContext) { guardSnodes ->
+                var unusedSnodes = SwarmAPI.shared.snodePool.minus(guardSnodes).minus(reusablePaths.flatten())
+                val reusableGuardSnodeCount = reusableGuardSnodes.count()
+                val pathSnodeCount = (targetGuardSnodeCount - reusableGuardSnodeCount) * pathSize - (targetGuardSnodeCount - reusableGuardSnodeCount)
                 if (unusedSnodes.count() < pathSnodeCount) { throw InsufficientSnodesException() }
                 // Don't test path snodes as this would reveal the user's IP to them
-                guardSnodes.map { guardSnode ->
+                guardSnodes.minus(reusableGuardSnodes).map { guardSnode ->
                     val result = listOf( guardSnode ) + (0 until (pathSize - 1)).map {
                         val pathSnode = unusedSnodes.getRandomElement()
                         unusedSnodes = unusedSnodes.minus(pathSnode)
@@ -155,7 +170,7 @@ public object OnionRequestAPI {
                     result
                 }
             }.map { paths ->
-                OnionRequestAPI.paths = paths
+                OnionRequestAPI.paths = paths + reusablePaths
                 SnodeAPI.shared.broadcaster.broadcast("pathsBuilt")
                 paths
             }
@@ -168,9 +183,14 @@ public object OnionRequestAPI {
     private fun getPath(snodeToExclude: Snode?): Promise<Path, Exception> {
         if (pathSize < 1) { throw Exception("Can't build path of size zero.") }
         val paths = this.paths
-        if (guardSnodes.isEmpty() && paths.count() >= pathCount) {
-            guardSnodes = setOf( paths[0][0], paths[1][0] )
+        val guardSnodes = mutableSetOf<Snode>()
+        if (paths.isNotEmpty()) {
+            guardSnodes.add(paths[0][0])
+            if (paths.count() >= 2) {
+                guardSnodes.add(paths[1][0])
+            }
         }
+        OnionRequestAPI.guardSnodes = guardSnodes
         fun getPath(paths: List<Path>): Path {
             if (snodeToExclude != null) {
                 return paths.filter { !it.contains(snodeToExclude) }.getRandomElement()
@@ -178,10 +198,19 @@ public object OnionRequestAPI {
                 return paths.getRandomElement()
             }
         }
-        if (paths.count() >= pathCount) {
+        if (paths.count() >= targetPathCount) {
             return Promise.of(getPath(paths))
+        } else if (paths.isNotEmpty()) {
+            if (paths.any { !it.contains(snodeToExclude) }) {
+                buildPaths(paths) // Re-build paths in the background
+                return Promise.of(getPath(paths))
+            } else {
+                return buildPaths(paths).map(SnodeAPI.sharedContext) { newPaths ->
+                    getPath(newPaths)
+                }
+            }
         } else {
-            return buildPaths().map(SnodeAPI.sharedContext) { newPaths ->
+            return buildPaths(listOf()).map(SnodeAPI.sharedContext) { newPaths ->
                 getPath(newPaths)
             }
         }
@@ -192,6 +221,10 @@ public object OnionRequestAPI {
     }
 
     private fun dropSnode(snode: Snode) {
+        // We repair the path here because we can do it sync. In the case where we drop a whole
+        // path we leave the re-building up to getPath() because re-building the path in that case
+        // is async.
+        snodeFailureCount[snode] = 0
         val oldPaths = paths.toMutableList()
         val pathIndex = oldPaths.indexOfFirst { it.contains(snode) }
         if (pathIndex == -1) { return }
@@ -208,8 +241,13 @@ public object OnionRequestAPI {
         paths = newPaths
     }
 
-    private fun dropAllPaths() {
-        paths = listOf()
+    private fun dropPath(path: Path) {
+        pathFailureCount[path] = 0
+        val paths = OnionRequestAPI.paths.toMutableList()
+        val pathIndex = paths.indexOf(path)
+        if (pathIndex == -1) { return }
+        paths.removeAt(pathIndex)
+        OnionRequestAPI.paths = paths
     }
 
     /**
@@ -249,52 +287,11 @@ public object OnionRequestAPI {
             }
         }.map(SnodeAPI.sharedContext) { OnionBuildingResult(guardSnode, encryptionResult, destinationSymmetricKey) }
     }
-    // endregion
-
-    // region Internal API
-    /**
-     * Sends an onion request to `snode`. Builds new paths as needed.
-     */
-    internal fun sendOnionRequest(method: Snode.Method, parameters: Map<*, *>, snode: Snode, publicKey: String): Promise<Map<*, *>, Exception> {
-        val payload = mapOf( "method" to method.rawValue, "params" to parameters )
-        return sendOnionRequest(Destination.Snode(snode), payload).recover { exception ->
-            @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtDestinationException ?: throw exception
-            throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, publicKey)
-        }
-    }
-
-    /**
-     * Sends an onion request to `server`. Builds new paths as needed.
-     *
-     * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
-     */
-    public fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
-        val headers = request.getHeadersForOnionRequest()
-        val url = request.url()
-        val urlAsString = url.toString()
-        val host = url.host()
-        val endpoint = when {
-            server.count() < urlAsString.count() -> urlAsString.substringAfter("$server/")
-            else -> ""
-        }
-        val body = request.getBodyForOnionRequest() ?: "null"
-        val payload = mapOf(
-            "body" to body,
-            "endpoint" to endpoint,
-            "method" to request.method(),
-            "headers" to headers
-        )
-        val destination = Destination.Server(host, x25519PublicKey)
-        return sendOnionRequest(destination, payload, isJSONRequired).recover { exception ->
-            Log.d("Loki", "Couldn't reach server: $urlAsString due to error: $exception.")
-            throw exception
-        }
-    }
 
     /**
      * Sends an onion request to `destination`. Builds new paths as needed.
      */
-    internal fun sendOnionRequest(destination: Destination, payload: Map<*, *>, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
+    private fun sendOnionRequest(destination: Destination, payload: Map<*, *>, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
         val deferred = deferred<Map<*, *>, Exception>()
         lateinit var guardSnode: Snode
         buildOnionForDestination(payload, destination).success { result ->
@@ -302,8 +299,7 @@ public object OnionRequestAPI {
             val url = "${guardSnode.address}:${guardSnode.port}/onion_req/v2"
             val finalEncryptionResult = result.finalEncryptionResult
             val onion = finalEncryptionResult.ciphertext
-            if (destination is Destination.Server
-                && onion.count().toDouble() > 0.75 * FileServerAPI.maxFileSize.toDouble()) {
+            if (destination is Destination.Server && onion.count().toDouble() > 0.75 * FileServerAPI.maxFileSize.toDouble()) {
                 Log.d("Loki", "Approaching request size limit: ~${onion.count()} bytes.")
             }
             @Suppress("NAME_SHADOWING") val parameters = mapOf(
@@ -372,12 +368,19 @@ public object OnionRequestAPI {
             val path = paths.firstOrNull { it.contains(guardSnode) }
             if (exception is HTTP.HTTPRequestFailedException) {
                 fun handleUnspecificError() {
-                    path?.forEach { snode ->
-                        @Suppress("ThrowableNotThrown")
-                        SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
+                    if (path == null) { return }
+                    var pathFailureCount = OnionRequestAPI.pathFailureCount[path] ?: 0
+                    pathFailureCount += 1
+                    if (pathFailureCount >= pathFailureThreshold) {
+                        dropGuardSnode(guardSnode)
+                        path.forEach { snode ->
+                            @Suppress("ThrowableNotThrown")
+                            SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, null) // Intentionally don't throw
+                        }
+                        dropPath(path)
+                    } else {
+                        OnionRequestAPI.pathFailureCount[path] = pathFailureCount
                     }
-                    dropAllPaths()
-                    dropGuardSnode(guardSnode)
                 }
                 val json = exception.json
                 val message = json?.get("result") as? String
@@ -386,22 +389,71 @@ public object OnionRequestAPI {
                     val ed25519PublicKey = message.substringAfter(prefix)
                     val snode = path?.firstOrNull { it.publicKeySet!!.ed25519Key == ed25519PublicKey }
                     if (snode != null) {
-                        @Suppress("ThrowableNotThrown")
-                        SnodeAPI.shared.handleSnodeError(exception.statusCode, json, snode, null) // Intentionally don't throw
-                        try {
-                            dropSnode(snode)
-                        } catch (exception: Exception) {
-                            handleUnspecificError()
+                        var snodeFailureCount = OnionRequestAPI.snodeFailureCount[snode] ?: 0
+                        snodeFailureCount += 1
+                        if (snodeFailureCount >= snodeFailureThreshold) {
+                            @Suppress("ThrowableNotThrown")
+                            SnodeAPI.shared.handleSnodeError(exception.statusCode, json, snode, null) // Intentionally don't throw
+                            try {
+                                dropSnode(snode)
+                            } catch (exception: Exception) {
+                                handleUnspecificError()
+                            }
+                        } else {
+                            OnionRequestAPI.snodeFailureCount[snode] = snodeFailureCount
                         }
                     } else {
                         handleUnspecificError()
                     }
+                } else if (message == "Loki Server error") {
+                    // Do nothing
                 } else {
                     handleUnspecificError()
                 }
             }
         }
         return promise
+    }
+    // endregion
+
+    // region Internal API
+    /**
+     * Sends an onion request to `snode`. Builds new paths as needed.
+     */
+    internal fun sendOnionRequest(method: Snode.Method, parameters: Map<*, *>, snode: Snode, publicKey: String): Promise<Map<*, *>, Exception> {
+        val payload = mapOf( "method" to method.rawValue, "params" to parameters )
+        return sendOnionRequest(Destination.Snode(snode), payload).recover { exception ->
+            @Suppress("NAME_SHADOWING") val exception = exception as? HTTPRequestFailedAtDestinationException ?: throw exception
+            throw SnodeAPI.shared.handleSnodeError(exception.statusCode, exception.json, snode, publicKey)
+        }
+    }
+
+    /**
+     * Sends an onion request to `server`. Builds new paths as needed.
+     *
+     * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
+     */
+    public fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
+        val headers = request.getHeadersForOnionRequest()
+        val url = request.url()
+        val urlAsString = url.toString()
+        val host = url.host()
+        val endpoint = when {
+            server.count() < urlAsString.count() -> urlAsString.substringAfter("$server/")
+            else -> ""
+        }
+        val body = request.getBodyForOnionRequest() ?: "null"
+        val payload = mapOf(
+            "body" to body,
+            "endpoint" to endpoint,
+            "method" to request.method(),
+            "headers" to headers
+        )
+        val destination = Destination.Server(host, x25519PublicKey)
+        return sendOnionRequest(destination, payload, isJSONRequired).recover { exception ->
+            Log.d("Loki", "Couldn't reach server: $urlAsString due to error: $exception.")
+            throw exception
+        }
     }
     // endregion
 }

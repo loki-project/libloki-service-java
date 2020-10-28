@@ -20,6 +20,8 @@ object OnionRequestEncryption {
         buffer.order(ByteOrder.LITTLE_ENDIAN)
         buffer.putInt(ciphertextSize)
         val ciphertextSizeAsData = ByteArray(buffer.capacity())
+        // Casting here avoids an issue where this gets compiled down to incorrect byte code. See
+        // https://github.com/eclipse/jetty.project/issues/3244 for more info
         (buffer as Buffer).position(0)
         buffer.get(ciphertextSizeAsData)
         return ciphertextSizeAsData + ciphertext + jsonAsData
