@@ -44,11 +44,11 @@ public object OnionRequestAPI {
     /**
      * The number of times a path can fail before it's replaced.
      */
-    private val pathFailureThreshold = 3
+    private val pathFailureThreshold = 2
     /**
      * The number of times a snode can fail before it's replaced.
      */
-    private val snodeFailureThreshold = 3
+    private val snodeFailureThreshold = 2
     /**
      * The number of paths to maintain.
      */
