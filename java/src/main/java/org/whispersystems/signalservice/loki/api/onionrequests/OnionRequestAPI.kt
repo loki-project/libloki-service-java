@@ -35,6 +35,8 @@ public object OnionRequestAPI {
                 SnodeAPI.shared.database.setOnionRequestPaths(newValue)
             }
         }
+    public var logEvent: ((String) -> Unit)? = null
+    public var logEventWithProperties: ((String, Map<String, *>) -> Unit)? = null
 
     // region Settings
     /**
@@ -342,12 +344,14 @@ public object OnionRequestAPI {
                                     val exception = HTTPRequestFailedAtDestinationException(statusCode, body)
                                     return@Thread deferred.reject(exception)
                                 }
+                                logEvent?.invoke("succesful onion request")
                                 deferred.resolve(body)
                             } else {
                                 if (statusCode != 200) {
                                     val exception = HTTPRequestFailedAtDestinationException(statusCode, json)
                                     return@Thread deferred.reject(exception)
                                 }
+                                logEvent?.invoke("succesful onion request")
                                 deferred.resolve(json)
                             }
                         } catch (exception: Exception) {
@@ -367,7 +371,9 @@ public object OnionRequestAPI {
         promise.fail { exception ->
             val path = paths.firstOrNull { it.contains(guardSnode) }
             if (exception is HTTP.HTTPRequestFailedException) {
+                logEvent?.invoke("failed_onion_request")
                 fun handleUnspecificError() {
+                    logEventWithProperties?.invoke("unspecific_path_error", mapOf( "status_code" to exception.statusCode ))
                     if (path == null) { return }
                     var pathFailureCount = OnionRequestAPI.pathFailureCount[path] ?: 0
                     pathFailureCount += 1
@@ -387,6 +393,7 @@ public object OnionRequestAPI {
                 val prefix = "Next node not found: "
                 if (message != null && message.startsWith(prefix)) {
                     val ed25519PublicKey = message.substringAfter(prefix)
+                    logEventWithProperties?.invoke("next_node_not_found", mapOf( "ed25519_public_key" to ed25519PublicKey ))
                     val snode = path?.firstOrNull { it.publicKeySet!!.ed25519Key == ed25519PublicKey }
                     if (snode != null) {
                         var snodeFailureCount = OnionRequestAPI.snodeFailureCount[snode] ?: 0
@@ -406,6 +413,7 @@ public object OnionRequestAPI {
                         handleUnspecificError()
                     }
                 } else if (message == "Loki Server error") {
+                    logEvent?.invoke("loki_server_error")
                     // Do nothing
                 } else {
                     handleUnspecificError()
