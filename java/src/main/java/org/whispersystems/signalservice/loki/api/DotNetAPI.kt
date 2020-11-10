@@ -122,7 +122,7 @@ open class LokiDotNetAPI(internal val userPublicKey: String, private val userPri
             val serverPublicKeyPromise = if (server == FileServerAPI.shared.server) Promise.of(FileServerAPI.fileServerPublicKey)
                 else FileServerAPI.shared.getPublicKeyForOpenGroupServer(server)
             return serverPublicKeyPromise.bind { serverPublicKey ->
-                OnionRequestAPI.sendOnionRequest(request.build(), server, serverPublicKey, isJSONRequired).recover { exception ->
+                OnionRequestAPI.sendOnionRequest(request.build(), server, serverPublicKey, isJSONRequired = isJSONRequired).recover { exception ->
                     if (exception is HTTP.HTTPRequestFailedException) {
                         val statusCode = exception.statusCode
                         if (statusCode == 401 || statusCode == 403) {
