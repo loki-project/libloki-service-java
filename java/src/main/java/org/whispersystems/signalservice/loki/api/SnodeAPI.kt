@@ -39,7 +39,7 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
         // endregion
 
         // region Settings
-        private val maxRetryCount = 4
+        private val maxRetryCount = 6
         private val useOnionRequests = true
 
         internal var powDifficulty = 1
