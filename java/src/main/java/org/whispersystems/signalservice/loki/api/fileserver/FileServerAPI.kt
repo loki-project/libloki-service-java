@@ -48,7 +48,7 @@ class FileServerAPI(public val server: String, userPublicKey: String, userPrivat
          * uploading a file we just divide the size of the file by this number. The alternative would be to actually check the size of the HTTP request but that's only
          * possible after proof of work has been calculated and the onion request encryption has happened, which takes several seconds.
          */
-        public val fileSizeORMultiplier = 10 // TODO: It should be possible to set this to 1.5?
+        public val fileSizeORMultiplier = 2 // TODO: It should be possible to set this to 1.5?
         public val fileStorageBucketURL = "https://file-static.lokinet.org"
         // endregion
 
