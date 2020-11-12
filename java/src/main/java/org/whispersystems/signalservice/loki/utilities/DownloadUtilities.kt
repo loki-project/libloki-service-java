@@ -6,6 +6,7 @@ import org.whispersystems.libsignal.logging.Log
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException
 import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException
+import org.whispersystems.signalservice.internal.util.Base64
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
 import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import java.io.*
@@ -51,13 +52,13 @@ object DownloadUtilities {
         try {
             val serverPublicKey = if (newPrefixedHost.contains(FileServerAPI.shared.server)) FileServerAPI.fileServerPublicKey
                 else FileServerAPI.shared.getPublicKeyForOpenGroupServer(newPrefixedHost).get()
-            val json = OnionRequestAPI.sendOnionRequest(request.build(), newPrefixedHost, serverPublicKey, false).get()
-            val data = json["data"] as? ArrayList<Int>
-            if (data == null) {
+            val json = OnionRequestAPI.sendOnionRequest(request.build(), newPrefixedHost, serverPublicKey, isJSONRequired = false).get()
+            val result = json["result"] as? String
+            if (result == null) {
                 Log.d("Loki", "Couldn't parse attachment from: $json.")
                 throw PushNetworkException("Missing response body.")
             }
-            val body = data.map { it.toByte() }.toByteArray()
+            val body = Base64.decode(result)
             if (body.size > maxSize) {
                 Log.d("Loki", "Attachment size limit exceeded.")
                 throw PushNetworkException("Max response size exceeded.")

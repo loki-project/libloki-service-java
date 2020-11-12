@@ -30,7 +30,7 @@ public class PushNotificationAPI private constructor(public val server: String) 
         val body = RequestBody.create(MediaType.get("application/json"), JsonUtil.toJson(parameters))
         val request = Request.Builder().url(url).post(body)
         retryIfNeeded(maxRetryCount) {
-            OnionRequestAPI.sendOnionRequest(request.build(), server, PushNotificationAPI.pnServerPublicKey).map { json ->
+            OnionRequestAPI.sendOnionRequest(request.build(), server, PushNotificationAPI.pnServerPublicKey, "/loki/v2/lsrpc").map { json ->
                 val code = json["code"] as? Int
                 if (code == null || code == 0) {
                     Log.d("Loki", "[Loki] Couldn't notify PN server due to error: ${json["message"] as? String ?: "null"}.")
