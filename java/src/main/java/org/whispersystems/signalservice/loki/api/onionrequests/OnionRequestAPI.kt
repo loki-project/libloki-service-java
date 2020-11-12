@@ -75,7 +75,7 @@ public object OnionRequestAPI {
 
     internal sealed class Destination {
         class Snode(val snode: org.whispersystems.signalservice.loki.api.Snode) : Destination()
-        class Server(val host: String, val x25519PublicKey: String) : Destination()
+        class Server(val host: String, val target: String, val x25519PublicKey: String) : Destination()
     }
 
     // region Private API
@@ -325,11 +325,11 @@ public object OnionRequestAPI {
                             @Suppress("NAME_SHADOWING") val json = JsonUtil.fromJson(plaintext.toString(Charsets.UTF_8), Map::class.java)
                             val statusCode = json["status"] as Int
                             if (statusCode == 406) {
-                                val body = mapOf( "result" to "Your clock is out of sync with the service node network." )
+                                @Suppress("NAME_SHADOWING") val body = mapOf( "result" to "Your clock is out of sync with the service node network." )
                                 val exception = HTTPRequestFailedAtDestinationException(statusCode, body)
                                 return@Thread deferred.reject(exception)
                             } else if (json["body"] != null) {
-                                val body: Map<*, *>
+                                @Suppress("NAME_SHADOWING") val body: Map<*, *>
                                 if (json["body"] is Map<*, *>) {
                                     body = json["body"] as Map<*, *>
                                 } else {
@@ -441,7 +441,7 @@ public object OnionRequestAPI {
      *
      * `publicKey` is the hex encoded public key of the user the call is associated with. This is needed for swarm cache maintenance.
      */
-    public fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
+    public fun sendOnionRequest(request: Request, server: String, x25519PublicKey: String, target: String = "/loki/v3/lsrpc", isJSONRequired: Boolean = true): Promise<Map<*, *>, Exception> {
         val headers = request.getHeadersForOnionRequest()
         val url = request.url()
         val urlAsString = url.toString()
@@ -457,7 +457,7 @@ public object OnionRequestAPI {
             "method" to request.method(),
             "headers" to headers
         )
-        val destination = Destination.Server(host, x25519PublicKey)
+        val destination = Destination.Server(host, target, x25519PublicKey)
         return sendOnionRequest(destination, payload, isJSONRequired).recover { exception ->
             Log.d("Loki", "Couldn't reach server: $urlAsString due to error: $exception.")
             throw exception
