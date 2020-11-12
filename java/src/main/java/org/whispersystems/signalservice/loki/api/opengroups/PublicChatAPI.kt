@@ -305,20 +305,22 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
     }
 
     public fun downloadOpenGroupProfilePicture(server: String, endpoint: String): ByteArray? {
-        val actualEndpoint = "/loki/v1/${endpoint.removePrefix("/")}"
-        val url = "$server/${actualEndpoint.removePrefix("/")}"
-        Log.d("Loki", "Downloading open group profile picture from \"$url\".")
-        try {
-            val result = execute(HTTPVerb.GET, server, actualEndpoint).get()
-            if (!result.containsKey("data") || result["data"] !is ArrayList<*>) {
-                throw IllegalStateException("Couldn't parse profile picture from $result.")
-            }
-            val data = result["data"] as ArrayList<Int>
-            return data.map { v -> v.toByte() }.toByteArray()
-        } catch (e: Exception) {
-            Log.d("Loki", "Couldn't download open group profile picture from \"$url\" due to error: $e.")
-            return null
-        }
+        //TODO Use DownloadUtilities#donwloadFile() to pull the avatar from the server.
+        return null
+//        val actualEndpoint = "/loki/v1/${endpoint.removePrefix("/")}"
+//        val url = "$server/${actualEndpoint.removePrefix("/")}"
+//        Log.d("Loki", "Downloading open group profile picture from \"$url\".")
+//        try {
+//            val result = execute(HTTPVerb.GET, server, actualEndpoint).get()
+//            if (!result.containsKey("data") || result["data"] !is ArrayList<*>) {
+//                throw IllegalStateException("Couldn't parse profile picture from $result.")
+//            }
+//            val data = result["data"] as ArrayList<Int>
+//            return data.map { v -> v.toByte() }.toByteArray()
+//        } catch (e: Exception) {
+//            Log.d("Loki", "Couldn't download open group profile picture from \"$url\" due to error: $e.")
+//            return null
+//        }
     }
 
     public fun join(channel: Long, server: String): Promise<Unit, Exception> {
