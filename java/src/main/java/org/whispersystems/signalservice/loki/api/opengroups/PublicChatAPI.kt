@@ -11,11 +11,14 @@ import org.whispersystems.signalservice.internal.util.Hex
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.LokiDotNetAPI
 import org.whispersystems.signalservice.loki.api.SnodeAPI
+import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiOpenGroupDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
+import org.whispersystems.signalservice.loki.utilities.DownloadUtilities
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -305,22 +308,19 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
     }
 
     public fun downloadOpenGroupProfilePicture(server: String, endpoint: String): ByteArray? {
-        //TODO Use DownloadUtilities#donwloadFile() to pull the avatar from the server.
-        return null
-//        val actualEndpoint = "/loki/v1/${endpoint.removePrefix("/")}"
-//        val url = "$server/${actualEndpoint.removePrefix("/")}"
-//        Log.d("Loki", "Downloading open group profile picture from \"$url\".")
-//        try {
-//            val result = execute(HTTPVerb.GET, server, actualEndpoint).get()
-//            if (!result.containsKey("data") || result["data"] !is ArrayList<*>) {
-//                throw IllegalStateException("Couldn't parse profile picture from $result.")
-//            }
-//            val data = result["data"] as ArrayList<Int>
-//            return data.map { v -> v.toByte() }.toByteArray()
-//        } catch (e: Exception) {
-//            Log.d("Loki", "Couldn't download open group profile picture from \"$url\" due to error: $e.")
-//            return null
-//        }
+        val url = "${server.removeSuffix("/")}/${endpoint.removePrefix("/")}"
+        Log.d("Loki", "Downloading open group profile picture from \"$url\".")
+        val outputStream = ByteArrayOutputStream()
+        try {
+            DownloadUtilities.downloadFile(outputStream, url, FileServerAPI.maxFileSize, null)
+            Log.d("Loki", "Open group profile picture was successfully loaded from \"$url\"")
+            return outputStream.toByteArray()
+        } catch (e: Exception) {
+            Log.d("Loki", "Failed to download open group profile picture from \"$url\" due to error: $e.")
+            return null
+        } finally {
+            outputStream.close()
+        }
     }
 
     public fun join(channel: Long, server: String): Promise<Unit, Exception> {
