@@ -1026,7 +1026,7 @@ public class SignalServiceMessageSender {
       throws IOException
   {
     // Loki - This method is only invoked for various types of control messages
-    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, useFallbackEncryption, isSyncMessage, false);
+    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, useFallbackEncryption, false, isSyncMessage, false);
   }
 
   public SendMessageResult sendMessage(final long                   messageID,
