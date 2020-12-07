@@ -1162,6 +1162,11 @@ public class SignalServiceMessageSender {
       throws IOException, UntrustedIdentityException
   {
     if (recipient.getNumber().equals(userPublicKey)) { return SendMessageResult.success(recipient, false, false); }
+
+    if (!useFallbackEncryption) {
+        throw new AssertionError();
+    }
+
     final SettableFuture<?>[] future = { new SettableFuture<Unit>() };
     try {
       OutgoingPushMessageList messages = getEncryptedMessages(socket, recipient, unidentifiedAccess, timestamp, content, online, useFallbackEncryption, isClosedGroup);
