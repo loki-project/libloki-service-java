@@ -1366,7 +1366,7 @@ public class SignalServiceMessageSender {
 
     PushTransportDetails transportDetails = new PushTransportDetails(3);
     String publicKey = recipient.getNumber(); // Could be a contact's public key or the public key of a SSK group
-    byte[] ciphertext = sessionProtocolImpl.encryptWithSessionProtocol(transportDetails.getPaddedMessageBody(plaintext), publicKey);
+    byte[] ciphertext = sessionProtocolImpl.encrypt(transportDetails.getPaddedMessageBody(plaintext), publicKey);
     String body = Base64.encodeBytes(ciphertext);
     boolean isSSKBasedClosedGroup = sskDatabase.isSSKBasedClosedGroup(publicKey);
     int type = isSSKBasedClosedGroup ? SignalServiceProtos.Envelope.Type.CLOSED_GROUP_CIPHERTEXT_VALUE :

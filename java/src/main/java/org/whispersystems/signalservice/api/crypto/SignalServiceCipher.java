@@ -320,7 +320,7 @@ public class SignalServiceCipher {
       int sessionVersion;
 
       if (envelope.isClosedGroupCiphertext()) {
-        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decryptWithSessionProtocol(envelope);
+        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(envelope);
         paddedMessage = plaintextAndSenderPublicKey.getFirst();
         String senderPublicKey = plaintextAndSenderPublicKey.getSecond();
         metadata = new Metadata(senderPublicKey, 1, envelope.getTimestamp(), false);
@@ -334,7 +334,7 @@ public class SignalServiceCipher {
         metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
         sessionVersion = sessionCipher.getSessionVersion();
       } else if (envelope.isUnidentifiedSender()) {
-        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decryptWithSessionProtocol(envelope);
+        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(envelope);
         paddedMessage = plaintextAndSenderPublicKey.getFirst();
         String senderPublicKey = plaintextAndSenderPublicKey.getSecond();
         metadata = new Metadata(senderPublicKey, 1, envelope.getTimestamp(), false);

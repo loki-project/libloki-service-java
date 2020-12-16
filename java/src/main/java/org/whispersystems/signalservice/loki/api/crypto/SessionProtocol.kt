@@ -21,11 +21,11 @@ interface SessionProtocol {
      * Encrypts `plaintext` using the Session protocol for `hexEncodedX25519PublicKey`.
      *
      * @param plaintext the plaintext to encrypt. Must already be padded.
-     * @param hexEncodedX25519PublicKey the X25519 public key to encrypt for. Could be the Session ID of a user, or the public key of a closed group.
+     * @param recipientHexEncodedX25519PublicKey the X25519 public key to encrypt for. Could be the Session ID of a user, or the public key of a closed group.
      *
      * @return the encrypted message.
      */
-    fun encryptWithSessionProtocol(plaintext: ByteArray, hexEncodedX25519PublicKey: String): ByteArray
+    fun encrypt(plaintext: ByteArray, recipientHexEncodedX25519PublicKey: String): ByteArray
 
     /**
      * Decrypts `envelope.content` using the Session protocol. If the envelope type is `UNIDENTIFIED_SENDER` the message is assumed to be a one-to-one
@@ -36,5 +36,5 @@ interface SessionProtocol {
      *
      * @return the padded plaintext.
      */
-    fun decryptWithSessionProtocol(envelope: SignalServiceEnvelope): Pair<ByteArray, String>
+    fun decrypt(envelope: SignalServiceEnvelope): Pair<ByteArray, String>
 }
