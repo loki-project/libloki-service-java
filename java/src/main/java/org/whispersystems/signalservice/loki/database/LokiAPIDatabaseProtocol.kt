@@ -1,5 +1,6 @@
 package org.whispersystems.signalservice.loki.database
 
+import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope
 import org.whispersystems.signalservice.loki.api.Snode
 import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink
 import java.util.*
