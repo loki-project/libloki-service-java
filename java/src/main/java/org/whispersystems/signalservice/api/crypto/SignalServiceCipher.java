@@ -39,6 +39,7 @@ import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
+import org.whispersystems.libsignal.util.Pair;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -320,11 +321,23 @@ public class SignalServiceCipher {
       int sessionVersion;
 
       if (envelope.isClosedGroupCiphertext()) {
-        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(envelope);
-        paddedMessage = plaintextAndSenderPublicKey.getFirst();
-        String senderPublicKey = plaintextAndSenderPublicKey.getSecond();
-        metadata = new Metadata(senderPublicKey, 1, envelope.getTimestamp(), false);
-        sessionVersion = sessionCipher.getSessionVersion();
+        try {
+          // Try the Session protocol
+          kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(envelope);
+          paddedMessage = plaintextAndSenderPublicKey.getFirst();
+          String senderPublicKey = plaintextAndSenderPublicKey.getSecond();
+          if (senderPublicKey.equals(localAddress.getNumber())) { throw new SelfSendException(); } // Will be caught and ignored in PushDecryptJob
+          metadata = new Metadata(senderPublicKey, 1, envelope.getTimestamp(), false);
+          sessionVersion = sessionCipher.getSessionVersion();
+        } catch (Exception exception) {
+          // Fall back on shared sender keys
+          Pair<byte[], String> plaintextAndSenderPublicKey = ClosedGroupUtilities.decrypt(envelope);
+          String senderPublicKey = plaintextAndSenderPublicKey.second();
+          if (senderPublicKey.equals(localAddress.getNumber())) { throw new SelfSendException(); } // Will be caught and ignored in PushDecryptJob
+          paddedMessage = plaintextAndSenderPublicKey.first();
+          metadata = new Metadata(senderPublicKey, envelope.getSourceDevice(), envelope.getTimestamp(), false);
+          sessionVersion = sessionCipher.getSessionVersion();
+        }
       } else if (envelope.isPreKeySignalMessage()) {
         paddedMessage  = sessionCipher.decrypt(new PreKeySignalMessage(ciphertext));
         metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
@@ -334,11 +347,21 @@ public class SignalServiceCipher {
         metadata       = new Metadata(envelope.getSource(), envelope.getSourceDevice(), envelope.getTimestamp(), false);
         sessionVersion = sessionCipher.getSessionVersion();
       } else if (envelope.isUnidentifiedSender()) {
-        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(envelope);
-        paddedMessage = plaintextAndSenderPublicKey.getFirst();
-        String senderPublicKey = plaintextAndSenderPublicKey.getSecond();
-        metadata = new Metadata(senderPublicKey, 1, envelope.getTimestamp(), false);
-        sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
+        try {
+          // Try the Session protocol
+          kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(envelope);
+          paddedMessage = plaintextAndSenderPublicKey.getFirst();
+          String senderPublicKey = plaintextAndSenderPublicKey.getSecond();
+          metadata = new Metadata(senderPublicKey, 1, envelope.getTimestamp(), false);
+          sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
+        } catch (Exception exception) {
+          // Fall back on the Signal protocol
+          Pair<SignalProtocolAddress, Pair<Integer, byte[]>> results = sealedSessionCipher.decrypt(certificateValidator, ciphertext, envelope.getServerTimestamp(), envelope.getSource());
+          Pair<Integer, byte[]> data = results.second();
+          paddedMessage = data.second();
+          metadata = new Metadata(results.first().getName(), results.first().getDeviceId(), envelope.getTimestamp(), false);
+          sessionVersion = sealedSessionCipher.getSessionVersion(new SignalProtocolAddress(metadata.getSender(), metadata.getSenderDevice()));
+        }
       } else {
         throw new InvalidMetadataMessageException("Unknown type: " + envelope.getType());
       }

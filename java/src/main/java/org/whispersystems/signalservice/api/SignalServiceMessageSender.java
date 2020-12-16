@@ -1364,13 +1364,48 @@ public class SignalServiceMessageSender {
   {
     List<OutgoingPushMessage> messages = new LinkedList<>();
 
+    // Loki - The way this works is:
+    // • Alice sends a session request (i.e. a pre key bundle) to Bob using fallback encryption.
+    // • She may send any number of subsequent messages also encrypted using fallback encryption.
+    // • When Bob receives the session request, he sets up his Signal cipher session locally and sends back a null message,
+    //   now encrypted using Signal encryption.
+    // • Alice receives this, sets up her Signal cipher session locally, and sends any subsequent messages
+    //   using Signal encryption.
+
+    if (!recipient.equals(localAddress) || unidentifiedAccess.isPresent()) {
+      if (sskDatabase.isSSKBasedClosedGroup(recipient.getNumber()) && unidentifiedAccess.isPresent()) {
+        messages.add(getSSKEncryptedMessage(recipient.getNumber(), unidentifiedAccess.get(), plaintext));
+      } else if (useFallbackEncryption) {
+        messages.add(getFallbackCipherEncryptedMessage(recipient.getNumber(), plaintext, unidentifiedAccess));
+      } else {
+        OutgoingPushMessage message = getEncryptedMessage(socket, recipient, unidentifiedAccess, plaintext, isClosedGroup);
+        if (message != null) { // May be null in a closed group context
+          messages.add(message);
+        }
+      }
+    }
+
+    return new OutgoingPushMessageList(recipient.getNumber(), timestamp, messages, online);
+  }
+
+  private OutgoingPushMessageList getSessionProtocolEncryptedMessages(PushServiceSocket            socket,
+                                                                      SignalServiceAddress         recipient,
+                                                                      Optional<UnidentifiedAccess> unidentifiedAccess,
+                                                                      long                         timestamp,
+                                                                      byte[]                       plaintext,
+                                                                      boolean                      online,
+                                                                      boolean                      useFallbackEncryption,
+                                                                      boolean                      isClosedGroup)
+  {
+    List<OutgoingPushMessage> messages = new LinkedList<>();
+
     PushTransportDetails transportDetails = new PushTransportDetails(3);
     String publicKey = recipient.getNumber(); // Could be a contact's public key or the public key of a SSK group
     byte[] ciphertext = sessionProtocolImpl.encrypt(transportDetails.getPaddedMessageBody(plaintext), publicKey);
     String body = Base64.encodeBytes(ciphertext);
     boolean isSSKBasedClosedGroup = sskDatabase.isSSKBasedClosedGroup(publicKey);
     int type = isSSKBasedClosedGroup ? SignalServiceProtos.Envelope.Type.CLOSED_GROUP_CIPHERTEXT_VALUE :
-        SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE;
+      SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE;
     OutgoingPushMessage message = new OutgoingPushMessage(type, 1, 0, body);
     messages.add(message);
 
