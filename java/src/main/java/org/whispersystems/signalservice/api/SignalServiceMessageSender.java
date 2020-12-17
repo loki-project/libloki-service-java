@@ -77,6 +77,7 @@ import org.whispersystems.signalservice.loki.api.LokiDotNetAPI;
 import org.whispersystems.signalservice.loki.api.PushNotificationAPI;
 import org.whispersystems.signalservice.loki.api.SignalMessageInfo;
 import org.whispersystems.signalservice.loki.api.SnodeAPI;
+import org.whispersystems.signalservice.loki.api.crypto.SessionProtocol;
 import org.whispersystems.signalservice.loki.api.fileserver.FileServerAPI;
 import org.whispersystems.signalservice.loki.api.opengroups.PublicChat;
 import org.whispersystems.signalservice.loki.api.opengroups.PublicChatAPI;
@@ -142,6 +143,7 @@ public class SignalServiceMessageSender {
   private final LokiThreadDatabaseProtocol                          threadDatabase;
   private final LokiMessageDatabaseProtocol                         messageDatabase;
   private final LokiPreKeyBundleDatabaseProtocol                    preKeyBundleDatabase;
+  private final SessionProtocol                                     sessionProtocolImpl;
   private final SessionResetProtocol                                sessionResetImpl;
   private final LokiUserDatabaseProtocol                            userDatabase;
   private final LokiOpenGroupDatabaseProtocol                       openGroupDatabase;
@@ -171,12 +173,13 @@ public class SignalServiceMessageSender {
                                     LokiThreadDatabaseProtocol threadDatabase,
                                     LokiMessageDatabaseProtocol messageDatabase,
                                     LokiPreKeyBundleDatabaseProtocol preKeyBundleDatabase,
+                                    SessionProtocol sessionProtocolImpl,
                                     SessionResetProtocol sessionResetImpl,
                                     LokiUserDatabaseProtocol userDatabase,
                                     LokiOpenGroupDatabaseProtocol openGroupDatabase,
                                     Broadcaster broadcaster)
   {
-    this(urls, new StaticCredentialsProvider(user, password, null), store, userAgent, isMultiDevice, pipe, unidentifiedPipe, eventListener, userPublicKey, apiDatabase, sskDatabase, threadDatabase, messageDatabase, preKeyBundleDatabase, sessionResetImpl, userDatabase, openGroupDatabase, broadcaster);
+    this(urls, new StaticCredentialsProvider(user, password, null), store, userAgent, isMultiDevice, pipe, unidentifiedPipe, eventListener, userPublicKey, apiDatabase, sskDatabase, threadDatabase, messageDatabase, preKeyBundleDatabase, sessionProtocolImpl, sessionResetImpl, userDatabase, openGroupDatabase, broadcaster);
   }
 
   public SignalServiceMessageSender(SignalServiceConfiguration urls,
@@ -193,6 +196,7 @@ public class SignalServiceMessageSender {
                                     LokiThreadDatabaseProtocol threadDatabase,
                                     LokiMessageDatabaseProtocol messageDatabase,
                                     LokiPreKeyBundleDatabaseProtocol preKeyBundleDatabase,
+                                    SessionProtocol sessionProtocolImpl,
                                     SessionResetProtocol sessionResetImpl,
                                     LokiUserDatabaseProtocol userDatabase,
                                     LokiOpenGroupDatabaseProtocol openGroupDatabase,
@@ -211,6 +215,7 @@ public class SignalServiceMessageSender {
     this.threadDatabase            = threadDatabase;
     this.messageDatabase           = messageDatabase;
     this.preKeyBundleDatabase      = preKeyBundleDatabase;
+    this.sessionProtocolImpl       = sessionProtocolImpl;
     this.sessionResetImpl          = sessionResetImpl;
     this.userDatabase              = userDatabase;
     this.openGroupDatabase         = openGroupDatabase;
@@ -1026,7 +1031,7 @@ public class SignalServiceMessageSender {
       throws IOException
   {
     // Loki - This method is only invoked for various types of control messages
-    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, false, useFallbackEncryption, isSyncMessage, false);
+    return sendMessage(0, recipient, unidentifiedAccess, timestamp, content, online, ttl, false, useFallbackEncryption, false, isSyncMessage, false);
   }
 
   public SendMessageResult sendMessage(final long                   messageID,
@@ -1162,6 +1167,11 @@ public class SignalServiceMessageSender {
       throws IOException, UntrustedIdentityException
   {
     if (recipient.getNumber().equals(userPublicKey)) { return SendMessageResult.success(recipient, false, false); }
+
+    if (!useFallbackEncryption) {
+        throw new AssertionError();
+    }
+
     final SettableFuture<?>[] future = { new SettableFuture<Unit>() };
     try {
       OutgoingPushMessageList messages = getEncryptedMessages(socket, recipient, unidentifiedAccess, timestamp, content, online, useFallbackEncryption, isClosedGroup);
@@ -1378,6 +1388,30 @@ public class SignalServiceMessageSender {
     return new OutgoingPushMessageList(recipient.getNumber(), timestamp, messages, online);
   }
 
+  private OutgoingPushMessageList getSessionProtocolEncryptedMessages(PushServiceSocket            socket,
+                                                                      SignalServiceAddress         recipient,
+                                                                      Optional<UnidentifiedAccess> unidentifiedAccess,
+                                                                      long                         timestamp,
+                                                                      byte[]                       plaintext,
+                                                                      boolean                      online,
+                                                                      boolean                      useFallbackEncryption,
+                                                                      boolean                      isClosedGroup)
+  {
+    List<OutgoingPushMessage> messages = new LinkedList<>();
+
+    PushTransportDetails transportDetails = new PushTransportDetails(3);
+    String publicKey = recipient.getNumber(); // Could be a contact's public key or the public key of a SSK group
+    byte[] ciphertext = sessionProtocolImpl.encrypt(transportDetails.getPaddedMessageBody(plaintext), publicKey);
+    String body = Base64.encodeBytes(ciphertext);
+    boolean isSSKBasedClosedGroup = sskDatabase.isSSKBasedClosedGroup(publicKey);
+    int type = isSSKBasedClosedGroup ? SignalServiceProtos.Envelope.Type.CLOSED_GROUP_CIPHERTEXT_VALUE :
+      SignalServiceProtos.Envelope.Type.UNIDENTIFIED_SENDER_VALUE;
+    OutgoingPushMessage message = new OutgoingPushMessage(type, 1, 0, body);
+    messages.add(message);
+
+    return new OutgoingPushMessageList(publicKey, timestamp, messages, online);
+  }
+
   private OutgoingPushMessage getFallbackCipherEncryptedMessage(String publicKey, byte[] plaintext, Optional<UnidentifiedAccess> unidentifiedAccess)
       throws InvalidKeyException
   {
@@ -1404,7 +1438,7 @@ public class SignalServiceMessageSender {
   {
       int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
       SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(groupPublicKey, deviceID);
-      SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, null);
+      SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, sessionProtocolImpl, null);
       try {
           return cipher.encrypt(signalProtocolAddress, Optional.of(unidentifiedAccess), plaintext);
       } catch (org.whispersystems.libsignal.UntrustedIdentityException e) {
@@ -1422,7 +1456,7 @@ public class SignalServiceMessageSender {
     Log.d("Loki", "Using Signal cipher.");
     int deviceID = SignalServiceAddress.DEFAULT_DEVICE_ID;
     SignalProtocolAddress signalProtocolAddress = new SignalProtocolAddress(recipient.getNumber(), deviceID);
-    SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, null);
+    SignalServiceCipher cipher = new SignalServiceCipher(localAddress, store, sskDatabase, sessionResetImpl, sessionProtocolImpl, null);
 
     try {
       String contactPublicKey = recipient.getNumber();

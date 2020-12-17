@@ -1,7 +1,9 @@
 package org.whispersystems.signalservice.loki.database
 
+import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope
 import org.whispersystems.signalservice.loki.api.Snode
 import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink
+import java.util.*
 
 interface LokiAPIDatabaseProtocol {
 
@@ -31,6 +33,8 @@ interface LokiAPIDatabaseProtocol {
     fun setOpenGroupPublicKey(server: String, newValue: String)
     fun setOpenGroupProfilePictureURL(group: Long, server: String, newValue: String)
     fun getOpenGroupProfilePictureURL(group: Long, server: String): String?
+    fun getLastSnodePoolRefreshDate(): Date?
+    fun setLastSnodePoolRefreshDate(newValue: Date)
 
     // region Deprecated
     fun getDeviceLinks(publicKey: String): Set<DeviceLink>
