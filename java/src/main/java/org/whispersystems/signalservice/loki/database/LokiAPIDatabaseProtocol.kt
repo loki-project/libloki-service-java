@@ -1,5 +1,7 @@
 package org.whispersystems.signalservice.loki.database
 
+import org.whispersystems.libsignal.IdentityKeyPair
+import org.whispersystems.libsignal.ecc.ECKeyPair
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope
 import org.whispersystems.signalservice.loki.api.Snode
 import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink
@@ -35,6 +37,8 @@ interface LokiAPIDatabaseProtocol {
     fun getOpenGroupProfilePictureURL(group: Long, server: String): String?
     fun getLastSnodePoolRefreshDate(): Date?
     fun setLastSnodePoolRefreshDate(newValue: Date)
+    fun getUserX25519KeyPair(): ECKeyPair
+    fun getClosedGroupEncryptionKeyPairs(groupPublicKey: String): List<ECKeyPair>
 
     // region Deprecated
     fun getDeviceLinks(publicKey: String): Set<DeviceLink>
