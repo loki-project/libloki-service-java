@@ -95,6 +95,7 @@ import org.whispersystems.signalservice.loki.protocol.closedgroups.ClosedGroupUt
 import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
 import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
+import org.whispersystems.signalservice.loki.utilities.TrimmingKt;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -337,7 +338,7 @@ public class SignalServiceCipher {
         } catch (Exception e) {
           // Fall back on the V1 method
           String privateKey = sskDatabase.getClosedGroupPrivateKey(groupPublicKey);
-          ECKeyPair keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(groupPublicKey)), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
+          ECKeyPair keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(TrimmingKt.removing05PrefixIfNeeded(groupPublicKey))), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
           plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(ciphertext, keyPair);
         }
         paddedMessage = plaintextAndSenderPublicKey.getFirst();

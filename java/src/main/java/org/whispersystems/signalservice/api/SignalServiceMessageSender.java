@@ -1335,8 +1335,8 @@ public class SignalServiceMessageSender {
     boolean isSSKBasedClosedGroup = sskDatabase.isSSKBasedClosedGroup(publicKey);
     String encryptionPublicKey;
     if (isSSKBasedClosedGroup) {
-      List<ECKeyPair> encryptionKeyPairs = apiDatabase.getClosedGroupEncryptionKeyPairs(publicKey);
-      encryptionPublicKey = HexEncodingKt.getHexEncodedPublicKey(encryptionKeyPairs.get(encryptionKeyPairs.size() - 1));
+      ECKeyPair encryptionKeyPair = apiDatabase.getLatestClosedGroupEncryptionKeyPair(publicKey);
+      encryptionPublicKey = HexEncodingKt.getHexEncodedPublicKey(encryptionKeyPair);
 
       /*
       encryptionPublicKey = publicKey;

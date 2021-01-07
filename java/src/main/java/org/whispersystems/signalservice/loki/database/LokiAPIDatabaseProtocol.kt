@@ -39,6 +39,7 @@ interface LokiAPIDatabaseProtocol {
     fun setLastSnodePoolRefreshDate(newValue: Date)
     fun getUserX25519KeyPair(): ECKeyPair
     fun getClosedGroupEncryptionKeyPairs(groupPublicKey: String): List<ECKeyPair>
+    fun getLatestClosedGroupEncryptionKeyPair(groupPublicKey: String): ECKeyPair?
 
     // region Deprecated
     fun getDeviceLinks(publicKey: String): Set<DeviceLink>
