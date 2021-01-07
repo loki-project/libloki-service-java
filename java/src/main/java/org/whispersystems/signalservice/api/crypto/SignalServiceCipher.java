@@ -78,6 +78,7 @@ import org.whispersystems.signalservice.internal.push.PushTransportDetails;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.AttachmentPointer;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ClosedGroupUpdate;
+import org.whispersystems.signalservice.internal.push.SignalServiceProtos.ClosedGroupUpdateV2;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Content;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.DataMessage;
 import org.whispersystems.signalservice.internal.push.SignalServiceProtos.Envelope.Type;
@@ -397,6 +398,7 @@ public class SignalServiceCipher {
     List<Preview>                  previews                    = createPreviews(content);
     Sticker                        sticker                     = createSticker(content);
     ClosedGroupUpdate              closedGroupUpdate           = content.getClosedGroupUpdate();
+    ClosedGroupUpdateV2            closedGroupUpdateV2         = content.getClosedGroupUpdateV2();
     boolean                        isDeviceUnlinkingRequest    = ((content.getFlags() & DataMessage.Flags.DEVICE_UNLINKING_REQUEST_VALUE) != 0);
 
     for (AttachmentPointer pointer : content.getAttachmentsList()) {
@@ -425,6 +427,7 @@ public class SignalServiceCipher {
                                         null,
                                         null,
                                         closedGroupUpdate,
+                                        closedGroupUpdateV2,
                                         isDeviceUnlinkingRequest);
   }
 
