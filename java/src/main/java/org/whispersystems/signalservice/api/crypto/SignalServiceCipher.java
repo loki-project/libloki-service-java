@@ -33,8 +33,6 @@ import org.whispersystems.libsignal.NoSessionException;
 import org.whispersystems.libsignal.SessionCipher;
 import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.UntrustedIdentityException;
-import org.whispersystems.libsignal.ecc.DjbECPrivateKey;
-import org.whispersystems.libsignal.ecc.DjbECPublicKey;
 import org.whispersystems.libsignal.ecc.ECKeyPair;
 import org.whispersystems.libsignal.loki.LokiSessionCipher;
 import org.whispersystems.libsignal.loki.SessionResetProtocol;
@@ -42,7 +40,6 @@ import org.whispersystems.libsignal.protocol.CiphertextMessage;
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage;
 import org.whispersystems.libsignal.protocol.SignalMessage;
 import org.whispersystems.libsignal.state.SignalProtocolStore;
-import org.whispersystems.libsignal.util.Hex;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
@@ -95,7 +92,6 @@ import org.whispersystems.signalservice.loki.protocol.closedgroups.ClosedGroupUt
 import org.whispersystems.signalservice.loki.protocol.closedgroups.SharedSenderKeysDatabaseProtocol;
 import org.whispersystems.signalservice.loki.protocol.sessionmanagement.PreKeyBundleMessage;
 import org.whispersystems.signalservice.loki.protocol.shelved.multidevice.DeviceLink;
-import org.whispersystems.signalservice.loki.utilities.TrimmingKt;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -332,15 +328,7 @@ public class SignalServiceCipher {
 
       if (envelope.isClosedGroupCiphertext()) {
         String groupPublicKey = envelope.getSource();
-        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey;
-        try {
-          plaintextAndSenderPublicKey = SessionProtocolUtilities.INSTANCE.decryptClosedGroupCiphertext(ciphertext, groupPublicKey, apiDB, sessionProtocolImpl);
-        } catch (Exception e) {
-          // Fall back on the V1 method
-          String privateKey = sskDatabase.getClosedGroupPrivateKey(groupPublicKey);
-          ECKeyPair keyPair = new ECKeyPair(new DjbECPublicKey(Hex.fromStringCondensed(TrimmingKt.removing05PrefixIfNeeded(groupPublicKey))), new DjbECPrivateKey(Hex.fromStringCondensed(privateKey)));
-          plaintextAndSenderPublicKey = sessionProtocolImpl.decrypt(ciphertext, keyPair);
-        }
+        kotlin.Pair<byte[], String> plaintextAndSenderPublicKey = SessionProtocolUtilities.INSTANCE.decryptClosedGroupCiphertext(ciphertext, groupPublicKey, apiDB, sessionProtocolImpl);
         paddedMessage = plaintextAndSenderPublicKey.getFirst();
         String senderPublicKey = plaintextAndSenderPublicKey.getSecond();
         if (senderPublicKey.equals(localAddress.getNumber())) { throw new SelfSendException(); } // Will be caught and ignored in PushDecryptJob

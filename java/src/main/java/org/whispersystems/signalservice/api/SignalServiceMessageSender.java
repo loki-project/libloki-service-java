@@ -1337,10 +1337,6 @@ public class SignalServiceMessageSender {
     if (isSSKBasedClosedGroup) {
       ECKeyPair encryptionKeyPair = apiDatabase.getLatestClosedGroupEncryptionKeyPair(publicKey);
       encryptionPublicKey = HexEncodingKt.getHexEncodedPublicKey(encryptionKeyPair);
-
-      /*
-      encryptionPublicKey = publicKey;
-       */
     } else {
       encryptionPublicKey = publicKey;
     }
