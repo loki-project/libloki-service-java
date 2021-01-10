@@ -1,6 +1,9 @@
 package org.whispersystems.signalservice.loki.api.crypto
 
+import org.whispersystems.libsignal.ecc.ECKeyPair
 import org.whispersystems.signalservice.api.messages.SignalServiceEnvelope
+import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
+import kotlin.Exception
 
 interface SessionProtocol {
 
@@ -12,7 +15,7 @@ interface SessionProtocol {
         // Decryption
         object NoData : Exception("Received an empty envelope.")
         object InvalidGroupPublicKey : Exception("Invalid group public key.")
-        object NoGroupPrivateKey : Exception("Missing group private key.")
+        object NoGroupKeyPair : Exception("Missing group key pair.")
         object DecryptionFailed : Exception("Couldn't decrypt message.")
         object InvalidSignature : Exception("Invalid message signature.")
     }
@@ -26,15 +29,37 @@ interface SessionProtocol {
      * @return the encrypted message.
      */
     fun encrypt(plaintext: ByteArray, recipientHexEncodedX25519PublicKey: String): ByteArray
-
     /**
-     * Decrypts `envelope.content` using the Session protocol. If the envelope type is `UNIDENTIFIED_SENDER` the message is assumed to be a one-to-one
-     * message. If the envelope type is `CLOSED_GROUP_CIPHERTEXT` the message is assumed to be a closed group message. In the latter case `envelope.source`
-     * must be set to the closed group's public key.
+     * Decrypts `ciphertext` using the Session protocol and `x25519KeyPair`.
      *
-     * @param envelope the envelope for which to decrypt the content.
+     * @param ciphertext the data to decrypt.
+     * @param x25519KeyPair the key pair to use for decryption. This could be the current user's key pair, or the key pair of a closed group.
      *
      * @return the padded plaintext.
      */
-    fun decrypt(envelope: SignalServiceEnvelope): Pair<ByteArray, String>
+    fun decrypt(ciphertext: ByteArray, x25519KeyPair: ECKeyPair): Pair<ByteArray, String>
+}
+
+object SessionProtocolUtilities {
+
+    fun decryptClosedGroupCiphertext(ciphertext: ByteArray, groupPublicKey: String, apiDB: LokiAPIDatabaseProtocol, sessionProtocolImpl: SessionProtocol): Pair<ByteArray, String> {
+        val encryptionKeyPairs = apiDB.getClosedGroupEncryptionKeyPairs(groupPublicKey).toMutableList()
+        if (encryptionKeyPairs.isEmpty()) { throw SessionProtocol.Exception.NoGroupKeyPair }
+        // Loop through all known group key pairs in reverse order (i.e. try the latest key pair first (which'll more than
+        // likely be the one we want) but try older ones in case that didn't work)
+        var encryptionKeyPair = encryptionKeyPairs.removeAt(encryptionKeyPairs.lastIndex)
+        fun decrypt(): Pair<ByteArray, String> {
+            try {
+                return sessionProtocolImpl.decrypt(ciphertext, encryptionKeyPair)
+            } catch(exception: Exception) {
+                if (encryptionKeyPairs.isNotEmpty()) {
+                    encryptionKeyPair = encryptionKeyPairs.removeAt(encryptionKeyPairs.lastIndex)
+                    return decrypt()
+                } else {
+                    throw exception
+                }
+            }
+        }
+        return decrypt()
+    }
 }
