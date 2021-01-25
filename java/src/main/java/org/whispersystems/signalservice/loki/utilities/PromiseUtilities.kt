@@ -4,10 +4,11 @@ package org.whispersystems.signalservice.loki.utilities
 import nl.komponents.kovenant.*
 import nl.komponents.kovenant.jvm.asDispatcher
 import org.whispersystems.libsignal.logging.Log
+import java.util.concurrent.Executors
 
 fun Kovenant.createContext(): Context {
     return createContext {
-        callbackContext.dispatcher = ThreadUtils.executorPool.asDispatcher()
+        callbackContext.dispatcher = Executors.newSingleThreadExecutor().asDispatcher()
         workerContext.dispatcher = ThreadUtils.executorPool.asDispatcher()
         multipleCompletion = { v1, v2 ->
             Log.d("Loki", "Promise resolved more than once (first with $v1, then with $v2); ignoring $v2.")
