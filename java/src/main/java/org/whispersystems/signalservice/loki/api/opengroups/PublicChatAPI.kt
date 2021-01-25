@@ -16,6 +16,7 @@ import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiOpenGroupDatabaseProtocol
 import org.whispersystems.signalservice.loki.database.LokiUserDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.DownloadUtilities
+import org.whispersystems.signalservice.loki.utilities.ThreadUtils
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
 import java.io.ByteArrayOutputStream
@@ -27,7 +28,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
 
     companion object {
         private val moderators: HashMap<String, HashMap<Long, Set<String>>> = hashMapOf() // Server URL to (channel ID to set of moderator IDs)
-        val sharedContext = Kovenant.createContext("LokiPublicChatAPISharedContext")
+        val sharedContext = Kovenant.createContext()
 
         // region Settings
         private val fallbackBatchCount = 64
@@ -193,7 +194,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
 
     fun sendMessage(message: PublicChatMessage, channel: Long, server: String): Promise<PublicChatMessage, Exception> {
         val deferred = deferred<PublicChatMessage, Exception>()
-        Thread {
+        ThreadUtils.queue {
             val signedMessage = message.sign(userPrivateKey)
             if (signedMessage == null) {
                 deferred.reject(SnodeAPI.Error.MessageSigningFailed)
@@ -224,7 +225,7 @@ class PublicChatAPI(userPublicKey: String, private val userPrivateKey: ByteArray
                     deferred.reject(it)
                 }
             }
-        }.start()
+        }
         return deferred.promise
     }
 

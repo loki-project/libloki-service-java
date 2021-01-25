@@ -13,6 +13,7 @@ import org.whispersystems.signalservice.loki.api.onionrequests.OnionRequestAPI
 import org.whispersystems.signalservice.loki.api.utilities.HTTP
 import org.whispersystems.signalservice.loki.database.LokiAPIDatabaseProtocol
 import org.whispersystems.signalservice.loki.utilities.Broadcaster
+import org.whispersystems.signalservice.loki.utilities.ThreadUtils
 import org.whispersystems.signalservice.loki.utilities.createContext
 import org.whispersystems.signalservice.loki.utilities.prettifiedDescription
 import org.whispersystems.signalservice.loki.utilities.retryIfNeeded
@@ -22,12 +23,12 @@ import java.net.SocketTimeoutException
 class SnodeAPI private constructor(public var userPublicKey: String, public val database: LokiAPIDatabaseProtocol, public val broadcaster: Broadcaster) {
 
     companion object {
-        val messageSendingContext = Kovenant.createContext("LokiAPIMessageSendingContext")
-        val messagePollingContext = Kovenant.createContext("LokiAPIMessagePollingContext")
+        val messageSendingContext = Kovenant.createContext()
+        val messagePollingContext = Kovenant.createContext()
         /**
          * For operations that are shared between message sending and message polling.
          */
-        val sharedContext = Kovenant.createContext("LokiAPISharedContext")
+        val sharedContext = Kovenant.createContext()
 
         // region Initialization
         lateinit var shared: SnodeAPI
@@ -75,7 +76,7 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
             return OnionRequestAPI.sendOnionRequest(method, parameters, snode, publicKey)
         } else {
             val deferred = deferred<Map<*, *>, Exception>()
-            Thread {
+            ThreadUtils.queue {
                 val payload = mapOf( "method" to method.rawValue, "params" to parameters )
                 try {
                     val json = HTTP.execute(HTTP.Verb.POST, url, payload)
@@ -87,13 +88,13 @@ class SnodeAPI private constructor(public var userPublicKey: String, public val 
                         val httpRequestFailedException = exception as? HTTP.HTTPRequestFailedException
                         if (httpRequestFailedException != null) {
                             @Suppress("NAME_SHADOWING") val exception = handleSnodeError(httpRequestFailedException.statusCode, httpRequestFailedException.json, snode, publicKey)
-                            return@Thread deferred.reject(exception)
+                            return@queue deferred.reject(exception)
                         }
                         Log.d("Loki", "Unhandled exception: $exception.")
                     }
                     deferred.reject(exception)
                 }
-            }.start()
+            }
             return deferred.promise
         }
     }
