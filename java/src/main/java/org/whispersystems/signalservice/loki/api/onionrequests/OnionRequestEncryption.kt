@@ -5,6 +5,7 @@ import nl.komponents.kovenant.deferred
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionResult
 import org.whispersystems.signalservice.loki.api.utilities.EncryptionUtilities
+import org.whispersystems.signalservice.loki.utilities.ThreadUtils
 import org.whispersystems.signalservice.loki.utilities.toHexString
 import java.nio.Buffer
 import java.nio.ByteBuffer
@@ -32,7 +33,7 @@ object OnionRequestEncryption {
      */
     internal fun encryptPayloadForDestination(payload: Map<*, *>, destination: OnionRequestAPI.Destination): Promise<EncryptionResult, Exception> {
         val deferred = deferred<EncryptionResult, Exception>()
-        Thread {
+        ThreadUtils.queue {
             try {
                 // Wrapping isn't needed for file server or open group onion requests
                 when (destination) {
@@ -52,7 +53,7 @@ object OnionRequestEncryption {
             } catch (exception: Exception) {
                 deferred.reject(exception)
             }
-        }.start()
+        }
         return deferred.promise
     }
 
@@ -61,7 +62,7 @@ object OnionRequestEncryption {
      */
     internal fun encryptHop(lhs: OnionRequestAPI.Destination, rhs: OnionRequestAPI.Destination, previousEncryptionResult: EncryptionResult): Promise<EncryptionResult, Exception> {
         val deferred = deferred<EncryptionResult, Exception>()
-        Thread {
+        ThreadUtils.queue {
             try {
                 val payload: MutableMap<String, Any>
                 when (rhs) {
@@ -88,7 +89,7 @@ object OnionRequestEncryption {
             } catch (exception: Exception) {
                 deferred.reject(exception)
             }
-        }.start()
+        }
         return deferred.promise
     }
 }
