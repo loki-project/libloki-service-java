@@ -15,6 +15,7 @@ import java.security.SecureRandom
 import java.util.*
 
 class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol) {
+    private var populateSnodePoolPromise: Promise<Unit, Exception>? = null
     internal var snodeFailureCount: MutableMap<Snode, Int> = mutableMapOf()
 
     internal var snodePool: Set<Snode>
@@ -47,6 +48,64 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
     }
 
     // region Swarm API
+    internal fun populateSnodePool(): Promise<Unit, Exception> {
+        val existingPromise = this.populateSnodePoolPromise
+        if (existingPromise != null) { return existingPromise }
+        database.setLastSnodePoolRefreshDate(Date())
+        val target = seedNodePool.random()
+        val url = "$target/json_rpc"
+        Log.d("Loki", "Populating snode pool using: $target.")
+        val parameters = mapOf(
+            "method" to "get_n_service_nodes",
+            "params" to mapOf(
+                "active_only" to true,
+                "fields" to mapOf( "public_ip" to true, "storage_port" to true, "pubkey_x25519" to true, "pubkey_ed25519" to true )
+            )
+        )
+        val deferred = deferred<Unit, Exception>()
+        val promise = deferred.promise
+        populateSnodePoolPromise = promise
+        Thread {
+            try {
+                val json = HTTP.execute(HTTP.Verb.POST, url, parameters, useSeedNodeConnection = true)
+                val intermediate = json["result"] as? Map<*, *>
+                val rawSnodes = intermediate?.get("service_node_states") as? List<*>
+                if (rawSnodes != null) {
+                    @Suppress("NAME_SHADOWING") val snodePool = rawSnodes.mapNotNull { rawSnode ->
+                        val rawSnodeAsJSON = rawSnode as? Map<*, *>
+                        val address = rawSnodeAsJSON?.get("public_ip") as? String
+                        val port = rawSnodeAsJSON?.get("storage_port") as? Int
+                        val ed25519Key = rawSnodeAsJSON?.get("pubkey_ed25519") as? String
+                        val x25519Key = rawSnodeAsJSON?.get("pubkey_x25519") as? String
+                        if (address != null && port != null && ed25519Key != null && x25519Key != null && address != "0.0.0.0") {
+                            Snode("https://$address", port, Snode.KeySet(ed25519Key, x25519Key))
+                        } else {
+                            Log.d("Loki", "Failed to parse: ${rawSnode?.prettifiedDescription()}.")
+                            null
+                        }
+                    }.toMutableSet()
+                    Log.d("Loki", "Persisting snode pool to database.")
+                    this.snodePool = snodePool
+                    try {
+                        deferred.resolve(Unit)
+                    } catch (exception: Exception) {
+                        Log.d("Loki", "Got an empty snode pool from: $target.")
+                        deferred.reject(SnodeAPI.Error.Generic)
+                    }
+                } else {
+                    Log.d("Loki", "Failed to update snode pool from: ${(rawSnodes as List<*>?)?.prettifiedDescription()}.")
+                    deferred.reject(SnodeAPI.Error.Generic)
+                }
+            } catch (exception: Exception) {
+                deferred.reject(exception)
+            }
+        }.start()
+        promise always {
+            this.populateSnodePoolPromise = null
+        }
+        return promise
+    }
+
     internal fun getRandomSnode(): Promise<Snode, Exception> {
         val snodePool = this.snodePool
         val lastRefreshDate = database.getLastSnodePoolRefreshDate()
@@ -54,55 +113,7 @@ class SwarmAPI private constructor(private val database: LokiAPIDatabaseProtocol
         val needsRefresh = (snodePool.count() < minimumSnodePoolCount) || lastRefreshDate == null
             || (now.time - lastRefreshDate.time) > 24 * 60 * 60 * 1000
         if (needsRefresh) {
-            database.setLastSnodePoolRefreshDate(now)
-            val target = seedNodePool.random()
-            val url = "$target/json_rpc"
-            Log.d("Loki", "Populating snode pool using: $target.")
-            val parameters = mapOf(
-                "method" to "get_n_service_nodes",
-                "params" to mapOf(
-                    "active_only" to true,
-                    "fields" to mapOf( "public_ip" to true, "storage_port" to true, "pubkey_x25519" to true, "pubkey_ed25519" to true )
-                )
-            )
-            val deferred = deferred<Snode, Exception>()
-            deferred<Snode, Exception>(SnodeAPI.sharedContext)
-            Thread {
-                try {
-                    val json = HTTP.execute(HTTP.Verb.POST, url, parameters, useSeedNodeConnection = true)
-                    val intermediate = json["result"] as? Map<*, *>
-                    val rawSnodes = intermediate?.get("service_node_states") as? List<*>
-                    if (rawSnodes != null) {
-                        @Suppress("NAME_SHADOWING") val snodePool = rawSnodes.mapNotNull { rawSnode ->
-                            val rawSnodeAsJSON = rawSnode as? Map<*, *>
-                            val address = rawSnodeAsJSON?.get("public_ip") as? String
-                            val port = rawSnodeAsJSON?.get("storage_port") as? Int
-                            val ed25519Key = rawSnodeAsJSON?.get("pubkey_ed25519") as? String
-                            val x25519Key = rawSnodeAsJSON?.get("pubkey_x25519") as? String
-                            if (address != null && port != null && ed25519Key != null && x25519Key != null && address != "0.0.0.0") {
-                                Snode("https://$address", port, Snode.KeySet(ed25519Key, x25519Key))
-                            } else {
-                                Log.d("Loki", "Failed to parse: ${rawSnode?.prettifiedDescription()}.")
-                                null
-                            }
-                        }.toMutableSet()
-                        Log.d("Loki", "Persisting snode pool to database.")
-                        this.snodePool = snodePool
-                        try {
-                            deferred.resolve(snodePool.getRandomElement())
-                        } catch (exception: Exception) {
-                            Log.d("Loki", "Got an empty snode pool from: $target.")
-                            deferred.reject(SnodeAPI.Error.Generic)
-                        }
-                    } else {
-                        Log.d("Loki", "Failed to update snode pool from: ${(rawSnodes as List<*>?)?.prettifiedDescription()}.")
-                        deferred.reject(SnodeAPI.Error.Generic)
-                    }
-                } catch (exception: Exception) {
-                    deferred.reject(exception)
-                }
-            }.start()
-            return deferred.promise
+            return populateSnodePool() map { snodePool.getRandomElement() }
         } else {
             return Promise.of(snodePool.getRandomElement())
         }
